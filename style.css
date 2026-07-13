@@ -516,6 +516,8 @@ tr.row-date:hover td { background:#eef3f9; }
   color:var(--alas-text-3); transform:rotate(-90deg); transition:transform .22s var(--alas-ease); }
 .row-date__chev svg { width:15px; height:15px; }
 tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-brand); }
+.row-date__sec { display:inline-flex; align-items:center; margin-right:12px; padding:4px 12px; border-radius:9px; background:var(--alas-brand);
+  color:#fff; font-size:13px; font-weight:800; letter-spacing:.01em; box-shadow:0 3px 8px rgba(11,95,141,.18); }
 .inv-table tbody tr.is-collapsed { display:none; }
 .date-report-btn { display:inline-flex; align-items:center; gap:7px; height:37px; padding:0 16px; margin-left:16px; border:1px solid #cfe0ee; border-radius:10px;
   background:#fff; color:var(--alas-brand); font-size:13px; font-weight:700; transition:.16s var(--alas-ease); }
