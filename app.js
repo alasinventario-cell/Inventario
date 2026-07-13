@@ -1353,12 +1353,8 @@
       '<div class="modal__body">'+'<div style="max-width:760px;margin:0 auto">'+reporteEmailHTML(u)+'</div>'+
         '<div class="report-actions" style="max-width:760px;margin:20px auto 0">'+
           '<button class="btn btn--primary" id="r_copy">📋 Copiar para Outlook</button>'+
-          '<button class="btn btn--success" id="r_print">'+ICONS.print+' Imprimir</button>'+
-          '<button class="btn btn--dark" id="r_pdf">⬇ Descargar PDF</button>'+
         '</div></div>', { wide:true });
     q('#r_copy',m.bd).addEventListener('click',function(){ copyReport(u); });
-    q('#r_print',m.bd).addEventListener('click',function(){ printReporte(u); });
-    q('#r_pdf',m.bd).addEventListener('click',function(){ printReporte(u); });
   }
 
   // Reporte de correo (tabla). Clave anti-negrita de Outlook: font-weight:normal EXPLÍCITO en
