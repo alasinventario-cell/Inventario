@@ -460,7 +460,13 @@ button.kpi:hover::before { transform:scaleY(1); }
   transition:transform .16s var(--alas-ease-spring), background .16s var(--alas-ease), color .16s var(--alas-ease), border-color .16s var(--alas-ease), box-shadow .16s var(--alas-ease); }
 .action-btn svg { width:20px; height:20px; }
 .action-btn:hover { transform:translateY(-4px) scale(1.12); }
-.action-btn:active { transform:translateY(-1px) scale(1.05); }
+.action-btn:active { transform:translateY(-1px) scale(.94); }
+.action-btn.is-loading { pointer-events:none; transform:none; }
+.action-btn.is-loading svg { opacity:0; }
+.action-btn.is-loading .tip { display:none; }
+.action-btn.is-loading::after { content:''; position:absolute; top:50%; left:50%; width:18px; height:18px; margin:-9px 0 0 -9px;
+  border-radius:50%; border:2.5px solid currentColor; border-right-color:transparent; opacity:.9; animation:actBtnSpin .6s linear infinite; }
+@keyframes actBtnSpin { to { transform:rotate(360deg); } }
 .row-actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
 
 /* Variantes: reposo con tinte suave, hover relleno sólido + glow */

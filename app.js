@@ -859,7 +859,9 @@
       '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th></th>'+
       '</tr></thead><tbody>'+body+'</tbody></table></div>';
     host.querySelectorAll('[data-act]').forEach(function(btn){
-      btn.addEventListener('click',function(){ onAction(btn.getAttribute('data-act'), +btn.getAttribute('data-uso'), +btn.getAttribute('data-item'), btn.closest('tr')); });
+      btn.addEventListener('click',function(){ var b=this; if(b.classList.contains('is-loading')) return; b.classList.add('is-loading');
+        var clr=function(){ b.classList.remove('is-loading'); }; setTimeout(clr, 2500);
+        onAction(btn.getAttribute('data-act'), +btn.getAttribute('data-uso'), +btn.getAttribute('data-item'), btn.closest('tr'), clr); });
     });
     host.querySelectorAll('.date-report-btn').forEach(function(btn){
       btn.addEventListener('click',function(e){ e.stopPropagation(); var d=btn.getAttribute('data-date'); reporteFechaModal(d, groups[d]); });
@@ -1079,12 +1081,13 @@
     setTimeout(function(){ if(done) done(); }, 880);
   }
 
-  function onAction(act, usoId, itemId, rowEl){
-    if(act==='reporte' || act==='imprimir'){ API.getUso(usoId).then(function(u){ if(act==='reporte') reporteModal(u); else printReporte(u); }); return; }
-    if(act==='cargar'){ API.getUso(usoId).then(function(u){ var it=(u.items||[]).find(function(x){return x.id===itemId;}); cargarSAPModal(u,it,rowEl); }); return; }
-    if(act==='editar'){ API.getUso(usoId).then(function(u){ var it=(u.items||[]).find(function(x){return x.id===itemId;}); editItemModal(usoId, it); }); return; }
+  function onAction(act, usoId, itemId, rowEl, done){
+    done=done||function(){};
+    if(act==='reporte' || act==='imprimir'){ API.getUso(usoId).then(function(u){ done(); if(act==='reporte') reporteModal(u); else printReporte(u); }); return; }
+    if(act==='cargar'){ API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); cargarSAPModal(u,it,rowEl); }); return; }
+    if(act==='editar'){ API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); editItemModal(usoId, it); }); return; }
     if(act==='eliminar'){
-      API.getUso(usoId).then(function(u){ var it=(u.items||[]).find(function(x){return x.id===itemId;}); var last=(u.items||[]).length<=1;
+      API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); var last=(u.items||[]).length<=1;
         var m=openModal('<div class="modal__head"><div class="modal__title">Eliminar material</div><button class="modal__close" data-close>&times;</button></div>'+
           '<div class="modal__body"><p style="font-size:13.5px;line-height:1.6;color:var(--alas-text-2)">¿Seguro que querés eliminar esta línea del uso interno?</p>'+
           '<div class="caso-preview"><div class="caso-preview__row"><span>Mercadería</span><span>'+esc(it.cod_mercaderia)+'</span></div>'+
@@ -1098,7 +1101,7 @@
       return;
     }
     if(act==='baja'){
-      API.getUso(usoId).then(function(u){ var it=(u.items||[]).find(function(x){return x.id===itemId;});
+      API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;});
         function di(l,v,wide){ return '<div class="detail-item'+(wide?' detail-item--wide':'')+'"><span class="detail-item__l">'+l+'</span><span class="detail-item__v">'+v+'</span></div>'; }
         var m=openModal(
           '<div class="modal__head"><div class="modal__title">Dar de baja en SAP</div><button class="modal__close" data-close>&times;</button></div>'+
