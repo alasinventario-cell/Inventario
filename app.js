@@ -529,6 +529,20 @@
   }
   function monthDates(m){ var y=+m.split('-')[0], mo=+m.split('-')[1], last=new Date(y,mo,0).getDate(), out=[]; for(var d=1;d<=last;d++) out.push(y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0')); return out; }
   function aggByDay(usos, n){ return aggByDates(usos, lastNDates(n)); }
+  function aggByMonth(usos){
+    var minM=null, maxM=null;
+    usos.forEach(function(u){ if(u.estado==='anulado') return; var m=String(u.fecha_emision).slice(0,7); if(m.length!==7) return; if(!minM||m<minM)minM=m; if(!maxM||m>maxM)maxM=m; });
+    if(!minM){ var now=new Date(); minM=maxM=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'); }
+    var y=+minM.slice(0,4), mo=+minM.slice(5,7), ey=+maxM.slice(0,4), emo=+maxM.slice(5,7);
+    var order=[], map={};
+    while(y<ey || (y===ey && mo<=emo)){
+      var key=y+'-'+String(mo).padStart(2,'0');
+      map[key]={ date:key+'-01', label:(MESES[mo-1]||'').slice(0,3), tip:(MESES[mo-1]||'')+' '+y, seg:{}, total:0 };
+      order.push(key); mo++; if(mo>12){ mo=1; y++; }
+    }
+    usos.forEach(function(u){ if(u.estado==='anulado') return; var m=String(u.fecha_emision).slice(0,7); if(!map[m]) return; map[m].seg[u.sector]=(map[m].seg[u.sector]||0)+1; map[m].total++; });
+    return order.map(function(k){ return map[k]; });
+  }
   function aggTopItems(usos, n){
     var m={};
     usos.forEach(function(u){ if(u.estado==='anulado') return; (u.items||[]).forEach(function(it){ var k=it.cod_mercaderia||'—'; if(!m[k]) m[k]={cod:k,desc:it.descripcion||'',qty:0}; m[k].qty+=Number(it.cantidad)||0; }); });
@@ -575,8 +589,8 @@
     var area=line+' L '+xs(n-1).toFixed(1)+' '+(padT+ih)+' L '+xs(0).toFixed(1)+' '+(padT+ih)+' Z';
     var ticks=[maxT,Math.round(maxT/2),0].filter(function(v,i,a){return a.indexOf(v)===i;});
     var grid=ticks.map(function(v){ var y=ys(v); return '<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y+'" y2="'+y+'" class="ar-grid"/><text x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end" class="ar-tick">'+v+'</text>'; }).join('');
-    var dots=pts.map(function(p,i){ return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.6" class="ar-dot" data-tip="'+('<b>'+esc(fmtFecha(days[i].date))+'</b><br>'+days[i].total+' uso(s)').replace(/"/g,'&quot;')+'"/>'; }).join('');
-    var xl=days.map(function(d,i){ return (i%Math.ceil(n/7)===0||i===n-1)?'<text x="'+xs(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" class="ar-x">'+fmtFecha(d.date).slice(0,5)+'</text>':''; }).join('');
+    var dots=pts.map(function(p,i){ return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.6" class="ar-dot" data-tip="'+('<b>'+esc(days[i].tip||fmtFecha(days[i].date))+'</b><br>'+days[i].total+' uso(s)').replace(/"/g,'&quot;')+'"/>'; }).join('');
+    var xl=days.map(function(d,i){ return (i%Math.ceil(n/7)===0||i===n-1)?'<text x="'+xs(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" class="ar-x">'+(d.label||fmtFecha(d.date).slice(0,5))+'</text>':''; }).join('');
     return '<svg class="areachart" viewBox="0 0 '+W+' '+H+'"><defs><linearGradient id="arGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a78d6" stop-opacity=".26"/><stop offset="1" stop-color="#2a78d6" stop-opacity="0"/></linearGradient></defs>'+grid+'<path d="'+area+'" class="ar-area" fill="url(#arGrad)"/><path d="'+line+'" class="ar-line" fill="none" stroke="#2a78d6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+dots+xl+'</svg>';
   }
 
@@ -712,8 +726,9 @@
     function fillResumen(){
       var usos=(state._menuUsos||[]).filter(inMonth);
       var tot=usos.filter(function(u){return u.estado!=='anulado';}).length;
-      var timeSub= state.menuMonth ? monthLabel(state.menuMonth) : 'Últimos 14 días';
-      var days = state.menuMonth ? aggByDates(usos, monthDates(state.menuMonth)) : aggByDay(usos,14);
+      var months = aggByMonth(state._menuUsos||[]);
+      var _yrs={}; (state._menuUsos||[]).forEach(function(u){ if(u.estado!=='anulado') _yrs[String(u.fecha_emision).slice(0,4)]=1; });
+      var _yl=Object.keys(_yrs).sort(); var timeSub=_yl.length?(_yl.length>1?_yl[0]+'–'+_yl[_yl.length-1]:_yl[0]):'';
       var sectorRows=SECTOR_CARDS.map(function(s){ var c=usos.filter(function(u){return u.sector===s.key&&u.estado!=='anulado';}).length; return {label:s.label,value:c,color:SECTOR_COLOR[s.key]}; });
       var ec={pendiente:0,cargado:0,baja:0}; usos.forEach(function(u){ if(u.estado==='anulado')return; (u.items||[]).forEach(function(it){ if(ec[it.sap_estado]!=null) ec[it.sap_estado]++; }); });
       var estadoSegs=[{label:'Pendiente',value:ec.pendiente,color:'#d97706'},{label:'Cargado',value:ec.cargado,color:'#2a78d6'},{label:'Baja',value:ec.baja,color:'#16a34a'}];
@@ -721,7 +736,7 @@
       var top=aggTopItems(usos,7);
 
       var body=statTilesHTML(usos)+
-        panel('Usos internos por fecha', timeSub, chartAreaHTML(days), true)+
+        panel('Usos internos por mes', timeSub, chartAreaHTML(months), true)+
         '<div class="dash-2col">'+
           panel('Usos por sector','', svgDonut(sectorRows, String(tot), 'usos'))+
           panel('Estado de líneas SAP','', estadoTotal? svgDonut(estadoSegs, String(estadoTotal), 'líneas') : '<div class="chart-empty">Sin líneas aún</div>')+
