@@ -84,6 +84,7 @@
     thumb:'<svg fill="currentColor" viewBox="0 0 24 24"><path d="M2 21h2V9H2v12zM23 10a2 2 0 00-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L14 1 7.6 7.4c-.4.4-.6.9-.6 1.4V19a2 2 0 002 2h9c.8 0 1.5-.5 1.8-1.2l3-7c.1-.2.2-.5.2-.8v-2z"/></svg>',
     file:'<svg fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm0 2l4 4h-4V4zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>',
     print:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>',
+    entregado:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     sap:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-width="1.6"/></svg>',
     check:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     clock:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
@@ -879,7 +880,7 @@
         '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
-      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th>Entregado</th><th></th>'+
+      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th class="th-ent" title="Entregado">'+ICONS.entregado+'</th><th></th>'+
       '</tr></thead><tbody>'+body+'</tbody></table></div>';
     host.querySelectorAll('[data-act]').forEach(function(btn){
       btn.addEventListener('click',function(){ var b=this; if(b.classList.contains('is-loading')) return; b.classList.add('is-loading');
