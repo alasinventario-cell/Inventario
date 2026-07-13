@@ -187,6 +187,18 @@
       return Promise.resolve(true);
     },
 
+    asignarCeco: function (items, caso) {
+      var s = this._load(); var n = 0;
+      (items || []).forEach(function (ref) {
+        var u = s.usos.find(function (x) { return x.id === ref.usoId; }); if (!u) return;
+        var it = (u.items || []).find(function (x) { return x.id === ref.itemId; }); if (!it) return;
+        it.caso_id = caso.id || null; it.cuenta_mayor = caso.cuenta_mayor || ''; it.ceco = caso.ceco || ''; it.orden = caso.orden || ''; n++;
+      });
+      if (n) s.audit.push({ id: s.audit.length + 1, uso_id: null, item_id: null, accion: 'asignar_ceco', estado_anterior: null, estado_nuevo: null, usuario: usuario(), detalle: (caso.ceco || '—') + ' · ' + n + ' línea' + (n !== 1 ? 's' : ''), created_at: nowISO() });
+      this._save(s);
+      return Promise.resolve(n);
+    },
+
     deleteItem: function (usoId, itemId) {
       var s = this._load();
       var u = s.usos.find(function (x) { return x.id === usoId; });
@@ -317,6 +329,14 @@
       return DB.from('uso_items').update(fields).eq('id', itemId)
         .then(function () { return self._audit({ uso_id: usoId, item_id: itemId, accion: 'editar', detalle: fields.cod_mercaderia || '' }); });
     },
+    asignarCeco: function (items, caso) {
+      var self = this;
+      var ids = (items || []).map(function (x) { return x.itemId; });
+      if (!ids.length) return Promise.resolve(0);
+      return DB.from('uso_items').update({ caso_id: caso.id || null, cuenta_mayor: caso.cuenta_mayor || '', ceco: caso.ceco || '', orden: caso.orden || '' }).in('id', ids)
+        .then(function () { return self._audit({ accion: 'asignar_ceco', detalle: (caso.ceco || '—') + ' · ' + ids.length + ' línea' + (ids.length !== 1 ? 's' : '') }); })
+        .then(function () { return ids.length; });
+    },
     deleteItem: function (usoId, itemId) {
       var self = this;
       return DB.from('uso_items').delete().eq('id', itemId)
@@ -349,6 +369,7 @@
     cargarSAP:       function (usoId, it, d)   { return impl.cargarSAP(usoId, it, d); },
     darBaja:         function (usoId, it)      { return impl.darBaja(usoId, it); },
     updateItem:      function (usoId, it, f)   { return impl.updateItem(usoId, it, f); },
+    asignarCeco:     function (items, caso)    { return impl.asignarCeco(items, caso); },
     deleteItem:      function (usoId, it)      { return impl.deleteItem(usoId, it); },
     listAuditoria:   function (usoId)          { return impl.listAuditoria(usoId); }
   };

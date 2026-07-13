@@ -310,6 +310,7 @@
     dar_baja:     {dot:'#16a34a', bg:'#dcfce7', color:'#15803d', label:'Dio de baja'},
     terminar:     {dot:'#16a34a', bg:'#dcfce7', color:'#15803d', label:'Terminado'},
     editar:       {dot:'#d97706', bg:'#fef3c7', color:'#b45309', label:'Editó'},
+    asignar_ceco: {dot:'#7c3aed', bg:'#f3e8ff', color:'#6d28d9', label:'Asignó CECO'},
     eliminar_item:{dot:'#dc2626', bg:'#fee2e2', color:'#b91c1c', label:'Eliminó'},
     eliminar:     {dot:'#dc2626', bg:'#fee2e2', color:'#b91c1c', label:'Eliminó doc'},
     anular:       {dot:'#dc2626', bg:'#fee2e2', color:'#b91c1c', label:'Anuló'}
@@ -917,12 +918,10 @@
     CasoPicker(q('#bulk_caso_host',m.bd), { placeholder:'Elegir caso / CECO…', onChange:function(c){ chosen=c; paintPrev(); } });
     q('#okBulkCeco',m.bd).addEventListener('click',function(){
       if(!chosen){ toast('Elegí el caso / CECO','err'); return; }
-      var ok=q('#okBulkCeco',m.bd); ok.disabled=true; var i=0;
-      (function next(){
-        if(i>=items.length){ m.close(); toast(items.length+' línea(s) con CECO asignado','ok'); setTimeout(refreshCurrent, 300); return; }
-        var it=items[i++];
-        API.updateItem(it.usoId, it.itemId, { caso_id:chosen.id, cuenta_mayor:chosen.cuenta_mayor, ceco:chosen.ceco, orden:chosen.orden }).then(function(){ next(); });
-      })();
+      var ok=q('#okBulkCeco',m.bd); ok.disabled=true;
+      API.asignarCeco(items, { id:chosen.id, cuenta_mayor:chosen.cuenta_mayor, ceco:chosen.ceco, orden:chosen.orden }).then(function(n){
+        m.close(); toast('CECO asignado a '+n+' línea(s)','ok'); setTimeout(refreshCurrent, 300);
+      });
     });
   }
 
@@ -1350,7 +1349,7 @@
   }
 
   /* ── Vista AUDITORÍA ──────────────────────────────────────── */
-  var ACC_LABEL={ crear:'Creó el uso interno', autorizar:'Autorizó', cargar_sap:'Cargó a SAP', dar_baja:'Dio de baja', terminar:'Terminado', anular:'Anuló', editar:'Editó', eliminar_item:'Eliminó un material', eliminar:'Eliminó el documento' };
+  var ACC_LABEL={ crear:'Creó el uso interno', autorizar:'Autorizó', cargar_sap:'Cargó a SAP', dar_baja:'Dio de baja', terminar:'Terminado', anular:'Anuló', editar:'Editó', asignar_ceco:'Asignó CECO', eliminar_item:'Eliminó un material', eliminar:'Eliminó el documento' };
   function renderAuditoria(){
     var root=q('#viewRoot');
     root.innerHTML='<div class="view"><div class="list-toolbar"><div class="list-title">Auditoría de acciones</div></div><div id="auditHost"></div></div>';
