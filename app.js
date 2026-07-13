@@ -872,7 +872,7 @@
     });
     host.innerHTML=
       '<div class="bulk-bar" id="bulkBar" hidden><div class="bulk-bar__info"><span class="bulk-count">0</span> línea(s) seleccionada(s)</div>'+
-        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
+        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
       '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th></th>'+
@@ -912,6 +912,7 @@
     var bClr=host.querySelector('#bulkClear'); if(bClr) bClr.addEventListener('click',function(){ host.querySelectorAll('.baja-check:checked').forEach(function(cb){ cb.checked=false; setSel(cb); }); updateBulk(); });
     var bBaja=host.querySelector('#bulkBaja'); if(bBaja) bBaja.addEventListener('click',function(){ bulkBaja(sel, host); });
     var bCeco=host.querySelector('#bulkCeco'); if(bCeco) bCeco.addEventListener('click',function(){ bulkAsignarCeco(sel, host); });
+    var bRep=host.querySelector('#bulkReport'); if(bRep) bRep.addEventListener('click',function(){ var selRows=rows.filter(function(r){ return !!sel[r.it.id]; }); reporteSeleccionModal(selRows); });
 
     if(useGsap) animateTable(host);
 
@@ -1011,6 +1012,14 @@
     var items=(rows||[]).map(function(r){ return r.it; });
     var sectors=[]; (rows||[]).forEach(function(r){ if(sectors.indexOf(r.uso.sector)===-1) sectors.push(r.uso.sector); });
     reporteModal({ nro:'Fecha '+fmtFecha(fecha), fecha_emision:fecha, sector: sectors.length===1?sectors[0]:'Varios sectores', solicitante:'', items:items });
+  }
+  // Reporte solo de las líneas seleccionadas (pueden ser de varias fechas/sectores)
+  function reporteSeleccionModal(selRows){
+    var items=(selRows||[]).map(function(r){ return r.it; });
+    if(!items.length) return;
+    var sectors=[], fechas=[];
+    (selRows||[]).forEach(function(r){ if(sectors.indexOf(r.uso.sector)===-1) sectors.push(r.uso.sector); if(fechas.indexOf(r.uso.fecha_emision)===-1) fechas.push(r.uso.fecha_emision); });
+    reporteModal({ nro:'Selección ('+items.length+')', fecha_emision: fechas.length===1?fechas[0]:new Date().toISOString().slice(0,10), sector: sectors.length===1?sectors[0]:'Varios sectores', solicitante:'', items:items });
   }
 
   function fechaToolbarHTML(){
