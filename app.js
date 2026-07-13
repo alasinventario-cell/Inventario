@@ -1406,10 +1406,54 @@
     (u.items||[]).forEach(function(it){ lines.push(it.cod_mercaderia+'  '+it.descripcion+'  '+it.cantidad+' '+it.um+'  '+(it.uso_texto||'')); });
     return lines.join('\n');
   }
+  // HTML dedicado para IMPRESIÓN (con logo + firmas). El de Outlook queda minimalista aparte.
+  function printReporteHTML(u){
+    var ink='#1f2937', muted='#6b7280', line='#e5e7eb', blue='#08486A', ff='Arial,Helvetica,sans-serif';
+    function td(txt, extra){ return '<td style="padding:8px 14px;border-bottom:1px solid '+line+';font-family:'+ff+';font-size:12.5px;color:'+ink+';vertical-align:top;'+(extra||'')+'">'+txt+'</td>'; }
+    function head(txt, extra){ return '<td style="padding:8px 14px;background-color:#eef4f8;border-bottom:1px solid #cfe0ea;font-family:'+ff+';font-size:11px;font-weight:bold;color:'+blue+';white-space:nowrap;text-transform:uppercase;letter-spacing:.03em;'+(extra||'')+'">'+txt+'</td>'; }
+    var rows=(u.items||[]).map(function(it){
+      return '<tr>'+td(esc(it.cod_mercaderia),'white-space:nowrap;font-weight:bold;')+td(esc(it.descripcion))+
+        td(esc(it.cantidad),'text-align:center;white-space:nowrap;')+td(esc(it.um),'text-align:center;color:'+muted+';')+
+        td(esc(it.uso_texto||''))+td(esc(it.ceco||'—'),'white-space:nowrap;color:'+muted+';')+
+        td(it.n_reserva?esc(it.n_reserva):'—','white-space:nowrap;color:'+muted+';')+'</tr>';
+    }).join('');
+    var nro=(u.nro&&String(u.nro).indexOf('Fecha')===-1)?u.nro:'';
+    return '<div style="font-family:'+ff+';color:'+ink+';max-width:740px;">'+
+      // Encabezado con logo
+      '<table width="100%" style="border-collapse:collapse;"><tr>'+
+        '<td style="vertical-align:middle;"><img src="/logo-alas-s.a.png" alt="ALAS" style="height:50px;display:block;"></td>'+
+        '<td style="text-align:right;vertical-align:middle;">'+
+          '<div style="font-size:19px;font-weight:bold;color:'+blue+';">Control de Usos Internos</div>'+
+          '<div style="font-size:11.5px;color:'+muted+';">Comprobante de entrega de mercadería</div>'+
+        '</td></tr></table>'+
+      '<div style="border-bottom:2px solid '+blue+';margin:12px 0 16px;"></div>'+
+      // Datos
+      '<div style="font-size:13px;color:#374151;margin:0 0 16px;"><b>Fecha:</b> '+esc(fmtFecha(u.fecha_emision))+
+        ' &nbsp;·&nbsp; <b>Sector:</b> <span style="color:'+blue+';font-weight:bold;">'+esc(u.sector||'—')+'</span>'+
+        (nro?' &nbsp;·&nbsp; <b>N.º:</b> '+esc(nro):'')+'</div>'+
+      // Tabla
+      '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;border:1px solid '+line+';">'+
+        '<tr>'+head('Código')+head('Descripción')+head('Cant','text-align:center')+head('UM','text-align:center')+head('Uso')+head('CECO')+head('N.Reserva')+'</tr>'+rows+
+      '</table>'+
+      // Firmas
+      '<table width="100%" style="border-collapse:collapse;margin-top:70px;"><tr>'+
+        '<td style="width:44%;text-align:center;vertical-align:bottom;">'+
+          '<div style="border-top:1px solid #374151;margin:0 10px;padding-top:7px;font-size:12.5px;font-weight:bold;color:#374151;">Entregado por</div>'+
+          '<div style="font-size:10.5px;color:#9ca3af;margin-top:3px;">Aclaración y firma</div></td>'+
+        '<td style="width:12%;"></td>'+
+        '<td style="width:44%;text-align:center;vertical-align:bottom;">'+
+          '<div style="border-top:1px solid #374151;margin:0 10px;padding-top:7px;font-size:12.5px;font-weight:bold;color:#374151;">Recibido por</div>'+
+          '<div style="font-size:10.5px;color:#9ca3af;margin-top:3px;">Aclaración y firma</div></td>'+
+      '</tr></table>'+
+    '</div>';
+  }
   function printReporte(u){
     var old=q('#printArea'); if(old) old.remove();
-    var area=document.createElement('div'); area.id='printArea'; area.innerHTML=reporteEmailHTML(u);
-    document.body.appendChild(area); window.print(); setTimeout(function(){ area.remove(); }, 500);
+    var area=document.createElement('div'); area.id='printArea'; area.innerHTML=printReporteHTML(u);
+    document.body.appendChild(area);
+    var done=false; function go(){ if(done) return; done=true; window.print(); setTimeout(function(){ area.remove(); }, 500); }
+    var img=area.querySelector('img');
+    if(img && !img.complete){ img.onload=go; img.onerror=go; setTimeout(go, 1200); } else { go(); }
   }
 
   /* ── Vista AUDITORÍA ──────────────────────────────────────── */
