@@ -1194,7 +1194,11 @@
       if(!draft.sector){ toast('Elegí un sector','err'); return; }
       if(!draft.items.length){ toast('Agregá al menos una mercadería','err'); return; }
       q('#w_save',m.bd).disabled=true;
-      API.createUso(draft).then(function(uso){ state._highlightUso = uso && uso.id; m.close(); toast('Uso interno guardado','ok'); go('sector',draft.sector); });
+      var ov=actionOverlay('Guardando uso interno…');
+      API.createUso(draft).then(function(uso){
+        ov.success('Uso interno creado'); m.close();
+        setTimeout(function(){ state._highlightUso = uso && uso.id; go('sector',draft.sector); }, 950);
+      }).catch(function(){ ov.error('Error al guardar'); var b=q('#w_save',m.bd); if(b) b.disabled=false; });
     });
 
     function paintItems(){
