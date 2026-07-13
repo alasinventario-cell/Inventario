@@ -55,6 +55,13 @@
             <span class="tooltip">Auditoría</span>
           </button>
           <div class="sidebar-spacer"></div>
+          <div class="sidebar-user" id="sidebarUser" title="Usuario de sesión">
+            <span class="sidebar-user__ic"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg></span>
+            <span class="sidebar-user__meta">
+              <span class="sidebar-user__name" id="sidebarUserName">Usuario</span>
+              <span class="sidebar-user__role" id="sidebarUserRole"></span>
+            </span>
+          </div>
           <button class="sidebar-icon" type="button" id="btnVolver" aria-label="Volver al menú">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
             <span class="tooltip">Volver al Launcher</span>
@@ -86,7 +93,6 @@
               </div>
             </div>
             <span class="sync-chip" id="syncChip"></span>
-            <span class="stage__user" id="userChip"></span>
           </div>
         </header>
 

@@ -79,6 +79,16 @@ h1,h2,h3,.display { font-family:'Sora', system-ui, sans-serif; letter-spacing:-.
 .sidebar-icon .tooltip { color:inherit; font-size:13px; font-weight:500; white-space:nowrap; pointer-events:none;
   opacity:0; transform:translateX(-8px); transition:opacity .25s var(--alas-ease) .08s, transform .28s var(--alas-ease) .08s; }
 .sidebar-wave:hover .sidebar-icon .tooltip { opacity:1; transform:translateX(0); }
+/* Usuario de sesión (footer del sidebar, estilo CajaVenta) */
+.sidebar-user { display:flex; align-items:center; gap:12px; padding:9px 13px; border-radius:8px; margin-bottom:4px;
+  color:rgba(255,255,255,.85); overflow:hidden; flex-shrink:0; border-top:1px solid rgba(255,255,255,.12); }
+.sidebar-user__ic { flex-shrink:0; display:flex; color:rgba(255,255,255,.9); }
+.sidebar-user__ic svg { width:22px; height:22px; }
+.sidebar-user__meta { display:flex; flex-direction:column; min-width:0; line-height:1.25;
+  opacity:0; transform:translateX(-8px); transition:opacity .25s var(--alas-ease) .08s, transform .28s var(--alas-ease) .08s; }
+.sidebar-wave:hover .sidebar-user__meta { opacity:1; transform:translateX(0); }
+.sidebar-user__name { font-size:12.5px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sidebar-user__role { font-size:10px; font-weight:700; color:rgba(255,255,255,.55); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
 
 /* ── Escenario / topbar ───────────────────────────────────── */
 .stage { flex:1; margin-left:56px; display:flex; flex-direction:column; overflow:hidden; background:#fff; }

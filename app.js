@@ -365,8 +365,11 @@
   function startApp(){
     if(window._invStarted) return; window._invStarted=true;
     // Chip usuario + sync
-    var u=window.AlasAuthClient; var chip=q('#userChip');
-    if(chip){ var role=(u&&u.getRole&&u.getRole()||'').toUpperCase(); chip.textContent=(u&&u.getCurrentUser&&u.getCurrentUser()||'Operador')+(role?'  ·  '+role:''); }
+    var u=window.AlasAuthClient;
+    var ROLE_LABEL={ admin:'Administrador', supervisor:'Supervisor', operador:'Operador', invitado:'Invitado' };
+    var nm=q('#sidebarUserName'), rl=q('#sidebarUserRole');
+    if(nm) nm.textContent=(u&&u.getCurrentUser&&u.getCurrentUser())||'Operador';
+    if(rl){ var urole=(u&&u.getRole&&u.getRole())||''; rl.textContent=ROLE_LABEL[urole]||urole||''; }
     var sync=q('#syncChip');
     if(sync){ if(API.isRemote){ sync.textContent='Sincronización completa'; } else { sync.textContent='Modo demo (local)'; sync.classList.add('demo'); } }
 
