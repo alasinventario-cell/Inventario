@@ -212,6 +212,16 @@ button.kpi:hover::before { transform:scaleY(1); }
   font-size:12.5px; font-weight:700; transition:.16s var(--alas-ease); }
 .sector-chip:hover { border-color:#8db6e8; background:#f5faff; }
 .sector-chip.on { background:var(--alas-brand); border-color:var(--alas-brand); color:#fff; box-shadow:0 6px 14px rgba(11,95,141,.22); }
+/* Filtro de sectores multi-select (PRO) */
+.sector-filter { display:flex; flex-wrap:wrap; gap:9px; padding:2px 0 14px; }
+.secf-chip { display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 17px 0 14px; border:1.5px solid #e4e8ef; border-radius:13px;
+  background:#fff; color:var(--alas-text-2); font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;
+  transition:transform .16s var(--alas-ease), box-shadow .16s var(--alas-ease), border-color .16s var(--alas-ease), background .16s var(--alas-ease), color .16s var(--alas-ease); }
+.secf-chip .secf-ic { display:inline-flex; color:var(--alas-brand); transition:color .16s var(--alas-ease); }
+.secf-chip .secf-ic svg { width:17px; height:17px; }
+.secf-chip:hover { border-color:#c3d6ef; background:#f6faff; transform:translateY(-2px); box-shadow:0 8px 18px rgba(11,95,141,.10); }
+.secf-chip.on { background:var(--alas-brand); border-color:var(--alas-brand); color:#fff; box-shadow:0 8px 20px rgba(11,95,141,.26); }
+.secf-chip.on .secf-ic { color:#fff; }
 .sector-tag { display:inline-block; padding:2px 9px; border-radius:7px; background:#eef2f7; color:var(--alas-text-2); font-size:11px; font-weight:800; white-space:nowrap; }
 
 /* ── Paneles de gráficos ──────────────────────────────────── */

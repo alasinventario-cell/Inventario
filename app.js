@@ -23,7 +23,7 @@
   };
 
   var _curMonth=(function(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
-  var state = { view:'menu', sector:null, listFilter:null, search:'', casos:[], mercaderias:[], _rows:[], dateFilter:null, bajaSector:'', menuMonth:_curMonth, _menuUsos:null, resumenMode:'barras' };
+  var state = { view:'menu', sector:null, listFilter:null, search:'', casos:[], mercaderias:[], _rows:[], dateFilter:null, sectorFilter:[], menuMonth:_curMonth, _menuUsos:null, resumenMode:'barras' };
   var MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   function monthLabel(m){ if(!m) return 'Todos los meses'; var p=m.split('-'); return MESES[+p[1]-1]+' '+p[0]; }
   function shiftMonth(m, delta){ var d=m?new Date(+m.split('-')[0], +m.split('-')[1]-1, 1):new Date(); d.setMonth(d.getMonth()+delta); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
@@ -40,6 +40,24 @@
       var lab=root.querySelector('.mn-label'); if(lab) lab.textContent=monthLabel(state.menuMonth);
       var all=root.querySelector('.mn-all'); if(all) all.classList.toggle('on',!state.menuMonth);
       onChange();
+    }); });
+  }
+
+  /* ── Filtro de sectores multi-select (compartido) ─────────── */
+  function inSectorFilter(sec){ var f=state.sectorFilter||[]; return !f.length || f.indexOf(sec)!==-1; }
+  function sectorFilterHTML(){
+    var f=state.sectorFilter||[];
+    var html='<button class="secf-chip secf-chip--all'+(f.length?'':' on')+'" type="button" data-secf=""><span class="secf-ic">'+ICONS.filter+'</span><span>Todos</span></button>';
+    html+=SECTOR_CARDS.map(function(s){ var on=f.indexOf(s.key)!==-1; return '<button class="secf-chip'+(on?' on':'')+'" type="button" data-secf="'+esc(s.key)+'"><span class="secf-ic">'+ICONS[s.icon]+'</span><span>'+esc(s.label)+'</span></button>'; }).join('');
+    return '<div class="sector-filter">'+html+'</div>';
+  }
+  function wireSectorFilter(root, onChange){
+    function sync(){ root.querySelectorAll('.secf-chip').forEach(function(x){ var k=x.getAttribute('data-secf'); var on=k?((state.sectorFilter||[]).indexOf(k)!==-1):!(state.sectorFilter||[]).length; x.classList.toggle('on', on); }); }
+    root.querySelectorAll('.secf-chip').forEach(function(b){ b.addEventListener('click',function(){
+      var k=b.getAttribute('data-secf');
+      if(!k){ state.sectorFilter=[]; }
+      else { var f=state.sectorFilter||(state.sectorFilter=[]); var i=f.indexOf(k); if(i>=0) f.splice(i,1); else f.push(k); }
+      sync(); if(onChange) onChange();
     }); });
   }
 
@@ -563,7 +581,7 @@
     if(!window.gsap || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
     var g=window.gsap;
     g.from(root.querySelectorAll('.list-toolbar > *'), { y:-12, opacity:0, duration:.45, stagger:.08, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' });
-    g.from(root.querySelectorAll('.sector-chips .sector-chip'), { y:10, opacity:0, scale:.9, duration:.4, stagger:.04, ease:'back.out(1.6)', delay:.15, overwrite:'auto', clearProps:'transform,opacity' });
+    g.from(root.querySelectorAll('.sector-filter .secf-chip'), { y:10, opacity:0, scale:.92, duration:.4, stagger:.05, ease:'back.out(1.6)', delay:.12, overwrite:'auto', clearProps:'transform,opacity' });
   }
 
   /* ── Agregaciones para gráficos ──────────────────────────── */
@@ -803,6 +821,7 @@
     var s=state.search;
     var filtered=rows.filter(function(r){
       if(opts.monthFilter && !inMonth(r.uso)) return false;
+      if(opts.sectorFilter && !inSectorFilter(r.uso.sector)) return false;
       if(!s) return true;
       return (r.it.cod_mercaderia+' '+r.it.descripcion+' '+r.it.uso_texto+' '+r.uso.nro+' '+(r.it.n_reserva||'')+' '+r.uso.sector).toLowerCase().indexOf(s)!==-1;
     });
@@ -1006,6 +1025,7 @@
   /* ── Vista LISTA (sector / pendientes / terminados) ───────── */
   function renderLista(filter, titulo){
     var root=q('#viewRoot');
+    var showSector=!filter.sector, sig=filter.sector||filter.estado||'list';
     var iconSvg = filter.sector ? (function(){ var c=SECTOR_CARDS.find(function(s){return s.key===filter.sector;}); return c?ICONS[c.icon]:ICONS.file; })()
                 : (filter.estado==='pendientes' ? ICONS.clock : (filter.estado==='terminados' ? ICONS.check : ICONS.file));
     root.innerHTML='<div class="view">'+
@@ -1013,17 +1033,17 @@
         '<div class="lt-left"><button class="btn btn--secondary" id="btnVolverMenu">'+ICONS.back+' Volver al menú</button></div>'+
         '<div class="lt-center"><span class="lt-center__ic">'+iconSvg+'</span><span class="lt-center__title">'+esc(titulo)+'</span></div>'+
         '<div class="lt-right">'+ monthNavHTML() +'<button class="btn btn--primary" id="btnNuevo">'+ICONS.plus+' Nuevo Uso Interno</button></div>'+
-      '</div><div id="listHost"></div></div>';
+      '</div>'+ (showSector ? sectorFilterHTML() : '') +'<div id="listHost"></div></div>';
     q('#btnNuevo').addEventListener('click',wizardNuevo);
     q('#btnVolverMenu').addEventListener('click',function(){ go('menu'); });
     wireMonthNav(root, function(){ if(state._reRender) state._reRender(); });
+    if(showSector) wireSectorFilter(root, function(){ if(state._reRender) state._reRender(); });
     animateToolbar(root);
-    var showSector=!filter.sector, sig=filter.sector||filter.estado||'list';
     API.listUsos(filter).then(function(usos){
       var rows=[];
       usos.forEach(function(u){ (u.items||[]).forEach(function(it){ rows.push({ uso:u, it:it }); }); });
       state._rows=rows;
-      state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:showSector, monthFilter:true, sig:sig}); };
+      state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:showSector, monthFilter:true, sectorFilter:showSector, sig:sig}); };
       state._reRender();
     });
   }
@@ -1032,22 +1052,21 @@
   function renderPorBaja(){
     state.view='porbaja'; setActive('porbaja'); toggleSearch(true); resetSearch('Buscar por reserva, código…'); setBreadcrumb(['MENU','PARA DAR DE BAJA']);
     var root=q('#viewRoot');
-    var chips=[''].concat(SECTOR_CARDS.map(function(s){return s.key;}));
     root.innerHTML='<div class="view">'+
       '<div class="list-toolbar"><div><div class="list-title">Para dar de baja</div>'+
         '<p class="list-hint">Materiales con N.º de reserva cargado, esperando la baja en SAP.</p></div>'+
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+ fechaToolbarHTML() +'</div></div>'+
-      '<div class="sector-chips" id="bajaChips">'+ chips.map(function(k){ var lbl=k===''?'Todos':sectorShort(k); return '<button class="sector-chip'+(state.bajaSector===k?' on':'')+'" data-sec="'+esc(k)+'">'+esc(lbl)+'</button>'; }).join('') +'</div>'+
+      sectorFilterHTML()+
       '<div id="listHost"></div></div>';
     wireFechaToolbar();
+    wireSectorFilter(root, function(){ if(state._reRender) state._reRender(); });
     animateToolbar(root);
-    q('#bajaChips').querySelectorAll('.sector-chip').forEach(function(b){ b.addEventListener('click',function(){ state.bajaSector=b.getAttribute('data-sec'); renderPorBaja(); }); });
     API.listUsos({}).then(function(usos){
       usos=usos.filter(function(u){ return inDateRange(u.fecha_emision); });
       var rows=[];
-      usos.forEach(function(u){ if(state.bajaSector && u.sector!==state.bajaSector) return; (u.items||[]).forEach(function(it){ if(it.sap_estado!=='cargado') return; rows.push({uso:u,it:it}); }); });
+      usos.forEach(function(u){ (u.items||[]).forEach(function(it){ if(it.sap_estado!=='cargado') return; rows.push({uso:u,it:it}); }); });
       state._rows=rows;
-      state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:!state.bajaSector, emptyText:'No hay materiales esperando baja'+(state.bajaSector?' en este sector':'')}); };
+      state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:true, sectorFilter:true, emptyText:'No hay materiales esperando baja'}); };
       state._reRender();
     });
   }
