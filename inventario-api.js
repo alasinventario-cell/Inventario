@@ -199,6 +199,12 @@
       return Promise.resolve(n);
     },
 
+    marcarEntregado: function (itemIds) {
+      var s = this._load(); var set = {}; (itemIds || []).forEach(function (id) { set[id] = 1; });
+      s.usos.forEach(function (u) { (u.items || []).forEach(function (it) { if (set[it.id]) { it.entregado = true; it.entregado_at = nowISO(); } }); });
+      this._save(s); return Promise.resolve(true);
+    },
+
     deleteItem: function (usoId, itemId) {
       var s = this._load();
       var u = s.usos.find(function (x) { return x.id === usoId; });
@@ -337,6 +343,10 @@
         .then(function () { return self._audit({ accion: 'asignar_ceco', detalle: (caso.ceco || '—') + ' · ' + ids.length + ' línea' + (ids.length !== 1 ? 's' : '') }); })
         .then(function () { return ids.length; });
     },
+    marcarEntregado: function (itemIds) {
+      if (!itemIds || !itemIds.length) return Promise.resolve(false);
+      return DB.from('uso_items').update({ entregado: true, entregado_at: nowISO() }).in('id', itemIds).then(function () { return true; });
+    },
     deleteItem: function (usoId, itemId) {
       var self = this;
       return DB.from('uso_items').delete().eq('id', itemId)
@@ -370,6 +380,7 @@
     darBaja:         function (usoId, it)      { return impl.darBaja(usoId, it); },
     updateItem:      function (usoId, it, f)   { return impl.updateItem(usoId, it, f); },
     asignarCeco:     function (items, caso)    { return impl.asignarCeco(items, caso); },
+    marcarEntregado: function (itemIds)        { return impl.marcarEntregado(itemIds); },
     deleteItem:      function (usoId, it)      { return impl.deleteItem(usoId, it); },
     listAuditoria:   function (usoId)          { return impl.listAuditoria(usoId); }
   };

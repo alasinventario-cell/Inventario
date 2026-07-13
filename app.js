@@ -837,7 +837,7 @@
     if(state._tableSig!==sig || !state._openDates){ state._tableSig=sig; state._openDates={}; var _today=ymd(new Date()), _op=false; order.forEach(function(k){ if(String(k).slice(0,10)===_today){ state._openDates[k]=true; _op=true; } }); if(!_op && order[0]) state._openDates[order[0]]=true; }
     var openAll=!!s; // al buscar, mostrar todos los grupos
     function isOpen(f){ return openAll || !!state._openDates[f]; }
-    var colspan=12, animate=!state.search, ri=0, sel={};
+    var colspan=13, animate=!state.search, ri=0, sel={};
     var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var useGsap=animate && !!window.gsap && !reduce;
     var cssAnim=animate && !useGsap;
@@ -847,8 +847,11 @@
       var open=isOpen(f);
       var fp=String(f).split('|'), fFecha=fp[0], fSec=fp[1];
       var hasCargado=groups[f].some(function(r){return r.it.sap_estado==='cargado';});
-      var hasPend=groups[f].some(function(r){return r.it.sap_estado==='pendiente';});
-      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+(hasPend?'<button class="date-ceco-btn" data-ceco-date="'+esc(f)+'">'+ICONS.tag+' Asignar CECO</button>':'')+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
+      var sinCeco=groups[f].filter(function(r){return !r.it.ceco;}).length;
+      var cecoBtn = sinCeco===0
+        ? '<span class="date-ceco-done">'+ICONS.check+' CECO</span>'
+        : '<button class="date-ceco-btn" data-ceco-date="'+esc(f)+'">'+ICONS.tag+' Asignar CECO ('+sinCeco+')</button>';
+      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
       groups[f].forEach(function(r){
         var it=r.it, u=r.uso, hl=(state._highlightUso&&u.id===state._highlightUso);
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
@@ -866,6 +869,7 @@
           '<td class="cell-muted">'+esc(it.orden||'—')+'</td>'+
           '<td class="cell-muted">'+(it.n_reserva?'<b>'+esc(it.n_reserva)+'</b>':'—')+'</td>'+
           '<td class="cell-sap">'+sapBadge(it.sap_estado)+'</td>'+
+          '<td class="cell-ent">'+(it.entregado?'<span class="ent-chip ent-chip--si">SÍ</span>':'<span class="ent-chip ent-chip--no">NO</span>')+'</td>'+
           '<td><div class="row-actions">'+rowActions(u,it)+'</div></td>'+
         '</tr>';
       });
@@ -875,7 +879,7 @@
         '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
-      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th></th>'+
+      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th>Entregado</th><th></th>'+
       '</tr></thead><tbody>'+body+'</tbody></table></div>';
     host.querySelectorAll('[data-act]').forEach(function(btn){
       btn.addEventListener('click',function(){ var b=this; if(b.classList.contains('is-loading')) return; b.classList.add('is-loading');
@@ -1462,6 +1466,9 @@
     var done=false; function go(){ if(done) return; done=true; window.print(); setTimeout(function(){ area.remove(); }, 500); }
     var img=area.querySelector('img');
     if(img && !img.complete){ img.onload=go; img.onerror=go; setTimeout(go, 1200); } else { go(); }
+    // Imprimir = entregado: marca las líneas del comprobante y refresca la columna.
+    var ids=(u.items||[]).map(function(it){ return it.id; }).filter(Boolean);
+    if(ids.length && API.marcarEntregado){ API.marcarEntregado(ids).then(function(){ setTimeout(function(){ if(typeof refreshCurrent==='function') refreshCurrent(); }, 700); }).catch(function(){}); }
   }
 
   /* ── Vista AUDITORÍA ──────────────────────────────────────── */

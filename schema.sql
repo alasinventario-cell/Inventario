@@ -68,6 +68,8 @@ create table if not exists uso_items (
   cargado_at    timestamptz,
   baja_por      text,
   baja_at       timestamptz,
+  entregado     boolean default false,               -- se marca al imprimir el comprobante
+  entregado_at  timestamptz,
   created_at    timestamptz default now()
 );
 create index if not exists idx_uso_items_uso   on uso_items(uso_id);
