@@ -508,6 +508,10 @@ tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-b
   background:#f0fdf4; color:#15803d; font-size:13px; font-weight:700; transition:background .16s var(--alas-ease), border-color .16s var(--alas-ease); }
 .date-baja-btn svg { width:16px; height:16px; }
 .date-baja-btn:hover { background:#dcfce7; border-color:#16a34a; }
+.date-ceco-btn { display:inline-flex; align-items:center; gap:6px; height:37px; padding:0 14px; margin-left:10px; border:1px solid rgba(37,99,235,.30); border-radius:10px;
+  background:#eff5ff; color:#1d4ed8; font-size:13px; font-weight:700; transition:background .16s var(--alas-ease), border-color .16s var(--alas-ease); }
+.date-ceco-btn svg { width:16px; height:16px; }
+.date-ceco-btn:hover { background:#dbeafe; border-color:#2563eb; }
 
 /* Selección múltiple para baja */
 .th-check, .cell-check { width:38px; text-align:center; }

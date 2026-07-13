@@ -781,12 +781,13 @@
     order.forEach(function(f){
       var open=isOpen(f);
       var hasCargado=groups[f].some(function(r){return r.it.sap_estado==='cargado';});
-      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span><span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(f))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
+      var hasPend=groups[f].some(function(r){return r.it.sap_estado==='pendiente';});
+      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span><span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(f))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+(hasPend?'<button class="date-ceco-btn" data-ceco-date="'+esc(f)+'">'+ICONS.tag+' Asignar CECO</button>':'')+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
       groups[f].forEach(function(r){
         var it=r.it, u=r.uso, hl=(state._highlightUso&&u.id===state._highlightUso);
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
         var rst=(cssAnim&&open)?' style="animation-delay:'+(Math.min(ri++,18)*30)+'ms"':'';
-        var chk = it.sap_estado==='cargado' ? '<input type="checkbox" class="baja-check" data-baja-item="'+it.id+'" data-baja-uso="'+u.id+'" aria-label="Seleccionar para baja">' : '';
+        var chk = (it.sap_estado==='pendiente'||it.sap_estado==='cargado') ? '<input type="checkbox" class="baja-check" data-baja-item="'+it.id+'" data-baja-uso="'+u.id+'" data-estado="'+it.sap_estado+'" aria-label="Seleccionar">' : '';
         body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
           '<td class="cell-check">'+chk+'</td>'+
           '<td class="cell-cod">'+esc(it.cod_mercaderia)+'</td>'+
@@ -806,7 +807,7 @@
     });
     host.innerHTML=
       '<div class="bulk-bar" id="bulkBar" hidden><div class="bulk-bar__info"><span class="bulk-count">0</span> línea(s) seleccionada(s)</div>'+
-        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--success" id="bulkBaja">'+ICONS.check+' Dar de baja</button></div></div>'+
+        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th>'+(opts.showSector?'<th>Sector</th>':'')+'<th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
       '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th></th>'+
@@ -821,7 +822,7 @@
     // ── Fechas desplegables (acordeón) ──
     host.querySelectorAll('tr.row-date[data-toggle]').forEach(function(h){
       h.addEventListener('click',function(e){
-        if(e.target.closest('.date-report-btn')||e.target.closest('.date-baja-btn')) return;
+        if(e.target.closest('.date-report-btn')||e.target.closest('.date-baja-btn')||e.target.closest('.date-ceco-btn')) return;
         var f=h.getAttribute('data-toggle'), willOpen=!h.classList.contains('is-open');
         h.classList.toggle('is-open',willOpen);
         if(willOpen) state._openDates[f]=true; else delete state._openDates[f];
@@ -831,13 +832,19 @@
       });
     });
 
-    // ── Selección múltiple + baja en lote ──
-    function updateBulk(){ var n=Object.keys(sel).length; var bar=host.querySelector('#bulkBar'); if(!bar) return; bar.hidden=(n===0); var c=host.querySelector('.bulk-count'); if(c) c.textContent=n; }
-    function setSel(cb){ var id=+cb.getAttribute('data-baja-item'), tr=cb.closest('tr'); if(cb.checked){ sel[id]={usoId:+cb.getAttribute('data-baja-uso'), itemId:id}; if(tr) tr.classList.add('is-selected'); } else { delete sel[id]; if(tr) tr.classList.remove('is-selected'); } }
+    // ── Selección múltiple: Asignar CECO (pendientes) + baja en lote (cargados) ──
+    function selCounts(){ var p=0,c=0; Object.keys(sel).forEach(function(k){ if(sel[k].estado==='pendiente')p++; else if(sel[k].estado==='cargado')c++; }); return {p:p,c:c}; }
+    function updateBulk(){ var n=Object.keys(sel).length; var bar=host.querySelector('#bulkBar'); if(!bar) return; bar.hidden=(n===0); var cc=host.querySelector('.bulk-count'); if(cc) cc.textContent=n;
+      var ct=selCounts(); var bc=host.querySelector('#bulkCeco'), bb=host.querySelector('#bulkBaja');
+      if(bc){ bc.hidden=ct.p===0; bc.innerHTML=ICONS.tag+' Asignar CECO'+(ct.p?' ('+ct.p+')':''); }
+      if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.check+' Dar de baja'+(ct.c?' ('+ct.c+')':''); } }
+    function setSel(cb){ var id=+cb.getAttribute('data-baja-item'), tr=cb.closest('tr'); if(cb.checked){ sel[id]={usoId:+cb.getAttribute('data-baja-uso'), itemId:id, estado:cb.getAttribute('data-estado')}; if(tr) tr.classList.add('is-selected'); } else { delete sel[id]; if(tr) tr.classList.remove('is-selected'); } }
     host.querySelectorAll('.baja-check').forEach(function(cb){ cb.addEventListener('change',function(){ setSel(cb); updateBulk(); }); });
-    host.querySelectorAll('.date-baja-btn').forEach(function(b){ b.addEventListener('click',function(){ host.querySelectorAll('tr[data-d="'+b.getAttribute('data-baja-date')+'"] .baja-check').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
+    host.querySelectorAll('.date-ceco-btn').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); host.querySelectorAll('tr[data-d="'+b.getAttribute('data-ceco-date')+'"] .baja-check[data-estado="pendiente"]').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
+    host.querySelectorAll('.date-baja-btn').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); host.querySelectorAll('tr[data-d="'+b.getAttribute('data-baja-date')+'"] .baja-check[data-estado="cargado"]').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
     var bClr=host.querySelector('#bulkClear'); if(bClr) bClr.addEventListener('click',function(){ host.querySelectorAll('.baja-check:checked').forEach(function(cb){ cb.checked=false; setSel(cb); }); updateBulk(); });
     var bBaja=host.querySelector('#bulkBaja'); if(bBaja) bBaja.addEventListener('click',function(){ bulkBaja(sel, host); });
+    var bCeco=host.querySelector('#bulkCeco'); if(bCeco) bCeco.addEventListener('click',function(){ bulkAsignarCeco(sel, host); });
 
     if(useGsap) animateTable(host);
 
@@ -854,9 +861,42 @@
     }
   }
 
+  // Asignar CECO/caso a varias líneas pendientes seleccionadas
+  function bulkAsignarCeco(sel, host){
+    var items=Object.keys(sel).map(function(k){return sel[k];}).filter(function(x){return x.estado==='pendiente';});
+    if(!items.length){ toast('Seleccioná líneas pendientes','err'); return; }
+    var chosen=null;
+    var m=openModal(
+      '<div class="modal__head"><div class="modal__title">Asignar CECO a '+items.length+' línea(s)</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__body">'+
+        '<p class="list-hint" style="margin:0 0 14px">Elegí el caso / CECO que se aplicará a las <b>'+items.length+'</b> líneas pendientes seleccionadas.</p>'+
+        '<div class="field"><label class="field__label">Caso / CECO <span class="req">*</span></label><div id="bulk_caso_host"></div></div>'+
+        '<div class="caso-preview" id="bulk_prev" style="display:none">'+
+          '<div class="caso-preview__row"><span>Cuenta Mayor</span><span id="bp_cuenta">—</span></div>'+
+          '<div class="caso-preview__row"><span>CECO (Centro)</span><span id="bp_ceco">—</span></div>'+
+          '<div class="caso-preview__row"><span>Área CECO</span><span id="bp_area">—</span></div>'+
+          '<div class="caso-preview__row"><span>Orden</span><span id="bp_orden">—</span></div></div>'+
+      '</div>'+
+      '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="okBulkCeco">'+ICONS.tag+' Asignar a '+items.length+'</button></div>'
+    );
+    function paintPrev(){ var p=q('#bulk_prev',m.bd); if(!chosen){ p.style.display='none'; return; } p.style.display='block';
+      q('#bp_cuenta',m.bd).textContent=chosen.cuenta_mayor||'—'; q('#bp_ceco',m.bd).textContent=chosen.ceco||'—';
+      q('#bp_area',m.bd).textContent=API.cecoArea(chosen.ceco)||'—'; q('#bp_orden',m.bd).textContent=chosen.orden||'—'; }
+    CasoPicker(q('#bulk_caso_host',m.bd), { placeholder:'Elegir caso / CECO…', onChange:function(c){ chosen=c; paintPrev(); } });
+    q('#okBulkCeco',m.bd).addEventListener('click',function(){
+      if(!chosen){ toast('Elegí el caso / CECO','err'); return; }
+      var ok=q('#okBulkCeco',m.bd); ok.disabled=true; var i=0;
+      (function next(){
+        if(i>=items.length){ m.close(); toast(items.length+' línea(s) con CECO asignado','ok'); setTimeout(refreshCurrent, 300); return; }
+        var it=items[i++];
+        API.updateItem(it.usoId, it.itemId, { caso_id:chosen.id, cuenta_mayor:chosen.cuenta_mayor, ceco:chosen.ceco, orden:chosen.orden }).then(function(){ next(); });
+      })();
+    });
+  }
+
   // Baja en lote de las líneas seleccionadas (secuencial + barrido verde)
   function bulkBaja(sel, host){
-    var items=Object.keys(sel).map(function(k){return sel[k];});
+    var items=Object.keys(sel).map(function(k){return sel[k];}).filter(function(x){return x.estado==='cargado';});
     if(!items.length) return;
     var m=openModal(
       '<div class="modal__head"><div class="modal__title">Dar de baja en lote</div><button class="modal__close" data-close>&times;</button></div>'+
