@@ -371,7 +371,7 @@
     if(nm) nm.textContent=(u&&u.getCurrentUser&&u.getCurrentUser())||'Operador';
     if(rl){ var urole=(u&&u.getRole&&u.getRole())||''; rl.textContent=ROLE_LABEL[urole]||urole||''; }
     var sync=q('#syncChip');
-    if(sync){ if(API.isRemote){ sync.textContent='Sincronización completa'; } else { sync.textContent='Modo demo (local)'; sync.classList.add('demo'); } }
+    if(sync){ if(API.isRemote){ sync.style.display='none'; } else { sync.textContent='Modo demo (local)'; sync.classList.add('demo'); } }
 
     wireSidebar(); wireSearch(); initNotifications();
     q('#btnVolver').addEventListener('click',function(e){ if(window.alasGoToLauncher) window.alasGoToLauncher(e); });
