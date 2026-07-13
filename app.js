@@ -94,6 +94,10 @@
     var bd=elFrom('<div class="modal-backdrop"><div class="modal '+(opts.wide?'modal--wide':'')+'"><div class="modal__bar"></div>'+inner+'</div></div>');
     q('#modalHost').appendChild(bd);
     requestAnimationFrame(function(){ bd.classList.add('is-open'); });
+    if(window.gsap && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+      var _mb=bd.querySelector('.modal__body');
+      if(_mb && _mb.children.length){ window.gsap.from(_mb.children, { y:14, opacity:0, duration:.42, stagger:.05, ease:'power2.out', delay:.14, overwrite:'auto', clearProps:'transform,opacity' }); }
+    }
     function close(){ bd.classList.remove('is-open'); setTimeout(function(){ bd.remove(); },320); }
     bd.addEventListener('click',function(e){ if(e.target===bd) close(); });
     bd.querySelectorAll('[data-close]').forEach(function(b){ b.addEventListener('click',close); });
@@ -1114,7 +1118,8 @@
           '<div class="items-box"><div id="w_items"><div class="empty-mini">Sin mercaderías agregadas</div></div>'+
           '<button type="button" class="add-item-btn" id="w_add" style="margin-top:8px">'+ICONS.plus+' Agregar mercadería</button></div></div>'+
       '</div>'+
-      '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="w_save">Guardar</button></div>'
+      '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="w_save">Guardar</button></div>',
+      { wide:true }
     );
 
     q('#w_fecha',m.bd).addEventListener('change',function(e){ draft.fecha_emision=e.target.value; });
