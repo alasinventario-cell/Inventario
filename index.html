@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALAS — Inventario</title>
+
+  <!-- ── Favicon y PWA ─────────────────────────────────── -->
+  <link rel="icon"             type="image/png" href="/icon-192.png" />
+  <link rel="apple-touch-icon"                  href="/icon-192.png" />
+  <link rel="manifest"                          href="/manifest.json" />
+  <meta name="theme-color"     content="#0B5F8D" />
+
+  <!-- ── Fuentes ───────────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- ── CSS principal ─────────────────────────────────── -->
+  <link rel="stylesheet" href="/style.css" />
+
+  <!-- ── SSO + Transición (SIN defer — antes del primer paint) ── -->
+  <script src="/alas-transition.js"></script>
+  <script src="/alas-sso-config.js"></script>
+  <script src="/alas-auth-client.js"></script>
+  <script src="/ui-protection.js" defer></script>
+</head>
+<body>
+
+  <!-- Loader institucional -->
+  <div id="loader" class="loader">
+    <div class="loader__inner">
+      <img src="/logo-alas-s.a.png" alt="ALAS" class="loader__logo" />
+      <div class="loader__bar"><span></span></div>
+    </div>
+  </div>
+
+  <!-- Contenedor raíz -->
+  <div id="alas-root" class="layout">
+    <main class="system-shell">
+
+      <!-- ── Barra lateral ─────────────────────────────── -->
+      <nav class="sidebar-wave" aria-label="Navegación Inventario">
+        <div class="sidebar-icons">
+          <button class="sidebar-icon active" type="button" data-view="menu" aria-label="Menú">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <span class="tooltip">Menú principal</span>
+          </button>
+          <button class="sidebar-icon" type="button" data-view="resumen" aria-label="Resumen">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6" rx="1"/><rect x="12" y="7" width="3" height="10" rx="1"/><rect x="17" y="13" width="3" height="4" rx="1"/></svg>
+            <span class="tooltip">Resumen y gráficos</span>
+          </button>
+          <button class="sidebar-icon" type="button" data-view="auditoria" aria-label="Auditoría">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            <span class="tooltip">Auditoría</span>
+          </button>
+          <div class="sidebar-spacer"></div>
+          <button class="sidebar-icon" type="button" id="btnVolver" aria-label="Volver al menú">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
+            <span class="tooltip">Volver al Launcher</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- ── Escenario ─────────────────────────────────── -->
+      <section class="stage">
+        <header class="stage__topbar">
+          <div class="brand">
+            <span class="brand-mark">▲</span>
+            <span class="brand-title">INVENTARIO</span>
+          </div>
+          <nav class="breadcrumb" id="breadcrumb"><span>MENU</span></nav>
+          <div class="stage__search">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar…" autocomplete="off" />
+          </div>
+          <div class="stage__actions">
+            <div class="notif-wrap" id="notifWrap">
+              <button class="notif-btn" id="btnNotif" type="button" title="Notificaciones" aria-label="Notificaciones">
+                <svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                <span class="notif-badge" id="notifBadge" hidden>0</span>
+              </button>
+              <div class="notif-dd" id="notifDD">
+                <div class="notif-head">Actividad reciente</div>
+                <div class="notif-body" id="notifBody"><div class="notif-empty">Sin actividad reciente</div></div>
+              </div>
+            </div>
+            <span class="sync-chip" id="syncChip"></span>
+            <span class="stage__user" id="userChip"></span>
+          </div>
+        </header>
+
+        <div class="stage__body" id="viewRoot"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Host de modales (lo llena app.js) -->
+  <div id="modalHost"></div>
+
+  <!-- ── Init transición + volver ──────────────────────── -->
+  <script>
+    if (window.ALASTransition) ALASTransition.init({ root: '#alas-root' });
+    setTimeout(function () {
+      var l = document.getElementById('loader');
+      if (l && getComputedStyle(l).display !== 'none') { l.classList.add('loader--hidden'); }
+    }, 30000);
+    function alasGoToLauncher(e) {
+      if (e) e.preventDefault();
+      var url = (window.ALAS_SSO_CONFIG && window.ALAS_SSO_CONFIG.launcherUrl) ? window.ALAS_SSO_CONFIG.launcherUrl : 'https://launcher-tawny.vercel.app';
+      if (window.ALASTransition) ALASTransition.exitToLauncher(url); else window.location.href = url;
+    }
+  </script>
+
+  <!-- ── Supabase + datos + app (orden importa) ────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="/supabase-config.js"></script>
+  <script src="/casos-ceco.js"></script>
+  <script src="/inventario-api.js"></script>
+  <script src="/app.js"></script>
+
+</body>
+</html>
