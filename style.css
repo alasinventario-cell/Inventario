@@ -344,9 +344,9 @@ button.kpi:hover::before { transform:scaleY(1); }
 .sector-card__desc { font-size:12.5px; color:var(--alas-text-3); margin-top:3px; }
 .sector-card__bar { display:block; height:6px; border-radius:999px; background:var(--gray-100); overflow:hidden; margin-top:11px; }
 .sector-card__bar-fill { display:block; height:100%; border-radius:999px; transition:width var(--alas-dur-page) var(--alas-ease); }
-.sector-card__count-wrap { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:60px; flex-shrink:0; }
-.sector-card__count { font-family:'Sora',sans-serif; font-weight:800; font-size:30px; color:var(--alas-brand); text-align:center; letter-spacing:-.02em; line-height:1; }
-.sector-card__count-lbl { font-size:10px; font-weight:800; color:var(--alas-text-3); text-transform:uppercase; letter-spacing:.6px; }
+.sector-card__count-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; width:88px; flex-shrink:0; }
+.sector-card__count { font-family:'Sora',sans-serif; font-weight:800; font-size:32px; color:var(--alas-brand); text-align:center; letter-spacing:-.02em; line-height:1; }
+.sector-card__count-lbl { font-size:10px; font-weight:800; color:var(--alas-text-3); text-transform:uppercase; letter-spacing:.5px; text-align:center; line-height:1.25; white-space:normal; }
 .sector-card__arrow { color:var(--gray-300); display:flex; transition:transform .28s var(--alas-ease), color .28s var(--alas-ease); }
 .sector-card__arrow svg { width:20px; height:20px; }
 .sector-card:hover .sector-card__arrow { color:var(--alas-brand); transform:translateX(4px); }

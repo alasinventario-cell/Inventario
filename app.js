@@ -673,7 +673,7 @@
         '<span class="sector-card__body"><span class="sector-card__name">'+esc(s.label)+'</span>'+
         '<span class="sector-card__desc">'+esc(SECTOR_DESC[s.key]||'')+'</span></span>'+
         '<span class="sector-card__count-wrap"><span class="sector-card__count" data-c="'+esc(s.key)+'">·</span>'+
-        '<span class="sector-card__count-lbl">en curso</span></span>'+
+        '<span class="sector-card__count-lbl">materiales en curso</span></span>'+
         '<span class="sector-card__arrow">'+ARROW+'</span></button>';
     }).join('');
     host.querySelectorAll('.sector-card').forEach(function(b){ b.addEventListener('click',function(){ go('sector',b.getAttribute('data-sec')); }); });
@@ -686,8 +686,8 @@
       var pend=0, baja=0; usos.forEach(function(u){ if(u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente') pend++; else if(it.sap_estado==='cargado') baja++; }); });
       countUp(q('#k_pend'),pend); countUp(q('#k_term'),term); countUp(q('#k_total'),usos.length); countUp(q('#k_baja'),baja);
       SECTOR_CARDS.forEach(function(s){
-        var activos=usos.filter(function(u){return u.sector===s.key&&u.estado!=='anulado'&&u.estado!=='terminado';}).length;
-        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), activos);
+        var pend=0; usos.forEach(function(u){ if(u.sector!==s.key||u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente') pend++; }); });
+        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), pend);
       });
     }
     wireMonthNav(root, fillMenu);
