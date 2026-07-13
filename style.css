@@ -403,15 +403,15 @@ button.kpi:hover::before { transform:scaleY(1); }
 .btn--danger-soft { background:#fef2f2; color:var(--alas-danger); }
 .btn--danger-soft:hover { background:#fee2e2; }
 
-.table-wrap { border:1px solid #dbe4ee; border-radius:14px; overflow:visible; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,.03); }
-.inv-table { width:100%; border-collapse:collapse; font-size:13px; }
-.inv-table thead th { position:sticky; top:0; z-index:1; background:#fbfcfe; text-align:left; padding:13px 18px; font-size:11px;
+.table-wrap { border:1px solid #dbe4ee; border-radius:14px; overflow-x:auto; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,.03); }
+.inv-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.inv-table thead th { position:sticky; top:0; z-index:1; background:#fbfcfe; text-align:left; padding:10px 11px; font-size:10.5px;
   font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--alas-text-3); border-bottom:1px solid #e6edf5; white-space:nowrap; }
 .inv-table thead th:first-child { border-top-left-radius:14px; }
 .inv-table thead th:last-child { border-top-right-radius:14px; }
 .inv-table tbody tr:last-child td:first-child { border-bottom-left-radius:14px; }
 .inv-table tbody tr:last-child td:last-child { border-bottom-right-radius:14px; }
-.inv-table td { padding:12px 18px; border-bottom:1px solid #F3F4F6; vertical-align:middle; }
+.inv-table td { padding:9px 11px; border-bottom:1px solid #F3F4F6; vertical-align:middle; }
 .inv-table tbody tr { transition:background var(--fast); }
 .inv-table tbody tr:not(.row-date):hover { background:#f7fafd; }
 .inv-table tbody tr:last-child td { border-bottom:0; }
@@ -423,7 +423,7 @@ button.kpi:hover::before { transform:scaleY(1); }
 .cell-num { text-align:center; font-weight:800; }
 .cell-muted { color:var(--alas-text-3); }
 .cell-sap { white-space:nowrap; }
-.truncate { max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.truncate { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ── Badges de estado ─────────────────────────────────────── */
 .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:800;
@@ -469,11 +469,11 @@ button.kpi:hover::before { transform:scaleY(1); }
 
 /* Botones de acción de tabla — estilo CajaVenta (.tbl-btn): relleno tinte,
    hover sólido + elevación/escala + glow, tooltip del color de la acción. */
-.action-btn { position:relative; width:42px; height:42px; border:1px solid transparent; border-radius:12px;
+.action-btn { position:relative; width:33px; height:33px; border:1px solid transparent; border-radius:9px;
   display:inline-flex; align-items:center; justify-content:center; cursor:pointer; overflow:visible; background:transparent;
   transition:transform .16s var(--alas-ease-spring), background .16s var(--alas-ease), color .16s var(--alas-ease), border-color .16s var(--alas-ease), box-shadow .16s var(--alas-ease); }
-.action-btn svg { width:20px; height:20px; }
-.action-btn:hover { transform:translateY(-4px) scale(1.12); }
+.action-btn svg { width:16px; height:16px; }
+.action-btn:hover { transform:translateY(-2px) scale(1.09); }
 .action-btn:active { transform:translateY(-1px) scale(.94); }
 .action-btn.is-loading { pointer-events:none; transform:none; }
 .action-btn.is-loading svg { opacity:0; }
@@ -481,7 +481,7 @@ button.kpi:hover::before { transform:scaleY(1); }
 .action-btn.is-loading::after { content:''; position:absolute; top:50%; left:50%; width:18px; height:18px; margin:-9px 0 0 -9px;
   border-radius:50%; border:2.5px solid currentColor; border-right-color:transparent; opacity:.9; animation:actBtnSpin .6s linear infinite; }
 @keyframes actBtnSpin { to { transform:rotate(360deg); } }
-.row-actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+.row-actions { display:flex; align-items:center; gap:5px; justify-content:flex-end; }
 
 /* Variantes: reposo con tinte suave, hover relleno sólido + glow */
 .action-btn.a-sap   { background:rgba(59,130,246,.13); color:#1d4ed8; border-color:rgba(59,130,246,.16); }
