@@ -148,10 +148,13 @@
     function open(){
       if(isOpen) return; isOpen=true; wrap.classList.add('is-open');
       dd=document.createElement('div'); dd.className='ssel-dd';
-      dd.innerHTML='<div class="ssel-search-box"><span class="ssel-search-icon">'+ICONS.search+'</span><input class="ssel-inp" placeholder="Buscar…"></div><div class="ssel-list"></div>';
+      dd.innerHTML='<div class="ssel-search-box"><span class="ssel-search-icon">'+ICONS.search+'</span><input class="ssel-inp" placeholder="Buscar…"></div><div class="ssel-list"></div>'+(cfg.onAddNew?'<button type="button" class="ssel-addnew" id="sselAddNew">'+ICONS.plus+' '+esc(cfg.addNewLabel||'Agregar nuevo')+'</button>':'');
       document.body.appendChild(dd); position(); renderList('');
       var inp=dd.querySelector('.ssel-inp'); var _deb=null;
       inp.addEventListener('input',function(){ if(cfg.asyncSearch){ clearTimeout(_deb); _deb=setTimeout(function(){ renderList(inp.value); },260); } else { renderList(inp.value); } });
+      var _addB=dd.querySelector('#sselAddNew');
+      if(_addB) _addB.addEventListener('mousedown',function(e){ e.preventDefault(); }); // no perder foco/cerrar antes
+      if(_addB) _addB.addEventListener('click',function(){ var term=inp.value.trim(); close(); cfg.onAddNew(term, function(opt){ value=String(opt.value); _dynOpts=[opt]; paint(); if(cfg.onChange) cfg.onChange(value, opt); }); });
       requestAnimationFrame(function(){ dd.classList.add('open'); inp.focus(); });
       onDoc=function(e){ if(dd && !dd.contains(e.target) && !disp.contains(e.target)) close(); };
       onScroll=function(){ close(); };
@@ -861,6 +864,31 @@
     }
   }
 
+  // Alta de material nuevo en el catálogo (desde el buscador de mercaderías)
+  function openNewMaterial(prefill, select){
+    var m=openModal(
+      '<div class="modal__head"><div class="modal__title">Agregar material nuevo</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__body">'+
+        '<div class="field"><label class="field__label">Código <span class="req">*</span></label><input class="input" id="nm_cod" placeholder="Ej: LA6901998" autocomplete="off"></div>'+
+        '<div class="grid-2"><div class="field"><label class="field__label">Descripción <span class="req">*</span></label><input class="input" id="nm_desc" placeholder="Descripción del material" autocomplete="off"></div>'+
+        '<div class="field"><label class="field__label">UM</label><input class="input" id="nm_um" placeholder="UN" value="UN" autocomplete="off"></div></div>'+
+      '</div>'+
+      '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="nm_save">'+ICONS.check+' Guardar material</button></div>'
+    );
+    var c0=q('#nm_cod',m.bd), d0=q('#nm_desc',m.bd);
+    if(prefill){ if(/^la/i.test(prefill)||/\d/.test(prefill)) c0.value=prefill; else d0.value=prefill; }
+    q('#nm_save',m.bd).addEventListener('click',function(){
+      var cod=q('#nm_cod',m.bd).value.trim(), desc=q('#nm_desc',m.bd).value.trim(), um=(q('#nm_um',m.bd).value.trim()||'UN');
+      if(!cod || !desc){ toast('Código y descripción son obligatorios','err'); return; }
+      var btn=q('#nm_save',m.bd); btn.disabled=true;
+      API.createMercaderia({ codigo:cod, descripcion:desc, um:um }).then(function(mm){
+        m.close(); toast('Material agregado al catálogo','ok');
+        if(select) select({ value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, descripcion:mm.descripcion, um:mm.um });
+      }).catch(function(){ btn.disabled=false; toast('Error al guardar','err'); });
+    });
+    setTimeout(function(){ if(c0) c0.focus(); },60);
+  }
+
   // Asignar CECO/caso a varias líneas pendientes seleccionadas
   function bulkAsignarCeco(sel, host){
     var items=Object.keys(sel).map(function(k){return sel[k];}).filter(function(x){return x.estado==='pendiente';});
@@ -1135,6 +1163,7 @@
     var um=q('#i_um',m.bd), prev=q('#i_prev',m.bd), chosenMerc=null, chosenCaso=null;
     SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Buscar mercadería (código o descripción)…',
       asyncSearch:function(t){ return API.searchMercaderias(t).then(function(rows){ return rows.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, um:mm.um, descripcion:mm.descripcion }; }); }); },
+      addNewLabel:'Agregar material nuevo', onAddNew:function(term, select){ openNewMaterial(term, select); },
       onChange:function(v,opt){ chosenMerc=opt?{codigo:opt.value,descripcion:opt.descripcion,um:opt.um}:null; um.value=opt?opt.um:''; } });
     CasoPicker(q('#i_caso_host',m.bd), { placeholder:'Elegir caso / CECO…', onChange:function(c){ chosenCaso=c; paintPrev(); } });
     function paintPrev(){ if(!chosenCaso){ prev.style.display='none'; return; } prev.style.display='block';
@@ -1178,6 +1207,7 @@
     SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Buscar mercadería (código o descripción)…', value:it.cod_mercaderia,
       current:{ value:it.cod_mercaderia, label:it.cod_mercaderia+(it.descripcion?' — '+it.descripcion:'') },
       asyncSearch:function(t){ return API.searchMercaderias(t).then(function(rows){ return rows.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, um:mm.um, descripcion:mm.descripcion }; }); }); },
+      addNewLabel:'Agregar material nuevo', onAddNew:function(term, select){ openNewMaterial(term, select); },
       onChange:function(v,opt){ chosenMerc=opt?{codigo:opt.value,descripcion:opt.descripcion,um:opt.um}:null; um.value=opt?opt.um:''; } });
     CasoPicker(q('#i_caso_host',m.bd), { value: chosenCaso?chosenCaso.id:null, placeholder:'Elegir caso / CECO…', onChange:function(c){ chosenCaso=c; paintPrev(); } });
     function paintPrev(){ if(!chosenCaso){ prev.style.display='none'; return; } prev.style.display='block';

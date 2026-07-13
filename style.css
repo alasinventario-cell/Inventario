@@ -627,6 +627,10 @@ tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-b
 .ssel-check svg { width:16px; height:16px; }
 .ssel-item.on .ssel-check { opacity:1; transform:scale(1); }
 .ssel-empty { padding:26px 20px; text-align:center; color:#94a3b8; font-size:12.5px; }
+.ssel-addnew { display:flex; align-items:center; justify-content:center; gap:7px; width:100%; padding:11px; border:0; border-top:1px solid #edf2f8;
+  background:#f7fafd; color:var(--alas-brand); font-size:12.5px; font-weight:700; cursor:pointer; transition:background .14s var(--alas-ease); }
+.ssel-addnew:hover { background:#eef6fb; }
+.ssel-addnew svg { width:15px; height:15px; }
 
 /* ── Selector de Caso/CECO tipo tabla (modal grande) ──────── */
 .modal__head-actions { display:flex; align-items:center; gap:12px; }

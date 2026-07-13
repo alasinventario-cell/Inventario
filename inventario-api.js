@@ -44,6 +44,12 @@
         return (m.codigo + ' ' + m.descripcion).toLowerCase().indexOf(term) !== -1;
       }).slice(0, 40));
     },
+    createMercaderia: function (data) {
+      var m = { codigo: (data.codigo || '').trim(), descripcion: (data.descripcion || '').trim(), um: ((data.um || 'UN').trim() || 'UN') };
+      if (!window.MERCADERIAS_DEMO) window.MERCADERIAS_DEMO = [];
+      if (!window.MERCADERIAS_DEMO.some(function (x) { return x.codigo === m.codigo; })) window.MERCADERIAS_DEMO.unshift(m);
+      return Promise.resolve(m);
+    },
     listCasos: function () {
       var base = (window.CASOS_CECO || []).map(function (c, i) {
         return { id: i + 1, forma_carga: c.forma, cuenta_mayor: c.cuenta, ceco: c.ceco, orden: c.orden, detalle: c.detalle };
@@ -212,6 +218,12 @@
       return q.order('descripcion').limit(40)
         .then(function (r) { return (r.data || []).map(function (m) { return { codigo: m.codigo, descripcion: m.descripcion, um: m.um }; }); });
     },
+    createMercaderia: function (data) {
+      return DB.from('mercaderias').upsert({
+        codigo: (data.codigo || '').trim(), descripcion: (data.descripcion || '').trim(), um: ((data.um || 'UN').trim() || 'UN'), activo: true
+      }, { onConflict: 'codigo' }).select().single()
+        .then(function (r) { return r.data || { codigo: data.codigo, descripcion: data.descripcion, um: data.um }; });
+    },
     listCasos: function () {
       return DB.from('casos_ceco').select('*').eq('activo', true).order('id')
         .then(function (r) { return r.data || []; });
@@ -326,6 +338,7 @@
     cecoArea: function (code) { return (window.CECO_DIC && window.CECO_DIC[code]) || ''; },
     listMercaderias: function ()               { return impl.listMercaderias(); },
     searchMercaderias: function (term)         { return impl.searchMercaderias(term); },
+    createMercaderia:  function (data)         { return impl.createMercaderia(data); },
     listCasos:       function ()               { return impl.listCasos(); },
     createCaso:      function (data)           { return impl.createCaso(data); },
     listUsos:        function (f)              { return impl.listUsos(f); },
