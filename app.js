@@ -505,8 +505,11 @@
     var g=window.gsap, tbl=host && host.querySelector('.inv-table');
     if(!g || !tbl) return;
     g.from(tbl.querySelectorAll('thead th'), { y:-10, opacity:0, duration:.4, stagger:.015, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' });
-    g.from(tbl.querySelectorAll('tbody tr.row-date .row-date__inner'), { x:-16, opacity:0, duration:.5, stagger:{ amount:.35 }, ease:'back.out(1.3)', delay:.05, overwrite:'auto', clearProps:'transform,opacity' });
-    g.from(tbl.querySelectorAll('tbody tr:not(.row-date)'), { y:16, opacity:0, duration:.5, stagger:{ amount:.5 }, ease:'power2.out', delay:.1, overwrite:'auto', clearProps:'transform,opacity' });
+    var heads=tbl.querySelectorAll('tbody tr.row-date .row-date__inner');
+    g.from(heads, { x:-14, opacity:0, duration:.45, stagger:{ amount:Math.min(.35, heads.length*0.03) }, ease:'power2.out', delay:.04, overwrite:'auto', clearProps:'transform,opacity' });
+    // Solo animar filas VISIBLES (grupo abierto) — evita animar cientos de <tr> ocultos y la traba.
+    var vis=tbl.querySelectorAll('tbody tr:not(.row-date):not(.is-collapsed)');
+    if(vis.length) g.from(vis, { y:12, opacity:0, duration:.42, stagger:{ amount:Math.min(.45, vis.length*0.012) }, ease:'power2.out', delay:.08, overwrite:'auto', clearProps:'transform,opacity' });
   }
 
   /* ── Animación GSAP de la barra de herramientas / cabecera ── */
@@ -737,16 +740,22 @@
     opts=opts||{}; if(!host) return;
     var s=state.search;
     var filtered=rows.filter(function(r){
+      if(opts.monthFilter && !inMonth(r.uso)) return false;
       if(!s) return true;
       return (r.it.cod_mercaderia+' '+r.it.descripcion+' '+r.it.uso_texto+' '+r.uso.nro+' '+(r.it.n_reserva||'')+' '+r.uso.sector).toLowerCase().indexOf(s)!==-1;
     });
     if(!filtered.length){
-      host.innerHTML='<div class="empty-state"><div class="empty-state__icon">'+ICONS.file+'</div><div class="empty-state__title">Sin registros</div><p class="empty-state__text">'+(opts.emptyText||('No hay usos internos'+(s?' que coincidan con la búsqueda':' en esta vista')))+'.</p></div>';
+      host.innerHTML='<div class="empty-state"><div class="empty-state__icon">'+ICONS.file+'</div><div class="empty-state__title">Sin registros</div><p class="empty-state__text">'+(opts.emptyText||('No hay usos internos'+(s?' que coincidan con la búsqueda':(state.menuMonth?' en '+monthLabel(state.menuMonth):' en esta vista'))))+'.</p></div>';
       return;
     }
     var groups={}, order=[];
     filtered.forEach(function(r){ var f=r.uso.fecha_emision; if(!groups[f]){ groups[f]=[]; order.push(f); } groups[f].push(r); });
     order.sort(function(a,b){ return String(b).localeCompare(String(a)); });
+    // Fechas desplegables: hoy abierta, resto cerrado. Se resetea al cambiar de vista/mes.
+    var sig=(opts.sig||'')+'|'+(state.menuMonth||'all');
+    if(state._tableSig!==sig || !state._openDates){ state._tableSig=sig; state._openDates={}; var _today=ymd(new Date()); var _def=order.indexOf(_today)>=0?_today:order[0]; if(_def) state._openDates[_def]=true; }
+    var openAll=!!s; // al buscar, mostrar todos los grupos
+    function isOpen(f){ return openAll || !!state._openDates[f]; }
     var colspan=(opts.showSector?13:12), animate=!state.search, ri=0, sel={};
     var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var useGsap=animate && !!window.gsap && !reduce;
@@ -754,12 +763,15 @@
     function moAttr(base){ if(cssAnim){ var d=Math.min(ri++,18)*30; return ' class="'+(base?base+' ':'')+'mo-row" style="animation-delay:'+d+'ms"'; } return (base?' class="'+base+'"':''); }
     var body='';
     order.forEach(function(f){
+      var open=isOpen(f);
       var hasCargado=groups[f].some(function(r){return r.it.sap_estado==='cargado';});
-      body+='<tr'+moAttr('row-date')+'><td colspan="'+colspan+'"><div class="row-date__inner"><span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(f))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
+      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span><span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(f))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
       groups[f].forEach(function(r){
-        var it=r.it, u=r.uso;
+        var it=r.it, u=r.uso, hl=(state._highlightUso&&u.id===state._highlightUso);
+        var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
+        var rst=(cssAnim&&open)?' style="animation-delay:'+(Math.min(ri++,18)*30)+'ms"':'';
         var chk = it.sap_estado==='cargado' ? '<input type="checkbox" class="baja-check" data-baja-item="'+it.id+'" data-baja-uso="'+u.id+'" aria-label="Seleccionar para baja">' : '';
-        body+='<tr'+moAttr('')+((state._highlightUso&&u.id===state._highlightUso)?' data-hl="1"':'')+' data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
+        body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
           '<td class="cell-check">'+chk+'</td>'+
           '<td class="cell-cod">'+esc(it.cod_mercaderia)+'</td>'+
           (opts.showSector?'<td><span class="sector-tag">'+esc(sectorShort(u.sector))+'</span></td>':'')+
@@ -788,6 +800,19 @@
     });
     host.querySelectorAll('.date-report-btn').forEach(function(btn){
       btn.addEventListener('click',function(e){ e.stopPropagation(); var d=btn.getAttribute('data-date'); reporteFechaModal(d, groups[d]); });
+    });
+
+    // ── Fechas desplegables (acordeón) ──
+    host.querySelectorAll('tr.row-date[data-toggle]').forEach(function(h){
+      h.addEventListener('click',function(e){
+        if(e.target.closest('.date-report-btn')||e.target.closest('.date-baja-btn')) return;
+        var f=h.getAttribute('data-toggle'), willOpen=!h.classList.contains('is-open');
+        h.classList.toggle('is-open',willOpen);
+        if(willOpen) state._openDates[f]=true; else delete state._openDates[f];
+        var rws=host.querySelectorAll('tr[data-group="'+f+'"]');
+        rws.forEach(function(tr){ tr.classList.toggle('is-collapsed',!willOpen); });
+        if(willOpen && window.gsap && !reduce){ window.gsap.from(rws,{ y:10, opacity:0, duration:.38, stagger:{ amount:Math.min(.35, rws.length*0.012) }, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' }); }
+      });
     });
 
     // ── Selección múltiple + baja en lote ──
@@ -858,19 +883,18 @@
       '<div class="list-toolbar list-toolbar--3">'+
         '<div class="lt-left"><button class="btn btn--secondary" id="btnVolverMenu">'+ICONS.back+' Volver al menú</button></div>'+
         '<div class="lt-center"><span class="lt-center__ic">'+iconSvg+'</span><span class="lt-center__title">'+esc(titulo)+'</span></div>'+
-        '<div class="lt-right">'+ fechaToolbarHTML() +'<button class="btn btn--primary" id="btnNuevo">'+ICONS.plus+' Nuevo Uso Interno</button></div>'+
+        '<div class="lt-right">'+ monthNavHTML() +'<button class="btn btn--primary" id="btnNuevo">'+ICONS.plus+' Nuevo Uso Interno</button></div>'+
       '</div><div id="listHost"></div></div>';
     q('#btnNuevo').addEventListener('click',wizardNuevo);
     q('#btnVolverMenu').addEventListener('click',function(){ go('menu'); });
-    wireFechaToolbar();
+    wireMonthNav(root, function(){ if(state._reRender) state._reRender(); });
     animateToolbar(root);
-    var showSector=!filter.sector;
+    var showSector=!filter.sector, sig=filter.sector||filter.estado||'list';
     API.listUsos(filter).then(function(usos){
-      usos=usos.filter(function(u){ return inDateRange(u.fecha_emision); });
       var rows=[];
       usos.forEach(function(u){ (u.items||[]).forEach(function(it){ rows.push({ uso:u, it:it }); }); });
       state._rows=rows;
-      state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:showSector}); };
+      state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:showSector, monthFilter:true, sig:sig}); };
       state._reRender();
     });
   }
