@@ -105,6 +105,43 @@
     return { bd:bd, close:close };
   }
 
+  /* ── Overlay de acción: loader minimalista → check azul (GSAP) ── */
+  function actionOverlay(label){
+    var ov=elFrom(
+      '<div class="act-ov"><div class="act-card"><div class="act-vis">'+
+        '<svg class="act-spin" viewBox="0 0 48 48"><circle class="act-track" cx="24" cy="24" r="20"/><circle class="act-arc" cx="24" cy="24" r="20"/></svg>'+
+        '<svg class="act-check" viewBox="0 0 48 48" hidden><circle class="act-cring" cx="24" cy="24" r="20"/><path class="act-cmark" d="M15 24.5 L21.5 31 L34 18"/></svg>'+
+      '</div><div class="act-label">'+esc(label||'Procesando…')+'</div></div></div>');
+    document.body.appendChild(ov);
+    requestAnimationFrame(function(){ ov.classList.add('is-open'); });
+    var g=window.gsap, reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var spinT=null, arc=ov.querySelector('.act-arc');
+    if(g && !reduce) spinT=g.to(arc,{ rotation:360, duration:.85, repeat:-1, ease:'none', svgOrigin:'24 24' });
+    function close(){ ov.classList.remove('is-open'); setTimeout(function(){ ov.remove(); }, 280); }
+    function done(newLabel, isErr){
+      var spin=ov.querySelector('.act-spin'), chk=ov.querySelector('.act-check'), lbl=ov.querySelector('.act-label');
+      if(spinT) spinT.kill();
+      if(isErr) chk.classList.add('is-err');
+      if(g && !reduce){
+        g.to(spin,{ opacity:0, scale:.7, duration:.2, ease:'power2.in', onComplete:function(){ spin.setAttribute('hidden',''); } });
+        chk.removeAttribute('hidden');
+        var ring=chk.querySelector('.act-cring'), mark=chk.querySelector('.act-cmark');
+        var rl=(ring.getTotalLength&&ring.getTotalLength())||126, ml=(mark.getTotalLength&&mark.getTotalLength())||40;
+        g.set(chk,{ opacity:0, scale:.6 }); g.set(ring,{ strokeDasharray:rl, strokeDashoffset:rl }); g.set(mark,{ strokeDasharray:ml, strokeDashoffset:ml });
+        g.timeline({ delay:.14 })
+          .to(chk,{ opacity:1, scale:1, duration:.34, ease:'back.out(1.7)' },0)
+          .to(ring,{ strokeDashoffset:0, duration:.42, ease:'power2.out' },0.04)
+          .to(mark,{ strokeDashoffset:0, duration:.26, ease:'power2.out' },0.30);
+      } else { spin.setAttribute('hidden',''); chk.removeAttribute('hidden'); }
+      if(lbl) lbl.textContent=newLabel||(isErr?'Error':'Listo');
+    }
+    return {
+      success:function(l){ done(l||'Listo', false); setTimeout(close, 900); },
+      error:function(l){ done(l||'Error', true); setTimeout(close, 1300); },
+      close:close
+    };
+  }
+
   /* ── SSelect: desplegable "pro" (estilo itemsborrados) ────── */
   function SSelect(host, cfg){
     cfg = cfg || {};
@@ -234,13 +271,14 @@
       q('#nc_save',mf.bd).addEventListener('click',function(){
         var data={ forma_carga:q('#nc_forma',mf.bd).value, cuenta_mayor:q('#nc_cuenta',mf.bd).value, ceco:q('#nc_ceco',mf.bd).value, area:q('#nc_area',mf.bd).value, orden:q('#nc_orden',mf.bd).value, detalle:q('#nc_detalle',mf.bd).value };
         if(!data.forma_carga.trim() || !data.ceco.trim()){ toast('Forma de carga y CECO son obligatorios','err'); return; }
+        var ov=actionOverlay('Guardando CECO…');
         API.createCaso(data).then(function(nc){
           API.listCasos().then(function(cs){
             state.casos=cs; mf.close(); if(pickerM) pickerM.close();
-            value=String(nc.id); paint(); toast('CECO agregado','ok');
+            value=String(nc.id); paint(); ov.success('CECO agregado');
             if(cfg.onChange) cfg.onChange(cur());
           });
-        });
+        }).catch(function(){ ov.error('Error al guardar'); });
       });
       setTimeout(function(){ if(f0) f0.focus(); },60);
     }
@@ -886,10 +924,11 @@
       var cod=q('#nm_cod',m.bd).value.trim(), desc=q('#nm_desc',m.bd).value.trim(), um=(q('#nm_um',m.bd).value.trim()||'UN');
       if(!cod || !desc){ toast('Código y descripción son obligatorios','err'); return; }
       var btn=q('#nm_save',m.bd); btn.disabled=true;
+      var ov=actionOverlay('Guardando material…');
       API.createMercaderia({ codigo:cod, descripcion:desc, um:um }).then(function(mm){
-        m.close(); toast('Material agregado al catálogo','ok');
+        ov.success('Material agregado'); m.close();
         if(select) select({ value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, descripcion:mm.descripcion, um:mm.um });
-      }).catch(function(){ btn.disabled=false; toast('Error al guardar','err'); });
+      }).catch(function(){ ov.error('Error al guardar'); btn.disabled=false; });
     });
     setTimeout(function(){ if(c0) c0.focus(); },60);
   }
@@ -918,10 +957,11 @@
     CasoPicker(q('#bulk_caso_host',m.bd), { placeholder:'Elegir caso / CECO…', onChange:function(c){ chosen=c; paintPrev(); } });
     q('#okBulkCeco',m.bd).addEventListener('click',function(){
       if(!chosen){ toast('Elegí el caso / CECO','err'); return; }
-      var ok=q('#okBulkCeco',m.bd); ok.disabled=true;
+      var ok=q('#okBulkCeco',m.bd); ok.disabled=true; m.close();
+      var ov=actionOverlay('Asignando CECO…');
       API.asignarCeco(items, { id:chosen.id, cuenta_mayor:chosen.cuenta_mayor, ceco:chosen.ceco, orden:chosen.orden }).then(function(n){
-        m.close(); toast('CECO asignado a '+n+' línea(s)','ok'); setTimeout(refreshCurrent, 300);
-      });
+        ov.success('CECO asignado'); setTimeout(refreshCurrent, 350);
+      }).catch(function(){ ov.error('Error al asignar'); });
     });
   }
 
