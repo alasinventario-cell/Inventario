@@ -1090,12 +1090,11 @@
       '<span class="tip">'+esc(label)+'</span>'+icon+'</button>';
   }
   function rowActions(u,it){
-    // Línea terminada (dada de baja): solo imprimir, es de solo lectura.
-    if(it.sap_estado==='baja') return actBtn('a-print','Imprimir',ICONS.print,'imprimir',u.id,'');
+    // Línea terminada (dada de baja): solo lectura (se imprime desde "Ver reporte").
+    if(it.sap_estado==='baja') return '<span class="row-ro">—</span>';
     var h='';
     if(it.sap_estado==='pendiente') h+=actBtn('a-sap','Cargar a SAP',ICONS.sap,'cargar',u.id,it.id);
     if(it.sap_estado==='cargado')   h+=actBtn('a-baja','Dar de baja',ICONS.check,'baja',u.id,it.id);
-    h+=actBtn('a-print','Imprimir',ICONS.print,'imprimir',u.id,'');
     h+=actBtn('a-edit','Editar',ICONS.edit,'editar',u.id,it.id);
     h+=actBtn('a-del','Eliminar',ICONS.trash,'eliminar',u.id,it.id);
     return h;
@@ -1371,8 +1370,10 @@
       '<div class="modal__body">'+'<div style="max-width:760px;margin:0 auto">'+reporteEmailHTML(u)+'</div>'+
         '<div class="report-actions" style="max-width:760px;margin:20px auto 0">'+
           '<button class="btn btn--primary" id="r_copy">📋 Copiar para Outlook</button>'+
+          '<button class="btn btn--success" id="r_print">'+ICONS.print+' Imprimir</button>'+
         '</div></div>', { wide:true });
     q('#r_copy',m.bd).addEventListener('click',function(){ copyReport(u); });
+    q('#r_print',m.bd).addEventListener('click',function(){ m.close(); printReporte(u); });
   }
 
   // Reporte de correo (tabla). Clave anti-negrita de Outlook: font-weight:normal EXPLÍCITO en

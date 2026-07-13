@@ -484,6 +484,7 @@ button.kpi:hover::before { transform:scaleY(1); }
   border-radius:50%; border:2.5px solid currentColor; border-right-color:transparent; opacity:.9; animation:actBtnSpin .6s linear infinite; }
 @keyframes actBtnSpin { to { transform:rotate(360deg); } }
 .row-actions { display:flex; align-items:center; gap:5px; justify-content:flex-end; }
+.row-ro { color:var(--alas-text-3); font-weight:700; padding-right:10px; }
 
 /* Variantes: reposo con tinte suave, hover relleno sólido + glow */
 .action-btn.a-sap   { background:rgba(59,130,246,.13); color:#1d4ed8; border-color:rgba(59,130,246,.16); }
