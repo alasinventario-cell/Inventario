@@ -1410,8 +1410,7 @@
     var rows=(u.items||[]).map(function(it){
       return '<tr>'+td(esc(it.cod_mercaderia),'white-space:nowrap;font-weight:bold;')+td(esc(it.descripcion))+
         td(esc(it.cantidad),'text-align:center;white-space:nowrap;')+td(esc(it.um),'text-align:center;color:'+muted+';')+
-        td(esc(it.uso_texto||''))+td(esc(it.ceco||'—'),'white-space:nowrap;color:'+muted+';')+
-        td(it.n_reserva?esc(it.n_reserva):'—','white-space:nowrap;color:'+muted+';')+'</tr>';
+        td(esc(it.uso_texto||''))+'</tr>';
     }).join('');
     var nro=(u.nro&&String(u.nro).indexOf('Fecha')===-1)?u.nro:'';
     return '<div style="font-family:'+ff+';color:'+ink+';max-width:740px;">'+
@@ -1429,7 +1428,7 @@
         (nro?' &nbsp;·&nbsp; <b>N.º:</b> '+esc(nro):'')+'</div>'+
       // Tabla
       '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;border:1px solid '+line+';">'+
-        '<tr>'+head('Código')+head('Descripción')+head('Cant','text-align:center')+head('UM','text-align:center')+head('Uso')+head('CECO')+head('N.Reserva')+'</tr>'+rows+
+        '<tr>'+head('Código')+head('Descripción')+head('Cant','text-align:center')+head('UM','text-align:center')+head('Uso')+'</tr>'+rows+
       '</table>'+
       // Firmas
       '<table width="100%" style="border-collapse:collapse;margin-top:70px;"><tr>'+
