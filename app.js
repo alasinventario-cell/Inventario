@@ -113,15 +113,16 @@
       '<span class="ssel-arrow">'+ICONS.chevron+'</span></div></div>';
     var wrap=host.querySelector('.ssel'), disp=host.querySelector('.ssel-display'), dt=host.querySelector('.ssel-dt');
     var dd=null, isOpen=false, onDoc=null, onScroll=null, onKey=null;
-    function optByVal(v){ return options.find(function(o){ return String(o.value)===String(v); }); }
-    function paint(){ var o=(value!=null?optByVal(value):null); dt.textContent=o?o.label:placeholder; dt.style.color=o?'':'#8b9cb2'; }
+    var _dynOpts=[], searchSeq=0;
+    function optByVal(v){ return options.concat(_dynOpts).find(function(o){ return String(o.value)===String(v); }); }
+    function paint(){ var o=(value!=null?optByVal(value):null); var lbl=o?o.label:(cfg.current&&String(cfg.current.value)===String(value)?cfg.current.label:null); dt.textContent=lbl||placeholder; dt.style.color=lbl?'':'#8b9cb2'; }
     paint();
     function position(){ if(!dd) return; var r=disp.getBoundingClientRect(); dd.style.position='fixed'; dd.style.left=r.left+'px'; dd.style.top=(r.bottom+6)+'px'; dd.style.width=r.width+'px'; }
-    function renderList(f){
-      var list=dd.querySelector('.ssel-list'); f=(f||'').toLowerCase();
-      var items=options.filter(function(o){ return !f || (o.label+' '+(o.sub||'')).toLowerCase().indexOf(f)!==-1; });
-      if(!items.length){ list.innerHTML='<div class="ssel-empty">Sin resultados</div>'; return; }
-      list.innerHTML=items.map(function(o){
+    function doRender(items){
+      var list=dd&&dd.querySelector('.ssel-list'); if(!list) return;
+      _dynOpts=items||[];
+      if(!_dynOpts.length){ list.innerHTML='<div class="ssel-empty">Sin resultados</div>'; return; }
+      list.innerHTML=_dynOpts.slice(0,60).map(function(o){
         return '<button type="button" class="ssel-item'+(String(o.value)===String(value)?' on':'')+'" data-value="'+esc(o.value)+'">'+
           '<span class="ssel-lbl">'+esc(o.label)+(o.sub?' <small>· '+esc(o.sub)+'</small>':'')+'</span>'+
           '<span class="ssel-check">'+ICONS.check+'</span></button>';
@@ -130,12 +131,27 @@
         b.addEventListener('click',function(){ value=b.getAttribute('data-value'); paint(); close(); if(cfg.onChange) cfg.onChange(value, optByVal(value)); });
       });
     }
+    function renderList(f){
+      var list=dd&&dd.querySelector('.ssel-list'); if(!list) return; f=(f||'');
+      if(cfg.asyncSearch){
+        var term=f.trim();
+        if(!term){ list.innerHTML='<div class="ssel-empty">Escribí para buscar (código o descripción)…</div>'; return; }
+        list.innerHTML='<div class="ssel-empty">Buscando…</div>';
+        var myReq=++searchSeq;
+        cfg.asyncSearch(term).then(function(items){ if(myReq!==searchSeq||!dd) return; doRender(items||[]); })
+          .catch(function(){ if(myReq===searchSeq&&dd){ var l=dd.querySelector('.ssel-list'); if(l) l.innerHTML='<div class="ssel-empty">Error al buscar</div>'; } });
+        return;
+      }
+      var fl=f.toLowerCase();
+      doRender(options.filter(function(o){ return !fl || (o.label+' '+(o.sub||'')).toLowerCase().indexOf(fl)!==-1; }));
+    }
     function open(){
       if(isOpen) return; isOpen=true; wrap.classList.add('is-open');
       dd=document.createElement('div'); dd.className='ssel-dd';
       dd.innerHTML='<div class="ssel-search-box"><span class="ssel-search-icon">'+ICONS.search+'</span><input class="ssel-inp" placeholder="Buscar…"></div><div class="ssel-list"></div>';
       document.body.appendChild(dd); position(); renderList('');
-      var inp=dd.querySelector('.ssel-inp'); inp.addEventListener('input',function(){ renderList(inp.value); });
+      var inp=dd.querySelector('.ssel-inp'); var _deb=null;
+      inp.addEventListener('input',function(){ if(cfg.asyncSearch){ clearTimeout(_deb); _deb=setTimeout(function(){ renderList(inp.value); },260); } else { renderList(inp.value); } });
       requestAnimationFrame(function(){ dd.classList.add('open'); inp.focus(); });
       onDoc=function(e){ if(dd && !dd.contains(e.target) && !disp.contains(e.target)) close(); };
       onScroll=function(){ close(); };
@@ -377,10 +393,10 @@
     q('#btnVolver').addEventListener('click',function(e){ if(window.alasGoToLauncher) window.alasGoToLauncher(e); });
 
     // Cargar catálogos y arrancar
-    Promise.all([API.listCasos(), API.listMercaderias()]).then(function(res){
-      state.casos=res[0]||[]; state.mercaderias=res[1]||[];
+    API.listCasos().then(function(cs){
+      state.casos=cs||[]; state.mercaderias=[];
       hideLoader(); go('menu');
-    }).catch(function(e){ console.error(e); hideLoader(); go('menu'); });
+    }).catch(function(e){ console.error(e); state.mercaderias=[]; hideLoader(); go('menu'); });
   }
 
   /* ── Navegación ───────────────────────────────────────────── */
@@ -1037,9 +1053,9 @@
       '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="i_save">Guardar</button></div>'
     );
     var um=q('#i_um',m.bd), prev=q('#i_prev',m.bd), chosenMerc=null, chosenCaso=null;
-    SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Seleccionar mercadería…',
-      options:state.mercaderias.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion }; }),
-      onChange:function(v){ chosenMerc=state.mercaderias.find(function(x){return x.codigo===v;}); um.value=chosenMerc?chosenMerc.um:''; } });
+    SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Buscar mercadería (código o descripción)…',
+      asyncSearch:function(t){ return API.searchMercaderias(t).then(function(rows){ return rows.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, um:mm.um, descripcion:mm.descripcion }; }); }); },
+      onChange:function(v,opt){ chosenMerc=opt?{codigo:opt.value,descripcion:opt.descripcion,um:opt.um}:null; um.value=opt?opt.um:''; } });
     CasoPicker(q('#i_caso_host',m.bd), { placeholder:'Elegir caso / CECO…', onChange:function(c){ chosenCaso=c; paintPrev(); } });
     function paintPrev(){ if(!chosenCaso){ prev.style.display='none'; return; } prev.style.display='block';
       q('#ip_cuenta',m.bd).textContent=chosenCaso.cuenta_mayor||'—'; q('#ip_ceco',m.bd).textContent=chosenCaso.ceco||'—';
@@ -1079,9 +1095,10 @@
     var chosenCaso=it.caso_id ? state.casos.find(function(c){return String(c.id)===String(it.caso_id);})
                  : (it.ceco ? state.casos.find(function(c){return c.ceco===it.ceco && String(c.orden)===String(it.orden);}) : null);
     um.value=it.um||''; q('#i_cant',m.bd).value=it.cantidad; q('#i_uso',m.bd).value=it.uso_texto||'';
-    SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Seleccionar mercadería…', value:it.cod_mercaderia,
-      options:state.mercaderias.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion }; }),
-      onChange:function(v){ chosenMerc=state.mercaderias.find(function(x){return x.codigo===v;}); um.value=chosenMerc?chosenMerc.um:''; } });
+    SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Buscar mercadería (código o descripción)…', value:it.cod_mercaderia,
+      current:{ value:it.cod_mercaderia, label:it.cod_mercaderia+(it.descripcion?' — '+it.descripcion:'') },
+      asyncSearch:function(t){ return API.searchMercaderias(t).then(function(rows){ return rows.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, um:mm.um, descripcion:mm.descripcion }; }); }); },
+      onChange:function(v,opt){ chosenMerc=opt?{codigo:opt.value,descripcion:opt.descripcion,um:opt.um}:null; um.value=opt?opt.um:''; } });
     CasoPicker(q('#i_caso_host',m.bd), { value: chosenCaso?chosenCaso.id:null, placeholder:'Elegir caso / CECO…', onChange:function(c){ chosenCaso=c; paintPrev(); } });
     function paintPrev(){ if(!chosenCaso){ prev.style.display='none'; return; } prev.style.display='block';
       q('#ip_cuenta',m.bd).textContent=chosenCaso.cuenta_mayor||'—'; q('#ip_ceco',m.bd).textContent=chosenCaso.ceco||'—';

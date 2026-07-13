@@ -36,6 +36,14 @@
     _save: function (s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (_) {} },
 
     listMercaderias: function () { return Promise.resolve((window.MERCADERIAS_DEMO || []).slice()); },
+    searchMercaderias: function (term) {
+      term = (term || '').toLowerCase().trim();
+      var all = window.MERCADERIAS_DEMO || [];
+      if (!term) return Promise.resolve(all.slice(0, 40));
+      return Promise.resolve(all.filter(function (m) {
+        return (m.codigo + ' ' + m.descripcion).toLowerCase().indexOf(term) !== -1;
+      }).slice(0, 40));
+    },
     listCasos: function () {
       var base = (window.CASOS_CECO || []).map(function (c, i) {
         return { id: i + 1, forma_carga: c.forma, cuenta_mayor: c.cuenta, ceco: c.ceco, orden: c.orden, detalle: c.detalle };
@@ -194,7 +202,14 @@
      ============================================================ */
   var Remote = {
     listMercaderias: function () {
-      return DB.from('mercaderias').select('*').eq('activo', true).order('descripcion')
+      return DB.from('mercaderias').select('*').eq('activo', true).order('descripcion').limit(1000)
+        .then(function (r) { return (r.data || []).map(function (m) { return { codigo: m.codigo, descripcion: m.descripcion, um: m.um }; }); });
+    },
+    searchMercaderias: function (term) {
+      term = (term || '').trim().replace(/[,()%*]/g, ' ').trim();
+      var q = DB.from('mercaderias').select('codigo,descripcion,um').eq('activo', true);
+      if (term) q = q.or('codigo.ilike.%' + term + '%,descripcion.ilike.%' + term + '%');
+      return q.order('descripcion').limit(40)
         .then(function (r) { return (r.data || []).map(function (m) { return { codigo: m.codigo, descripcion: m.descripcion, um: m.um }; }); });
     },
     listCasos: function () {
@@ -310,6 +325,7 @@
     isRemote: REMOTE,
     cecoArea: function (code) { return (window.CECO_DIC && window.CECO_DIC[code]) || ''; },
     listMercaderias: function ()               { return impl.listMercaderias(); },
+    searchMercaderias: function (term)         { return impl.searchMercaderias(term); },
     listCasos:       function ()               { return impl.listCasos(); },
     createCaso:      function (data)           { return impl.createCaso(data); },
     listUsos:        function (f)              { return impl.listUsos(f); },
