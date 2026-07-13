@@ -536,7 +536,7 @@ tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-b
 .th-check, .cell-check { width:38px; text-align:center; }
 .baja-check { width:17px; height:17px; accent-color:#16a34a; cursor:pointer; vertical-align:middle; }
 .inv-table tbody tr.is-selected > td { background:#f0fdf4; }
-.bulk-bar { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 16px 11px 18px; margin-bottom:12px;
+.bulk-bar { display:flex; align-items:center; justify-content:center; gap:22px; padding:12px 18px; margin-bottom:12px;
   border:1px solid #cbe6d3; border-radius:12px; background:linear-gradient(180deg,#f0fdf4,#fff); box-shadow:0 8px 20px rgba(22,163,74,.12); animation:mo-fade-up .3s var(--alas-ease); }
 .bulk-bar[hidden] { display:none; }
 .bulk-bar__info { font-size:13.5px; font-weight:700; color:var(--alas-text-1); }
