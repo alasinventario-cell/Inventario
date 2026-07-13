@@ -707,8 +707,8 @@
       var pend=0, baja=0; usos.forEach(function(u){ if(u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente') pend++; else if(it.sap_estado==='cargado') baja++; }); });
       countUp(q('#k_pend'),pend); countUp(q('#k_term'),term); countUp(q('#k_total'),usos.length); countUp(q('#k_baja'),baja);
       SECTOR_CARDS.forEach(function(s){
-        var pend=0; usos.forEach(function(u){ if(u.sector!==s.key||u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente') pend++; }); });
-        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), pend);
+        var enCurso=0; usos.forEach(function(u){ if(u.sector!==s.key||u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente'||it.sap_estado==='cargado') enCurso++; }); });
+        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), enCurso);
       });
     }
     wireMonthNav(root, fillMenu);
