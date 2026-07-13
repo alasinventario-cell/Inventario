@@ -671,8 +671,10 @@
       return '<button class="sector-card" data-sec="'+esc(s.key)+'">'+
         '<span class="sector-card__ic">'+ICONS[s.icon]+'</span>'+
         '<span class="sector-card__body"><span class="sector-card__name">'+esc(s.label)+'</span>'+
-        '<span class="sector-card__desc">'+esc(SECTOR_DESC[s.key]||'')+'</span></span>'+
-        '<span class="sector-card__count" data-c="'+esc(s.key)+'">·</span>'+
+        '<span class="sector-card__desc">'+esc(SECTOR_DESC[s.key]||'')+'</span>'+
+        '<span class="sector-card__stats" data-s="'+esc(s.key)+'"></span></span>'+
+        '<span class="sector-card__count-wrap"><span class="sector-card__count" data-c="'+esc(s.key)+'">·</span>'+
+        '<span class="sector-card__count-lbl">en curso</span></span>'+
         '<span class="sector-card__arrow">'+ARROW+'</span></button>';
     }).join('');
     host.querySelectorAll('.sector-card').forEach(function(b){ b.addEventListener('click',function(){ go('sector',b.getAttribute('data-sec')); }); });
@@ -684,9 +686,15 @@
       var term=usos.filter(function(u){return u.estado==='terminado';}).length;
       var pend=0, baja=0; usos.forEach(function(u){ if(u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente') pend++; else if(it.sap_estado==='cargado') baja++; }); });
       countUp(q('#k_pend'),pend); countUp(q('#k_term'),term); countUp(q('#k_total'),usos.length); countUp(q('#k_baja'),baja);
+      function scChip(cls,n,lbl){ return '<span class="sc-chip sc-chip--'+cls+'"><b>'+n+'</b> '+lbl+'</span>'; }
       SECTOR_CARDS.forEach(function(s){
-        var c=usos.filter(function(u){return u.sector===s.key&&u.estado!=='anulado'&&u.estado!=='terminado';}).length;
-        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), c);
+        var su=usos.filter(function(u){return u.sector===s.key&&u.estado!=='anulado';});
+        var activos=su.filter(function(u){return u.estado!=='terminado';}).length;
+        var p=0,cg=0,bj=0; su.forEach(function(u){ (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente')p++; else if(it.sap_estado==='cargado')cg++; else if(it.sap_estado==='baja')bj++; }); });
+        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), activos);
+        var stEl=host.querySelector('.sector-card__stats[data-s="'+s.key+'"]');
+        if(stEl){ stEl.innerHTML=(p+cg+bj===0) ? '<span class="sc-empty">Sin usos este mes</span>'
+          : scChip('pend',p,'pendientes')+scChip('carg',cg,'para baja')+scChip('baja',bj,'terminadas'); }
       });
     }
     wireMonthNav(root, fillMenu);
