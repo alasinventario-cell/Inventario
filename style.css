@@ -641,6 +641,14 @@ tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-b
 .items-actions .add-item-btn { flex:1; }
 .add-item-btn--import { border-style:solid; border-color:rgba(37,99,235,.30); color:#1d4ed8; background:#eff5ff; }
 .add-item-btn--import:hover { border-color:#2563eb; background:#dbeafe; }
+/* Modal de formato/rechazo de import */
+.import-err { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:12px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-weight:700; font-size:13px; }
+.import-err svg { width:22px; height:22px; flex-shrink:0; }
+.import-err__sub { font-size:12px; color:#a56a6a; font-weight:500; margin-top:3px; }
+.import-table-wrap { overflow-x:auto; border:1px solid var(--alas-border); border-radius:12px; }
+.import-table { width:100%; border-collapse:collapse; font-size:11.5px; white-space:nowrap; }
+.import-table th { background:#f7fafd; text-align:left; padding:9px 12px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--alas-brand); border-bottom:1px solid #e6edf5; }
+.import-table td { padding:9px 12px; color:var(--alas-text-2); }
 .empty-mini { text-align:center; padding:16px; color:var(--alas-text-3); font-size:12.5px; }
 
 /* ── Select "pro" (estilo itemsborrados · .ssel) ──────────── */

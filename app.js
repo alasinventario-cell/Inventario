@@ -135,22 +135,47 @@
     });
     return window.__xlsxP;
   }
+  var IMPORT_COLS=[
+    { key:'material', label:'MATERIAL',                 cands:['material','codigo','cod'] },
+    { key:'desc',     label:'TEXTO BREVE DEL MATERIAL', cands:['texto breve','descrip'] },
+    { key:'cant',     label:'CANT',                     cands:['cant'] },
+    { key:'um',       label:'UM',                       cands:['um'] },
+    { key:'uso',      label:'USO',                      cands:['uso'] },
+    { key:'cuenta',   label:'CUENTA MAY',               cands:['cuenta'] },
+    { key:'ceco',     label:'CECO',                     cands:['ceco','centro'] },
+    { key:'orden',    label:'ORDEN',                    cands:['orden'] }
+  ];
   function parseUsoRows(rows){
-    if(!rows||rows.length<2) return [];
+    if(!rows||!rows.length) return { ok:false, missing:IMPORT_COLS.map(function(c){return c.label;}), items:[] };
     var hd=(rows[0]||[]).map(function(h){ return String(h||'').trim().toLowerCase(); });
-    function col(cands){ for(var i=0;i<hd.length;i++){ for(var j=0;j<cands.length;j++){ if(hd[i].indexOf(cands[j])!==-1) return i; } } return -1; }
-    var iMat=col(['material','codigo','cod']), iDesc=col(['texto breve','descrip']), iCant=col(['cant']), iUm=col(['um']),
-        iUso=col(['uso']), iCta=col(['cuenta']), iCeco=col(['ceco','centro']), iOrd=col(['orden']);
+    function findCol(cands){ for(var i=0;i<hd.length;i++){ for(var j=0;j<cands.length;j++){ if(hd[i].indexOf(cands[j])!==-1) return i; } } return -1; }
+    var idx={}, missing=[];
+    IMPORT_COLS.forEach(function(c){ var i=findCol(c.cands); idx[c.key]=i; if(i<0) missing.push(c.label); });
+    if(missing.length) return { ok:false, missing:missing, items:[] };
     var out=[];
     for(var r=1;r<rows.length;r++){ var row=rows[r]||[];
-      var cod=String((iMat>=0?row[iMat]:'')||'').trim(); if(!cod) continue;
-      out.push({ cod_mercaderia:cod, descripcion:String((iDesc>=0?row[iDesc]:'')||'').trim(),
-        cantidad:Number((iCant>=0?row[iCant]:0))||0, um:(String((iUm>=0?row[iUm]:'')||'').trim()||'UN'),
-        uso_texto:String((iUso>=0?row[iUso]:'')||'').trim(), caso_id:null,
-        cuenta_mayor:String((iCta>=0?row[iCta]:'')||'').trim(), ceco:String((iCeco>=0?row[iCeco]:'')||'').trim().toUpperCase(),
-        orden:String((iOrd>=0?row[iOrd]:'')||'').trim() });
+      var cod=String(row[idx.material]||'').trim(); if(!cod) continue;
+      out.push({ cod_mercaderia:cod, descripcion:String(row[idx.desc]||'').trim(),
+        cantidad:Number(row[idx.cant])||0, um:(String(row[idx.um]||'').trim()||'UN'),
+        uso_texto:String(row[idx.uso]||'').trim(), caso_id:null,
+        cuenta_mayor:String(row[idx.cuenta]||'').trim(), ceco:String(row[idx.ceco]||'').trim().toUpperCase(),
+        orden:String(row[idx.orden]||'').trim() });
     }
-    return out;
+    return { ok:true, missing:[], items:out };
+  }
+  function importFormatModal(missing){
+    var cols=IMPORT_COLS.map(function(c){return c.label;});
+    var ex=['LA6901998','GUANTE DE CUERO CAÑO LARGO','12','PAR','Renovación por desgaste, EPP','61212411','FSI51HI000','1014452'];
+    openModal(
+      '<div class="modal__head"><div class="modal__title">No se pudo importar el Excel</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__body">'+
+        '<div class="import-err">'+ICONS.file+'<div><b>Faltan columnas'+(missing&&missing.length?': '+esc(missing.join(', ')):'')+'</b><div class="import-err__sub">Revisá que la primera fila tenga los encabezados correctos.</div></div></div>'+
+        '<p class="list-hint" style="margin:14px 0 8px">El Excel debe tener estas columnas en la <b>primera fila</b> (los nombres pueden variar un poco). Ejemplo:</p>'+
+        '<div class="import-table-wrap"><table class="import-table"><thead><tr>'+cols.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+'</tr></thead>'+
+        '<tbody><tr>'+ex.map(function(v){return '<td>'+esc(v)+'</td>';}).join('')+'</tr></tbody></table></div>'+
+      '</div>'+
+      '<div class="modal__foot"><button class="btn btn--primary" data-close>Entendido</button></div>', { wide:true }
+    );
   }
 
   /* ── Overlay de acción: loader minimalista → check azul (GSAP) ── */
@@ -1313,10 +1338,11 @@
           try{
             var wb=XLSX.read(new Uint8Array(ev.target.result),{ type:'array' });
             var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{ header:1, defval:'' });
-            var items=parseUsoRows(rows);
-            if(!items.length){ ov.error('Sin filas válidas'); return; }
-            items.forEach(function(it){ draft.items.push(it); }); paintItems();
-            ov.success(items.length+' mercadería(s)');
+            var res=parseUsoRows(rows);
+            if(!res.ok){ ov.close(); importFormatModal(res.missing); return; }
+            if(!res.items.length){ ov.error('El Excel no tiene filas de material'); return; }
+            res.items.forEach(function(it){ draft.items.push(it); }); paintItems();
+            ov.success(res.items.length+' mercadería(s)');
           }catch(err){ ov.error('Error al leer el Excel'); }
         };
         reader.onerror=function(){ ov.error('Error al leer el archivo'); };
