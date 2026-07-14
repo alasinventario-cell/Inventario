@@ -366,13 +366,18 @@
     },
     deleteItem: function (usoId, itemId) {
       var self = this;
-      return DB.from('uso_items').delete().eq('id', itemId)
-        .then(function () { return self._audit({ uso_id: usoId, item_id: itemId, accion: 'eliminar_item', estado_nuevo: 'eliminado' }); })
+      return DB.from('uso_items').select('cod_mercaderia,descripcion,ceco,n_reserva,sap_estado').eq('id', itemId).maybeSingle()
+        .then(function (r) {
+          var it = r && r.data ? r.data : null;
+          var det = it ? ((it.descripcion || it.cod_mercaderia || '') + (it.ceco ? ' · CECO ' + it.ceco : '') + (it.n_reserva ? ' · Reserva ' + it.n_reserva : '')) : '';
+          return DB.from('uso_items').delete().eq('id', itemId)
+            .then(function () { return self._audit({ uso_id: usoId, item_id: itemId, accion: 'eliminar_item', estado_anterior: it ? it.sap_estado : null, estado_nuevo: 'eliminado', detalle: det }); });
+        })
         .then(function () { return self.getUso(usoId); })
         .then(function (u) {
           if (u && (u.items || []).length === 0) {
             return DB.from('usos_internos').delete().eq('id', usoId)
-              .then(function () { return self._audit({ uso_id: usoId, accion: 'eliminar', estado_nuevo: 'eliminado' }); });
+              .then(function () { return self._audit({ uso_id: usoId, accion: 'eliminar', estado_nuevo: 'eliminado', detalle: 'Uso interno ' + (u.nro || usoId) }); });
           }
         });
     }
