@@ -1003,8 +1003,7 @@
 
     if(state._highlightUso){
       host.querySelectorAll('tr[data-hl]').forEach(function(tr,i){
-        var d=220+i*150;
-        setTimeout(function(){ sweepRow(tr,'amber'); setTimeout(function(){ tr.classList.add('row-arrive-amber'); }, 880); }, d);
+        setTimeout(function(){ tr.classList.add('row-arrive-amber'); }, 80+i*90);
       });
       state._highlightUso=null;
     }
@@ -1067,7 +1066,7 @@
       var ok=q('#okBulkCeco',m.bd); ok.disabled=true; m.close();
       var ov=actionOverlay('Asignando CECO…');
       API.asignarCeco(items, { id:chosen.id, cuenta_mayor:chosen.cuenta_mayor, ceco:chosen.ceco, orden:chosen.orden }).then(function(n){
-        ov.success('CECO asignado'); setTimeout(refreshCurrent, 350);
+        ov.success('CECO asignado'); refreshCurrent();
       }).catch(function(){ ov.error('Error al asignar'); });
     });
   }
@@ -1093,7 +1092,7 @@
       if(!reserva){ toast('Ingresá el N.º de reserva','err'); return; }
       var ok=q('#okBulkSap',m.bd); ok.disabled=true; m.close();
       var ov=actionOverlay('Cargando a SAP…');
-      API.cargarSAPBulk(items, reserva).then(function(n){ ov.success('Cargado a SAP'); setTimeout(refreshCurrent, 350); }).catch(function(){ ov.error('Error al cargar'); });
+      API.cargarSAPBulk(items, reserva).then(function(n){ ov.success('Cargado a SAP'); refreshCurrent(); }).catch(function(){ ov.error('Error al cargar'); });
     });
   }
 
@@ -1107,12 +1106,14 @@
       '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--success" id="okBulk">'+ICONS.check+' Confirmar baja ('+items.length+')</button></div>'
     );
     q('#okBulk',m.bd).addEventListener('click',function(){
-      var okBtn=q('#okBulk',m.bd); okBtn.disabled=true; var i=0;
+      var okBtn=q('#okBulk',m.bd); okBtn.disabled=true; m.close();
+      var ov=actionOverlay('Dando de baja…'); var i=0;
       state._arrive=items.map(function(it){ return {itemId:it.itemId,color:'green'}; });
+      // Secuencial (evita duplicar el audit 'terminar' por carrera), pero sin pausas.
       (function next(){
-        if(i>=items.length){ m.close(); toast(items.length+' línea(s) dadas de baja','ok'); setTimeout(refreshCurrent, 900); return; }
-        var it=items[i++], tr=host.querySelector('tr[data-row-item="'+it.itemId+'"]');
-        API.darBaja(it.usoId, it.itemId).then(function(){ if(tr) sweepRow(tr,'green'); setTimeout(next, 100); });
+        if(i>=items.length){ ov.success(items.length+' línea(s) dadas de baja'); refreshCurrent(); return; }
+        var it=items[i++];
+        API.darBaja(it.usoId, it.itemId).then(next).catch(function(){ ov.error('Error al dar de baja'); });
       })();
     });
   }
@@ -1222,27 +1223,25 @@
   }
 
   // Barrido de luz al cambiar de estado (método de CajaVenta: overlay fijo + beam translateX).
-  function sweepRow(rowEl, color, done){
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(!rowEl || reduce){ if(done) done(); return; }
-    var r=rowEl.getBoundingClientRect();
-    var wrap=document.createElement('div'); wrap.className='sweep-overlay';
-    wrap.style.cssText='position:fixed;top:'+r.top+'px;left:'+r.left+'px;width:'+r.width+'px;height:'+r.height+'px;z-index:120;pointer-events:none;';
-    var beam=document.createElement('div'); beam.className='sweep-beam sweep-beam--'+color; wrap.appendChild(beam);
-    document.body.appendChild(wrap);
-    rowEl.classList.add('row-sweep-'+color);
-    setTimeout(function(){ wrap.remove(); }, 950);
-    // El resaltado (arrive) recién arranca cuando el barrido de luz TERMINA.
-    setTimeout(function(){ if(done) done(); }, 880);
+  // Refresca de inmediato; el resaltado suave del cambio lo hace `row-arrive-*`
+  // vía state._arrive tras el re-render (sin barrido de luz).
+  function sweepRow(rowEl, color, done){ if(done) done(); }
+
+  // Resuelve el uso desde el cache (state._rows) para abrir el modal al instante;
+  // solo va a la red si la fila no está en cache. Las mutaciones igual pegan a la API.
+  function resolveUso(usoId, itemId){
+    var row=(state._rows||[]).find(function(r){ return r.it && r.it.id===itemId; });
+    if(row && row.uso && row.uso.items) return Promise.resolve(row.uso);
+    return API.getUso(usoId);
   }
 
   function onAction(act, usoId, itemId, rowEl, done){
     done=done||function(){};
-    if(act==='reporte' || act==='imprimir'){ API.getUso(usoId).then(function(u){ done(); if(act==='reporte') reporteModal(u); else printReporte(u); }); return; }
-    if(act==='cargar'){ API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); cargarSAPModal(u,it,rowEl); }); return; }
-    if(act==='editar'){ API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); editItemModal(usoId, it); }); return; }
+    if(act==='reporte' || act==='imprimir'){ resolveUso(usoId,itemId).then(function(u){ done(); if(act==='reporte') reporteModal(u); else printReporte(u); }); return; }
+    if(act==='cargar'){ resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); cargarSAPModal(u,it,rowEl); }); return; }
+    if(act==='editar'){ resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); editItemModal(usoId, it); }); return; }
     if(act==='eliminar'){
-      API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); var last=(u.items||[]).length<=1;
+      resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); var last=(u.items||[]).length<=1;
         var m=openModal('<div class="modal__head"><div class="modal__title">Eliminar material</div><button class="modal__close" data-close>&times;</button></div>'+
           '<div class="modal__body"><p style="font-size:13.5px;line-height:1.6;color:var(--alas-text-2)">¿Seguro que querés eliminar esta línea del uso interno?</p>'+
           '<div class="caso-preview"><div class="caso-preview__row"><span>Mercadería</span><span>'+esc(it.cod_mercaderia)+'</span></div>'+
@@ -1256,7 +1255,7 @@
       return;
     }
     if(act==='baja'){
-      API.getUso(usoId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;});
+      resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;});
         function di(l,v,wide){ return '<div class="detail-item'+(wide?' detail-item--wide':'')+'"><span class="detail-item__l">'+l+'</span><span class="detail-item__v">'+v+'</span></div>'; }
         var m=openModal(
           '<div class="modal__head"><div class="modal__title">Dar de baja en SAP</div><button class="modal__close" data-close>&times;</button></div>'+

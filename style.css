@@ -446,27 +446,10 @@ button.kpi:hover::before { transform:scaleY(1); }
 .icon-btn svg { width:17px; height:17px; }
 .icon-btn:hover { background:var(--gray-100); color:var(--alas-brand); }
 
-/* Barrido de luz al cambiar de estado (método CajaVenta) */
-.sweep-overlay { overflow:hidden; pointer-events:none; border-radius:5px; }
-.sweep-beam { position:absolute; top:-30%; bottom:-30%; left:-46%; width:46%; transform:translateX(0) skewX(-18deg); filter:blur(2px);
-  animation:sweepBeamMove .85s cubic-bezier(0.22,1,0.36,1) forwards; }
-.sweep-beam--blue  { background:linear-gradient(90deg, transparent, rgba(59,130,246,.30) 32%, rgba(255,255,255,.92) 50%, rgba(59,130,246,.30) 68%, transparent); }
-.sweep-beam--green { background:linear-gradient(90deg, transparent, rgba(16,185,129,.30) 32%, rgba(255,255,255,.92) 50%, rgba(16,185,129,.30) 68%, transparent); }
-.sweep-beam--red   { background:linear-gradient(90deg, transparent, rgba(239,68,68,.30) 32%, rgba(255,255,255,.92) 50%, rgba(239,68,68,.30) 68%, transparent); }
-.sweep-beam--amber { background:linear-gradient(90deg, transparent, rgba(245,158,11,.32) 32%, rgba(255,255,255,.92) 50%, rgba(245,158,11,.32) 68%, transparent); }
-@keyframes sweepBeamMove { from { transform:translateX(0) skewX(-18deg); } to { transform:translateX(360%) skewX(-18deg); } }
-.inv-table tr.row-sweep-blue  > td { animation:rowPulseBlue  .85s ease-out; }
-.inv-table tr.row-sweep-green > td { animation:rowPulseGreen .85s ease-out; }
-.inv-table tr.row-sweep-red   > td { animation:rowPulseRed   .85s ease-out; }
-.inv-table tr.row-sweep-amber > td { animation:rowPulseAmber .85s ease-out; }
-@keyframes rowPulseBlue  { 0%{background:transparent} 25%{background:rgba(59,130,246,.12)}  100%{background:transparent} }
-@keyframes rowPulseGreen { 0%{background:transparent} 25%{background:rgba(16,185,129,.12)}  100%{background:transparent} }
-@keyframes rowPulseRed   { 0%{background:transparent} 25%{background:rgba(239,68,68,.12)}   100%{background:transparent} }
-@keyframes rowPulseAmber { 0%{background:transparent} 25%{background:rgba(245,158,11,.14)}  100%{background:transparent} }
 /* Resaltado "arrive": la fila queda pintada un momento y se desvanece */
-.inv-table tr.row-arrive-blue  > td { animation:arriveBlue  1.7s ease-out; }
-.inv-table tr.row-arrive-green > td { animation:arriveGreen 1.7s ease-out; }
-.inv-table tr.row-arrive-amber > td { animation:arriveAmber 1.7s ease-out; }
+.inv-table tr.row-arrive-blue  > td { animation:arriveBlue  1.05s ease-out; }
+.inv-table tr.row-arrive-green > td { animation:arriveGreen 1.05s ease-out; }
+.inv-table tr.row-arrive-amber > td { animation:arriveAmber 1.05s ease-out; }
 @keyframes arriveBlue  { 0%,50%{background:rgba(59,130,246,.15)}  100%{background:transparent} }
 @keyframes arriveGreen { 0%,50%{background:rgba(16,185,129,.15)}  100%{background:transparent} }
 @keyframes arriveAmber { 0%,50%{background:rgba(245,158,11,.16)}  100%{background:transparent} }
