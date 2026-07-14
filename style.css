@@ -427,7 +427,7 @@ button.kpi:hover::before { transform:scaleY(1); }
 .cell-num { text-align:center; font-weight:800; }
 .cell-muted { color:var(--alas-text-3); }
 .cell-sap { white-space:nowrap; }
-.truncate { max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.truncate { max-width:158px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ── Badges de estado ─────────────────────────────────────── */
 .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:800;
@@ -473,10 +473,10 @@ button.kpi:hover::before { transform:scaleY(1); }
 
 /* Botones de acción de tabla — estilo CajaVenta (.tbl-btn): relleno tinte,
    hover sólido + elevación/escala + glow, tooltip del color de la acción. */
-.action-btn { position:relative; width:38px; height:38px; border:1px solid transparent; border-radius:11px;
+.action-btn { position:relative; width:40px; height:40px; border:1px solid transparent; border-radius:12px;
   display:inline-flex; align-items:center; justify-content:center; cursor:pointer; overflow:visible; background:transparent;
   transition:transform .16s var(--alas-ease-spring), background .16s var(--alas-ease), color .16s var(--alas-ease), border-color .16s var(--alas-ease), box-shadow .16s var(--alas-ease); }
-.action-btn svg { width:18px; height:18px; }
+.action-btn svg { width:19px; height:19px; }
 .action-btn:hover { transform:translateY(-2px) scale(1.09); }
 .action-btn:active { transform:translateY(-1px) scale(.94); }
 .action-btn.is-loading { pointer-events:none; transform:none; }
@@ -485,7 +485,8 @@ button.kpi:hover::before { transform:scaleY(1); }
 .action-btn.is-loading::after { content:''; position:absolute; top:50%; left:50%; width:18px; height:18px; margin:-9px 0 0 -9px;
   border-radius:50%; border:2.5px solid currentColor; border-right-color:transparent; opacity:.9; animation:actBtnSpin .6s linear infinite; }
 @keyframes actBtnSpin { to { transform:rotate(360deg); } }
-.row-actions { display:flex; align-items:center; gap:7px; justify-content:flex-end; }
+.row-actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; padding-right:6px; }
+.inv-table td:last-child, .inv-table th:last-child { padding-right:20px; }
 .row-ro { color:var(--alas-text-3); font-weight:700; padding-right:10px; }
 /* Columna CECO (chip) + fila desplegable de detalle */
 .cell-ceco { white-space:nowrap; }
