@@ -488,22 +488,18 @@ button.kpi:hover::before { transform:scaleY(1); }
 .row-actions { display:flex; align-items:center; gap:8px; justify-content:flex-end; padding-right:6px; }
 .inv-table td:last-child, .inv-table th:last-child { padding-right:20px; }
 .row-ro { color:var(--alas-text-3); font-weight:700; padding-right:10px; }
-/* Columna CECO (chip) + fila desplegable de detalle */
+/* Columna CECO: chip clickeable con hover "Ver" → modal */
 .cell-ceco { white-space:nowrap; }
-.ceco-chip { display:inline-flex; align-items:center; justify-content:center; padding:3px 12px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; }
-.ceco-chip--ok { background:#dbeafe; color:#1d4ed8; }
+.ceco-chip { display:inline-flex; align-items:center; justify-content:center; min-width:58px; height:26px; padding:0 12px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; border:0; }
+.ceco-chip--ok { background:#dbeafe; color:#1d4ed8; cursor:pointer; transition:background .16s var(--alas-ease), transform .16s var(--alas-ease), box-shadow .16s var(--alas-ease); }
+.ceco-chip--ok:hover { background:#2563eb; color:#fff; transform:translateY(-1px); box-shadow:0 5px 14px rgba(37,99,235,.32); }
 .ceco-chip--falta { background:#fee2e2; color:#dc2626; }
-tr[data-expand] { cursor:pointer; }
-tr.is-expanded > td { background:#f0f6ff; }
-.row-exp-ic { display:inline-flex; align-items:center; margin-right:7px; color:var(--alas-text-3); vertical-align:middle;
-  transform:rotate(-90deg); transition:transform .2s var(--alas-ease), color .16s var(--alas-ease); }
-.row-exp-ic svg { width:13px; height:13px; }
-tr.is-expanded .row-exp-ic { transform:rotate(0deg); color:var(--alas-brand); }
-.inv-table tr.row-detail > td { background:#f6f9fc; padding:0; border-bottom:1px solid #e6edf5; }
-.rd-grid { display:flex; flex-wrap:wrap; gap:10px 36px; padding:12px 18px 14px 48px; }
-.rd-item { display:flex; flex-direction:column; gap:2px; }
-.rd-item span { font-size:10px; font-weight:700; color:var(--alas-text-3); text-transform:uppercase; letter-spacing:.04em; }
-.rd-item b { font-size:13px; font-weight:800; color:var(--alas-text-1); font-variant-numeric:tabular-nums; }
+.ceco-chip .cc-hover { display:none; }
+.ceco-chip--ok:hover .cc-lbl { display:none; }
+.ceco-chip--ok:hover .cc-hover { display:inline-flex; }
+.ceco-modal__head { display:flex; flex-direction:column; gap:3px; padding:2px; }
+.ceco-modal__cod { font-size:17px; font-weight:800; color:var(--alas-brand); font-family:'Sora',sans-serif; letter-spacing:-.01em; }
+.ceco-modal__desc { font-size:13px; color:var(--alas-text-2); font-weight:600; }
 
 /* Variantes: reposo con tinte suave, hover relleno sólido + glow */
 .action-btn.a-sap   { background:rgba(59,130,246,.13); color:#1d4ed8; border-color:rgba(59,130,246,.16); }

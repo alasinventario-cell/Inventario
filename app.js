@@ -860,25 +860,19 @@
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
         var rst=(cssAnim&&open)?' style="animation-delay:'+(Math.min(ri++,18)*30)+'ms"':'';
         var chk = (it.sap_estado==='pendiente'||it.sap_estado==='cargado') ? '<input type="checkbox" class="baja-check" data-baja-item="'+it.id+'" data-baja-uso="'+u.id+'" data-estado="'+it.sap_estado+'" aria-label="Seleccionar">' : '';
-        body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'" data-expand="'+it.id+'">'+
+        body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
           '<td class="cell-check">'+chk+'</td>'+
-          '<td class="cell-cod"><span class="row-exp-ic">'+ICONS.chevron+'</span>'+esc(it.cod_mercaderia)+'</td>'+
+          '<td class="cell-cod">'+esc(it.cod_mercaderia)+'</td>'+
           '<td class="cell-desc"><div class="truncate" title="'+esc(it.descripcion)+'">'+esc(it.descripcion)+'</div></td>'+
           '<td class="cell-num">'+esc(it.cantidad)+'</td>'+
           '<td class="cell-muted">'+esc(it.um)+'</td>'+
           '<td><div class="truncate" title="'+esc(it.uso_texto)+'">'+esc(it.uso_texto||'—')+'</div></td>'+
-          '<td class="cell-ceco">'+(it.ceco?'<span class="ceco-chip ceco-chip--ok">Listo</span>':'<span class="ceco-chip ceco-chip--falta">Falta</span>')+'</td>'+
+          '<td class="cell-ceco">'+(it.ceco?'<button class="ceco-chip ceco-chip--ok" data-cecoview="'+it.id+'"><span class="cc-lbl">Listo</span><span class="cc-hover">Ver</span></button>':'<span class="ceco-chip ceco-chip--falta">Falta</span>')+'</td>'+
           '<td class="cell-muted">'+(it.n_reserva?'<b>'+esc(it.n_reserva)+'</b>':'—')+'</td>'+
           '<td class="cell-sap">'+sapBadge(it.sap_estado)+'</td>'+
           '<td class="cell-ent">'+(it.entregado?'<span class="ent-chip ent-chip--si">SÍ</span>':'<span class="ent-chip ent-chip--no">NO</span>')+'</td>'+
           '<td><div class="row-actions">'+rowActions(u,it)+'</div></td>'+
-        '</tr>'+
-        '<tr class="row-detail is-collapsed" data-detailfor="'+it.id+'" data-dgroup="'+esc(f)+'"><td colspan="'+colspan+'"><div class="rd-grid">'+
-          '<div class="rd-item"><span>Cuenta Mayor</span><b>'+esc(it.cuenta_mayor||'—')+'</b></div>'+
-          '<div class="rd-item"><span>CECO</span><b>'+esc(it.ceco||'—')+'</b></div>'+
-          '<div class="rd-item"><span>Área CECO</span><b>'+esc(API.cecoArea(it.ceco)||'—')+'</b></div>'+
-          '<div class="rd-item"><span>Orden</span><b>'+esc(it.orden||'—')+'</b></div>'+
-        '</div></td></tr>';
+        '</tr>';
       });
     });
     host.innerHTML=
@@ -905,22 +899,14 @@
         h.classList.toggle('is-open',willOpen);
         if(willOpen) state._openDates[f]=true; else delete state._openDates[f];
         var rws=host.querySelectorAll('tr[data-group="'+f+'"]');
-        rws.forEach(function(tr){ tr.classList.toggle('is-collapsed',!willOpen); tr.classList.remove('is-expanded'); });
-        host.querySelectorAll('tr.row-detail[data-dgroup="'+f+'"]').forEach(function(d){ d.classList.add('is-collapsed'); });
+        rws.forEach(function(tr){ tr.classList.toggle('is-collapsed',!willOpen); });
         if(willOpen && window.gsap && !reduce){ window.gsap.from(rws,{ y:10, opacity:0, duration:.38, stagger:{ amount:Math.min(.35, rws.length*0.012) }, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' }); }
       });
     });
 
-    // ── Click en la fila → desplegar detalle (Cuenta Mayor / CECO / Orden) ──
-    host.querySelectorAll('tr[data-expand]').forEach(function(tr){
-      tr.addEventListener('click',function(e){
-        if(e.target.closest('button')||e.target.closest('input')||e.target.closest('a')) return;
-        var id=tr.getAttribute('data-expand'), d=host.querySelector('tr.row-detail[data-detailfor="'+id+'"]');
-        if(!d) return;
-        var show=d.classList.contains('is-collapsed');
-        d.classList.toggle('is-collapsed',!show); tr.classList.toggle('is-expanded',show);
-        if(show && window.gsap && !reduce){ window.gsap.from(d.querySelectorAll('.rd-item'),{ y:8, opacity:0, duration:.3, stagger:.04, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' }); }
-      });
+    // ── Chip CECO "Ver" → modal con el detalle ──
+    host.querySelectorAll('[data-cecoview]').forEach(function(b){
+      b.addEventListener('click',function(e){ e.stopPropagation(); var id=+b.getAttribute('data-cecoview'); var r=(state._rows||[]).find(function(x){return x.it.id===id;}); if(r) cecoDetailModal(r.it); });
     });
 
     // ── Selección múltiple: Asignar CECO (pendientes) + baja en lote (cargados) ──
@@ -1078,6 +1064,22 @@
   }
 
   // Reporte de TODO lo cargado en una fecha (puede abarcar varios documentos)
+  // Modal con el detalle del CECO de una línea (se abre desde el chip "Ver")
+  function cecoDetailModal(it){
+    openModal(
+      '<div class="modal__head"><div class="modal__title">Detalle del CECO</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__body">'+
+        '<div class="ceco-modal__head"><span class="ceco-modal__cod">'+esc(it.cod_mercaderia||'—')+'</span><span class="ceco-modal__desc">'+esc(it.descripcion||'—')+'</span></div>'+
+        '<div class="caso-preview" style="margin-top:12px">'+
+          '<div class="caso-preview__row"><span>Cuenta Mayor</span><span>'+esc(it.cuenta_mayor||'—')+'</span></div>'+
+          '<div class="caso-preview__row"><span>CECO (Centro)</span><span>'+esc(it.ceco||'—')+'</span></div>'+
+          '<div class="caso-preview__row"><span>Área CECO</span><span>'+esc(API.cecoArea(it.ceco)||'—')+'</span></div>'+
+          '<div class="caso-preview__row"><span>Orden</span><span>'+esc(it.orden||'—')+'</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="modal__foot"><button class="btn btn--primary" data-close>Cerrar</button></div>'
+    );
+  }
   function reporteFechaModal(fecha, rows){
     var items=(rows||[]).map(function(r){ return r.it; });
     var sectors=[]; (rows||[]).forEach(function(r){ if(sectors.indexOf(r.uso.sector)===-1) sectors.push(r.uso.sector); });
