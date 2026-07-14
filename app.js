@@ -836,6 +836,8 @@
     // Grupos desplegables: hoy abierto, resto cerrado. Se resetea al cambiar de vista/mes.
     var sig=(opts.sig||'')+'|'+(state.menuMonth||'all');
     if(state._tableSig!==sig || !state._openDates){ state._tableSig=sig; state._openDates={}; var _today=ymd(new Date()), _op=false; order.forEach(function(k){ if(String(k).slice(0,10)===_today){ state._openDates[k]=true; _op=true; } }); if(!_op && order[0]) state._openDates[order[0]]=true; }
+    // Recién creado: abrir el grupo que contiene el uso resaltado para que se vea.
+    if(state._highlightUso){ order.forEach(function(k){ if(groups[k].some(function(r){ return r.uso.id===state._highlightUso; })) state._openDates[k]=true; }); }
     var openAll=!!s; // al buscar, mostrar todos los grupos
     function isOpen(f){ return openAll || !!state._openDates[f]; }
     var colspan=13, animate=!state.search, ri=0, sel={};
@@ -880,7 +882,7 @@
         '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
-      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th class="th-ent" title="Entregado">'+ICONS.entregado+'</th><th></th>'+
+      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th class="th-ent">Entregado</th><th></th>'+
       '</tr></thead><tbody>'+body+'</tbody></table></div>';
     host.querySelectorAll('[data-act]').forEach(function(btn){
       btn.addEventListener('click',function(){ var b=this; if(b.classList.contains('is-loading')) return; b.classList.add('is-loading');
