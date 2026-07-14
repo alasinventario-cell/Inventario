@@ -124,6 +124,35 @@
     return { bd:bd, close:close };
   }
 
+  /* ── Import de Excel (SheetJS bajo demanda) ──────────────── */
+  function loadXLSX(){
+    if(window.XLSX) return Promise.resolve(window.XLSX);
+    if(window.__xlsxP) return window.__xlsxP;
+    window.__xlsxP=new Promise(function(res,rej){
+      var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload=function(){ window.XLSX?res(window.XLSX):rej(new Error('xlsx')); }; s.onerror=function(){ rej(new Error('xlsx')); };
+      document.head.appendChild(s);
+    });
+    return window.__xlsxP;
+  }
+  function parseUsoRows(rows){
+    if(!rows||rows.length<2) return [];
+    var hd=(rows[0]||[]).map(function(h){ return String(h||'').trim().toLowerCase(); });
+    function col(cands){ for(var i=0;i<hd.length;i++){ for(var j=0;j<cands.length;j++){ if(hd[i].indexOf(cands[j])!==-1) return i; } } return -1; }
+    var iMat=col(['material','codigo','cod']), iDesc=col(['texto breve','descrip']), iCant=col(['cant']), iUm=col(['um']),
+        iUso=col(['uso']), iCta=col(['cuenta']), iCeco=col(['ceco','centro']), iOrd=col(['orden']);
+    var out=[];
+    for(var r=1;r<rows.length;r++){ var row=rows[r]||[];
+      var cod=String((iMat>=0?row[iMat]:'')||'').trim(); if(!cod) continue;
+      out.push({ cod_mercaderia:cod, descripcion:String((iDesc>=0?row[iDesc]:'')||'').trim(),
+        cantidad:Number((iCant>=0?row[iCant]:0))||0, um:(String((iUm>=0?row[iUm]:'')||'').trim()||'UN'),
+        uso_texto:String((iUso>=0?row[iUso]:'')||'').trim(), caso_id:null,
+        cuenta_mayor:String((iCta>=0?row[iCta]:'')||'').trim(), ceco:String((iCeco>=0?row[iCeco]:'')||'').trim().toUpperCase(),
+        orden:String((iOrd>=0?row[iOrd]:'')||'').trim() });
+    }
+    return out;
+  }
+
   /* ── Overlay de acción: loader minimalista → check azul (GSAP) ── */
   function actionOverlay(label){
     var ov=elFrom(
@@ -1259,7 +1288,11 @@
           '<div class="sector-grid" id="w_sectores">'+ (window.SECTORES||[]).map(function(s){ return '<button type="button" class="sector-btn" data-sec="'+esc(s)+'">'+esc(s)+'</button>'; }).join('') +'</div></div>'+
         '<div class="field"><label class="field__label">Mercaderías <span class="req">*</span></label>'+
           '<div class="items-box"><div id="w_items"><div class="empty-mini">Sin mercaderías agregadas</div></div>'+
-          '<button type="button" class="add-item-btn" id="w_add" style="margin-top:8px">'+ICONS.plus+' Agregar mercadería</button></div></div>'+
+          '<div class="items-actions">'+
+            '<button type="button" class="add-item-btn" id="w_add">'+ICONS.plus+' Agregar mercadería</button>'+
+            '<button type="button" class="add-item-btn add-item-btn--import" id="w_import">'+ICONS.file+' Importar de Excel</button>'+
+          '</div>'+
+          '<input type="file" id="w_file" accept=".xlsx,.xls,.csv,.ods" style="display:none"></div></div>'+
       '</div>'+
       '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="w_save">Guardar</button></div>',
       { wide:true }
@@ -1270,6 +1303,26 @@
       b.addEventListener('click',function(){ draft.sector=b.getAttribute('data-sec'); m.bd.querySelectorAll('#w_sectores .sector-btn').forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); });
     });
     q('#w_add',m.bd).addEventListener('click',function(){ itemModal(function(item){ draft.items.push(item); paintItems(); }); });
+    q('#w_import',m.bd).addEventListener('click',function(){ var f=q('#w_file',m.bd); if(f) f.click(); });
+    q('#w_file',m.bd).addEventListener('change',function(e){
+      var file=e.target.files&&e.target.files[0]; if(!file) return; e.target.value='';
+      var ov=actionOverlay('Importando…');
+      loadXLSX().then(function(XLSX){
+        var reader=new FileReader();
+        reader.onload=function(ev){
+          try{
+            var wb=XLSX.read(new Uint8Array(ev.target.result),{ type:'array' });
+            var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{ header:1, defval:'' });
+            var items=parseUsoRows(rows);
+            if(!items.length){ ov.error('Sin filas válidas'); return; }
+            items.forEach(function(it){ draft.items.push(it); }); paintItems();
+            ov.success(items.length+' mercadería(s)');
+          }catch(err){ ov.error('Error al leer el Excel'); }
+        };
+        reader.onerror=function(){ ov.error('Error al leer el archivo'); };
+        reader.readAsArrayBuffer(file);
+      }).catch(function(){ ov.error('No se pudo cargar el lector'); });
+    });
     q('#w_save',m.bd).addEventListener('click',function(){
       if(!draft.sector){ toast('Elegí un sector','err'); return; }
       if(!draft.items.length){ toast('Agregá al menos una mercadería','err'); return; }
