@@ -204,6 +204,12 @@
       s.usos.forEach(function (u) { (u.items || []).forEach(function (it) { if (set[it.id]) { it.entregado = true; it.entregado_at = nowISO(); } }); });
       this._save(s); return Promise.resolve(true);
     },
+    cargarSAPBulk: function (items, reserva) {
+      var s = this._load(); var set = {}; (items || []).forEach(function (x) { set[x.itemId] = 1; }); var n = 0;
+      s.usos.forEach(function (u) { (u.items || []).forEach(function (it) { if (set[it.id] && it.sap_estado === 'pendiente') { it.n_reserva = reserva; it.sap_estado = 'cargado'; it.cargado_por = usuario(); it.cargado_at = nowISO(); n++; } }); });
+      if (n) s.audit.push({ id: s.audit.length + 1, uso_id: null, item_id: null, accion: 'cargar_sap', estado_anterior: 'pendiente', estado_nuevo: 'cargado', usuario: usuario(), detalle: 'Reserva ' + reserva + ' · ' + n + ' línea' + (n !== 1 ? 's' : ''), created_at: nowISO() });
+      this._save(s); return Promise.resolve(n);
+    },
 
     deleteItem: function (usoId, itemId) {
       var s = this._load();
@@ -347,6 +353,12 @@
       if (!itemIds || !itemIds.length) return Promise.resolve(false);
       return DB.from('uso_items').update({ entregado: true, entregado_at: nowISO() }).in('id', itemIds).then(function () { return true; });
     },
+    cargarSAPBulk: function (items, reserva) {
+      var self = this; var ids = (items || []).map(function (x) { return x.itemId; }); if (!ids.length) return Promise.resolve(0);
+      return DB.from('uso_items').update({ n_reserva: reserva, sap_estado: 'cargado', cargado_por: usuario(), cargado_at: nowISO() }).in('id', ids).eq('sap_estado', 'pendiente')
+        .then(function () { return self._audit({ accion: 'cargar_sap', estado_anterior: 'pendiente', estado_nuevo: 'cargado', detalle: 'Reserva ' + reserva + ' · ' + ids.length + ' línea' + (ids.length !== 1 ? 's' : '') }); })
+        .then(function () { return ids.length; });
+    },
     deleteItem: function (usoId, itemId) {
       var self = this;
       return DB.from('uso_items').delete().eq('id', itemId)
@@ -381,6 +393,7 @@
     updateItem:      function (usoId, it, f)   { return impl.updateItem(usoId, it, f); },
     asignarCeco:     function (items, caso)    { return impl.asignarCeco(items, caso); },
     marcarEntregado: function (itemIds)        { return impl.marcarEntregado(itemIds); },
+    cargarSAPBulk:   function (items, reserva) { return impl.cargarSAPBulk(items, reserva); },
     deleteItem:      function (usoId, it)      { return impl.deleteItem(usoId, it); },
     listAuditoria:   function (usoId)          { return impl.listAuditoria(usoId); }
   };

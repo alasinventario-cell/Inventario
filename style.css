@@ -401,6 +401,8 @@ button.kpi:hover::before { transform:scaleY(1); }
 .btn--ghost { background:transparent; color:var(--alas-text-2); }
 .btn--ghost:hover { background:var(--gray-100); }
 .btn--success { background:var(--alas-success); color:#fff; }
+.btn--sap { background:#2563eb; color:#fff; box-shadow:0 6px 16px rgba(37,99,235,.24); }
+.btn--sap:hover { background:#1d4ed8; }
 .btn--dark { background:#1e293b; color:#fff; }
 .btn--danger-soft { background:#fef2f2; color:var(--alas-danger); }
 .btn--danger-soft:hover { background:#fee2e2; }

@@ -879,7 +879,7 @@
     });
     host.innerHTML=
       '<div class="bulk-bar" id="bulkBar" hidden><div class="bulk-bar__info"><span class="bulk-count">0</span> línea(s) seleccionada(s)</div>'+
-        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
+        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--sap" id="bulkSap" hidden>'+ICONS.sap+' Cargar SAP</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
       '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th class="th-ent">Entregado</th><th></th>'+
@@ -909,8 +909,9 @@
     // ── Selección múltiple: Asignar CECO (pendientes) + baja en lote (cargados) ──
     function selCounts(){ var p=0,c=0; Object.keys(sel).forEach(function(k){ if(sel[k].estado==='pendiente')p++; else if(sel[k].estado==='cargado')c++; }); return {p:p,c:c}; }
     function updateBulk(){ var n=Object.keys(sel).length; var bar=host.querySelector('#bulkBar'); if(!bar) return; bar.hidden=(n===0); var cc=host.querySelector('.bulk-count'); if(cc) cc.textContent=n;
-      var ct=selCounts(); var bc=host.querySelector('#bulkCeco'), bb=host.querySelector('#bulkBaja');
+      var ct=selCounts(); var bc=host.querySelector('#bulkCeco'), bb=host.querySelector('#bulkBaja'), bsp=host.querySelector('#bulkSap');
       if(bc){ bc.hidden=ct.p===0; bc.innerHTML=ICONS.tag+' Asignar CECO'+(ct.p?' ('+ct.p+')':''); }
+      if(bsp){ bsp.hidden=ct.p===0; bsp.innerHTML=ICONS.sap+' Cargar SAP'+(ct.p?' ('+ct.p+')':''); }
       if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.check+' Dar de baja'+(ct.c?' ('+ct.c+')':''); } }
     function setSel(cb){ var id=+cb.getAttribute('data-baja-item'), tr=cb.closest('tr'); if(cb.checked){ sel[id]={usoId:+cb.getAttribute('data-baja-uso'), itemId:id, estado:cb.getAttribute('data-estado')}; if(tr) tr.classList.add('is-selected'); } else { delete sel[id]; if(tr) tr.classList.remove('is-selected'); } }
     host.querySelectorAll('.baja-check').forEach(function(cb){ cb.addEventListener('change',function(){ setSel(cb); updateBulk(); }); });
@@ -920,6 +921,7 @@
     var bBaja=host.querySelector('#bulkBaja'); if(bBaja) bBaja.addEventListener('click',function(){ bulkBaja(sel, host); });
     var bCeco=host.querySelector('#bulkCeco'); if(bCeco) bCeco.addEventListener('click',function(){ bulkAsignarCeco(sel, host); });
     var bRep=host.querySelector('#bulkReport'); if(bRep) bRep.addEventListener('click',function(){ var selRows=rows.filter(function(r){ return !!sel[r.it.id]; }); reporteSeleccionModal(selRows); });
+    var bSap=host.querySelector('#bulkSap'); if(bSap) bSap.addEventListener('click',function(){ bulkCargarSAP(sel, host); });
 
     if(useGsap) animateTable(host);
 
@@ -991,6 +993,31 @@
       API.asignarCeco(items, { id:chosen.id, cuenta_mayor:chosen.cuenta_mayor, ceco:chosen.ceco, orden:chosen.orden }).then(function(n){
         ov.success('CECO asignado'); setTimeout(refreshCurrent, 350);
       }).catch(function(){ ov.error('Error al asignar'); });
+    });
+  }
+
+  // Cargar a SAP en lote: mismo N.º de reserva a varias líneas pendientes (con CECO)
+  function bulkCargarSAP(sel, host){
+    var items=Object.keys(sel).map(function(k){return sel[k];}).filter(function(x){return x.estado==='pendiente';});
+    if(!items.length){ toast('Seleccioná líneas pendientes','err'); return; }
+    var byId={}; (state._rows||[]).forEach(function(r){ byId[r.it.id]=r; });
+    var sinCeco=items.filter(function(x){ var r=byId[x.itemId]; return r && !r.it.ceco; }).length;
+    if(sinCeco){ toast('Primero asigná CECO a '+sinCeco+' línea(s) sin CECO','err'); return; }
+    var m=openModal(
+      '<div class="modal__head"><div class="modal__title">Cargar a SAP — '+items.length+' línea(s)</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__body">'+
+        '<p class="list-hint" style="margin:0 0 14px">Ingresá el <b>N.º de reserva</b> que devolvió SAP; se aplica a las <b>'+items.length+'</b> líneas pendientes seleccionadas.</p>'+
+        '<div class="field"><label class="field__label">N.º de Reserva (SAP) <span class="req">*</span></label><input class="input" id="bs_reserva" placeholder="Ej: 0001490246" autocomplete="off"></div>'+
+      '</div>'+
+      '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="okBulkSap">'+ICONS.sap+' Marcar como cargado ('+items.length+')</button></div>'
+    );
+    setTimeout(function(){ var r=q('#bs_reserva',m.bd); if(r) r.focus(); },80);
+    q('#okBulkSap',m.bd).addEventListener('click',function(){
+      var reserva=q('#bs_reserva',m.bd).value.trim();
+      if(!reserva){ toast('Ingresá el N.º de reserva','err'); return; }
+      var ok=q('#okBulkSap',m.bd); ok.disabled=true; m.close();
+      var ov=actionOverlay('Cargando a SAP…');
+      API.cargarSAPBulk(items, reserva).then(function(n){ ov.success('Cargado a SAP'); setTimeout(refreshCurrent, 350); }).catch(function(){ ov.error('Error al cargar'); });
     });
   }
 
