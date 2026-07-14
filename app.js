@@ -925,12 +925,31 @@
 
     // ── Selección múltiple: Asignar CECO (pendientes) + baja en lote (cargados) ──
     function selCounts(){ var p=0,c=0; Object.keys(sel).forEach(function(k){ if(sel[k].estado==='pendiente')p++; else if(sel[k].estado==='cargado')c++; }); return {p:p,c:c}; }
-    function updateBulk(){ var n=Object.keys(sel).length; var bar=host.querySelector('#bulkBar'); if(!bar) return; bar.hidden=(n===0); var cc=host.querySelector('.bulk-count'); if(cc) cc.textContent=n;
-      var ct=selCounts(); var bc=host.querySelector('#bulkCeco'), bb=host.querySelector('#bulkBaja'), bsp=host.querySelector('#bulkSap');
+    var _bulkShown=false;
+    function updateBulk(){
+      var n=Object.keys(sel).length, bar=host.querySelector('#bulkBar'); if(!bar) return;
+      var ct=selCounts(), bc=host.querySelector('#bulkCeco'), bb=host.querySelector('#bulkBaja'), bsp=host.querySelector('#bulkSap');
       if(bc){ bc.hidden=ct.p===0; bc.innerHTML=ICONS.tag+' Asignar CECO'+(ct.p?' ('+ct.p+')':''); }
       if(bsp){ bsp.hidden=ct.p===0; bsp.innerHTML=ICONS.sap+' Cargar SAP'+(ct.p?' ('+ct.p+')':''); }
-      if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.check+' Dar de baja'+(ct.c?' ('+ct.c+')':''); } }
-    function setSel(cb){ var id=+cb.getAttribute('data-baja-item'), tr=cb.closest('tr'); if(cb.checked){ sel[id]={usoId:+cb.getAttribute('data-baja-uso'), itemId:id, estado:cb.getAttribute('data-estado')}; if(tr) tr.classList.add('is-selected'); } else { delete sel[id]; if(tr) tr.classList.remove('is-selected'); } }
+      if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.check+' Dar de baja'+(ct.c?' ('+ct.c+')':''); }
+      var cc=host.querySelector('.bulk-count'); if(cc) cc.textContent=n;
+      var g=window.gsap, anim=g && !reduce;
+      if(n>0){
+        if(!_bulkShown){ _bulkShown=true; bar.hidden=false;
+          if(anim){ g.killTweensOf(bar);
+            g.from(bar,{ y:-14, opacity:0, scale:.97, duration:.44, ease:'back.out(1.5)', clearProps:'transform,opacity' });
+            g.from(bar.querySelectorAll('.bulk-bar__info, .bulk-bar__actions .btn'),{ y:-7, opacity:0, duration:.34, stagger:.05, ease:'power2.out', delay:.1, clearProps:'transform,opacity' }); }
+        }
+        if(anim && cc) g.fromTo(cc,{ scale:.4 },{ scale:1, duration:.42, ease:'back.out(2.6)', clearProps:'transform' });
+      } else if(_bulkShown){ _bulkShown=false;
+        if(anim){ g.killTweensOf(bar); g.to(bar,{ y:-10, opacity:0, scale:.97, duration:.26, ease:'power2.in', onComplete:function(){ bar.hidden=true; g.set(bar,{ clearProps:'transform,opacity' }); } }); }
+        else bar.hidden=true;
+      }
+    }
+    function setSel(cb){ var id=+cb.getAttribute('data-baja-item'), tr=cb.closest('tr');
+      if(cb.checked){ sel[id]={usoId:+cb.getAttribute('data-baja-uso'), itemId:id, estado:cb.getAttribute('data-estado')}; if(tr) tr.classList.add('is-selected');
+        if(window.gsap && !reduce) window.gsap.fromTo(cb,{ scale:.55 },{ scale:1, duration:.34, ease:'back.out(2.8)', clearProps:'transform' }); }
+      else { delete sel[id]; if(tr) tr.classList.remove('is-selected'); } }
     host.querySelectorAll('.baja-check').forEach(function(cb){ cb.addEventListener('change',function(){ setSel(cb); updateBulk(); }); });
     host.querySelectorAll('.date-ceco-btn').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); host.querySelectorAll('tr[data-d="'+b.getAttribute('data-ceco-date')+'"] .baja-check[data-estado="pendiente"]').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
     host.querySelectorAll('.date-baja-btn').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); host.querySelectorAll('tr[data-d="'+b.getAttribute('data-baja-date')+'"] .baja-check[data-estado="cargado"]').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
