@@ -473,10 +473,10 @@ button.kpi:hover::before { transform:scaleY(1); }
 
 /* Botones de acción de tabla — estilo CajaVenta (.tbl-btn): relleno tinte,
    hover sólido + elevación/escala + glow, tooltip del color de la acción. */
-.action-btn { position:relative; width:33px; height:33px; border:1px solid transparent; border-radius:9px;
+.action-btn { position:relative; width:38px; height:38px; border:1px solid transparent; border-radius:11px;
   display:inline-flex; align-items:center; justify-content:center; cursor:pointer; overflow:visible; background:transparent;
   transition:transform .16s var(--alas-ease-spring), background .16s var(--alas-ease), color .16s var(--alas-ease), border-color .16s var(--alas-ease), box-shadow .16s var(--alas-ease); }
-.action-btn svg { width:16px; height:16px; }
+.action-btn svg { width:18px; height:18px; }
 .action-btn:hover { transform:translateY(-2px) scale(1.09); }
 .action-btn:active { transform:translateY(-1px) scale(.94); }
 .action-btn.is-loading { pointer-events:none; transform:none; }
@@ -485,8 +485,24 @@ button.kpi:hover::before { transform:scaleY(1); }
 .action-btn.is-loading::after { content:''; position:absolute; top:50%; left:50%; width:18px; height:18px; margin:-9px 0 0 -9px;
   border-radius:50%; border:2.5px solid currentColor; border-right-color:transparent; opacity:.9; animation:actBtnSpin .6s linear infinite; }
 @keyframes actBtnSpin { to { transform:rotate(360deg); } }
-.row-actions { display:flex; align-items:center; gap:5px; justify-content:flex-end; }
+.row-actions { display:flex; align-items:center; gap:7px; justify-content:flex-end; }
 .row-ro { color:var(--alas-text-3); font-weight:700; padding-right:10px; }
+/* Columna CECO (chip) + fila desplegable de detalle */
+.cell-ceco { white-space:nowrap; }
+.ceco-chip { display:inline-flex; align-items:center; justify-content:center; padding:3px 12px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; }
+.ceco-chip--ok { background:#dbeafe; color:#1d4ed8; }
+.ceco-chip--falta { background:#fee2e2; color:#dc2626; }
+tr[data-expand] { cursor:pointer; }
+tr.is-expanded > td { background:#f0f6ff; }
+.row-exp-ic { display:inline-flex; align-items:center; margin-right:7px; color:var(--alas-text-3); vertical-align:middle;
+  transform:rotate(-90deg); transition:transform .2s var(--alas-ease), color .16s var(--alas-ease); }
+.row-exp-ic svg { width:13px; height:13px; }
+tr.is-expanded .row-exp-ic { transform:rotate(0deg); color:var(--alas-brand); }
+.inv-table tr.row-detail > td { background:#f6f9fc; padding:0; border-bottom:1px solid #e6edf5; }
+.rd-grid { display:flex; flex-wrap:wrap; gap:10px 36px; padding:12px 18px 14px 48px; }
+.rd-item { display:flex; flex-direction:column; gap:2px; }
+.rd-item span { font-size:10px; font-weight:700; color:var(--alas-text-3); text-transform:uppercase; letter-spacing:.04em; }
+.rd-item b { font-size:13px; font-weight:800; color:var(--alas-text-1); font-variant-numeric:tabular-nums; }
 
 /* Variantes: reposo con tinte suave, hover relleno sólido + glow */
 .action-btn.a-sap   { background:rgba(59,130,246,.13); color:#1d4ed8; border-color:rgba(59,130,246,.16); }

@@ -840,7 +840,7 @@
     if(state._highlightUso){ order.forEach(function(k){ if(groups[k].some(function(r){ return r.uso.id===state._highlightUso; })) state._openDates[k]=true; }); }
     var openAll=!!s; // al buscar, mostrar todos los grupos
     function isOpen(f){ return openAll || !!state._openDates[f]; }
-    var colspan=13, animate=!state.search, ri=0, sel={};
+    var colspan=11, animate=!state.search, ri=0, sel={};
     var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var useGsap=animate && !!window.gsap && !reduce;
     var cssAnim=animate && !useGsap;
@@ -860,21 +860,25 @@
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
         var rst=(cssAnim&&open)?' style="animation-delay:'+(Math.min(ri++,18)*30)+'ms"':'';
         var chk = (it.sap_estado==='pendiente'||it.sap_estado==='cargado') ? '<input type="checkbox" class="baja-check" data-baja-item="'+it.id+'" data-baja-uso="'+u.id+'" data-estado="'+it.sap_estado+'" aria-label="Seleccionar">' : '';
-        body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
+        body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'" data-expand="'+it.id+'">'+
           '<td class="cell-check">'+chk+'</td>'+
-          '<td class="cell-cod">'+esc(it.cod_mercaderia)+'</td>'+
+          '<td class="cell-cod"><span class="row-exp-ic">'+ICONS.chevron+'</span>'+esc(it.cod_mercaderia)+'</td>'+
           '<td class="cell-desc"><div class="truncate" title="'+esc(it.descripcion)+'">'+esc(it.descripcion)+'</div></td>'+
           '<td class="cell-num">'+esc(it.cantidad)+'</td>'+
           '<td class="cell-muted">'+esc(it.um)+'</td>'+
           '<td><div class="truncate" title="'+esc(it.uso_texto)+'">'+esc(it.uso_texto||'—')+'</div></td>'+
-          '<td class="cell-muted">'+esc(it.cuenta_mayor||'—')+'</td>'+
-          '<td class="cell-muted">'+esc(it.ceco||'—')+'</td>'+
-          '<td class="cell-muted">'+esc(it.orden||'—')+'</td>'+
+          '<td class="cell-ceco">'+(it.ceco?'<span class="ceco-chip ceco-chip--ok">Listo</span>':'<span class="ceco-chip ceco-chip--falta">Falta</span>')+'</td>'+
           '<td class="cell-muted">'+(it.n_reserva?'<b>'+esc(it.n_reserva)+'</b>':'—')+'</td>'+
           '<td class="cell-sap">'+sapBadge(it.sap_estado)+'</td>'+
           '<td class="cell-ent">'+(it.entregado?'<span class="ent-chip ent-chip--si">SÍ</span>':'<span class="ent-chip ent-chip--no">NO</span>')+'</td>'+
           '<td><div class="row-actions">'+rowActions(u,it)+'</div></td>'+
-        '</tr>';
+        '</tr>'+
+        '<tr class="row-detail is-collapsed" data-detailfor="'+it.id+'" data-dgroup="'+esc(f)+'"><td colspan="'+colspan+'"><div class="rd-grid">'+
+          '<div class="rd-item"><span>Cuenta Mayor</span><b>'+esc(it.cuenta_mayor||'—')+'</b></div>'+
+          '<div class="rd-item"><span>CECO</span><b>'+esc(it.ceco||'—')+'</b></div>'+
+          '<div class="rd-item"><span>Área CECO</span><b>'+esc(API.cecoArea(it.ceco)||'—')+'</b></div>'+
+          '<div class="rd-item"><span>Orden</span><b>'+esc(it.orden||'—')+'</b></div>'+
+        '</div></td></tr>';
       });
     });
     host.innerHTML=
@@ -882,7 +886,7 @@
         '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--sap" id="bulkSap" hidden>'+ICONS.sap+' Cargar SAP</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
-      '<th>Cuenta Mayor</th><th>CECO</th><th>Orden</th><th>N.Reserva</th><th>SAP</th><th class="th-ent">Entregado</th><th></th>'+
+      '<th>CECO</th><th>N.Reserva</th><th>SAP</th><th class="th-ent">Entregado</th><th></th>'+
       '</tr></thead><tbody>'+body+'</tbody></table></div>';
     host.querySelectorAll('[data-act]').forEach(function(btn){
       btn.addEventListener('click',function(){ var b=this; if(b.classList.contains('is-loading')) return; b.classList.add('is-loading');
@@ -901,8 +905,21 @@
         h.classList.toggle('is-open',willOpen);
         if(willOpen) state._openDates[f]=true; else delete state._openDates[f];
         var rws=host.querySelectorAll('tr[data-group="'+f+'"]');
-        rws.forEach(function(tr){ tr.classList.toggle('is-collapsed',!willOpen); });
+        rws.forEach(function(tr){ tr.classList.toggle('is-collapsed',!willOpen); tr.classList.remove('is-expanded'); });
+        host.querySelectorAll('tr.row-detail[data-dgroup="'+f+'"]').forEach(function(d){ d.classList.add('is-collapsed'); });
         if(willOpen && window.gsap && !reduce){ window.gsap.from(rws,{ y:10, opacity:0, duration:.38, stagger:{ amount:Math.min(.35, rws.length*0.012) }, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' }); }
+      });
+    });
+
+    // ── Click en la fila → desplegar detalle (Cuenta Mayor / CECO / Orden) ──
+    host.querySelectorAll('tr[data-expand]').forEach(function(tr){
+      tr.addEventListener('click',function(e){
+        if(e.target.closest('button')||e.target.closest('input')||e.target.closest('a')) return;
+        var id=tr.getAttribute('data-expand'), d=host.querySelector('tr.row-detail[data-detailfor="'+id+'"]');
+        if(!d) return;
+        var show=d.classList.contains('is-collapsed');
+        d.classList.toggle('is-collapsed',!show); tr.classList.toggle('is-expanded',show);
+        if(show && window.gsap && !reduce){ window.gsap.from(d.querySelectorAll('.rd-item'),{ y:8, opacity:0, duration:.3, stagger:.04, ease:'power2.out', overwrite:'auto', clearProps:'transform,opacity' }); }
       });
     });
 
