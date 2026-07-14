@@ -158,7 +158,7 @@
       var it = u.items.find(function (x) { return x.id === itemId; });
       if (it && it.sap_estado === 'cargado') {
         it.sap_estado = 'baja'; it.baja_por = usuario(); it.baja_at = nowISO();
-        s.audit.push({ id: s.audit.length + 1, uso_id: usoId, item_id: itemId, accion: 'dar_baja', estado_anterior: 'cargado', estado_nuevo: 'baja', usuario: usuario(), detalle: (it.descripcion || it.cod_mercaderia) + ' · ' + it.cod_mercaderia + (it.n_reserva ? ' · Reserva ' + it.n_reserva : ''), created_at: nowISO() });
+        s.audit.push({ id: s.audit.length + 1, uso_id: usoId, item_id: itemId, accion: 'dar_baja', estado_anterior: 'cargado', estado_nuevo: 'baja', usuario: usuario(), detalle: (it.descripcion || it.cod_mercaderia) + (it.ceco ? ' · CECO ' + it.ceco : '') + (it.n_reserva ? ' · Reserva ' + it.n_reserva : ''), created_at: nowISO() });
         if (u.items.every(function (x) { return x.sap_estado === 'baja'; })) {
           u.estado = 'terminado';
           s.audit.push({ id: s.audit.length + 1, uso_id: usoId, item_id: null, accion: 'terminar', estado_anterior: 'autorizado', estado_nuevo: 'terminado', usuario: usuario(), detalle: 'Uso interno ' + u.nro, created_at: nowISO() });
@@ -321,13 +321,18 @@
     },
     darBaja: function (usoId, itemId) {
       var self = this;
-      return DB.from('uso_items').update({ sap_estado: 'baja', baja_por: usuario(), baja_at: nowISO() }).eq('id', itemId).eq('sap_estado', 'cargado')
-        .then(function () { return self._audit({ uso_id: usoId, item_id: itemId, accion: 'dar_baja', estado_anterior: 'cargado', estado_nuevo: 'baja' }); })
+      return DB.from('uso_items').select('cod_mercaderia,descripcion,ceco,n_reserva').eq('id', itemId).single()
+        .then(function (r) {
+          var it = r.data || {};
+          var det = (it.descripcion || it.cod_mercaderia || '') + (it.ceco ? ' · CECO ' + it.ceco : '') + (it.n_reserva ? ' · Reserva ' + it.n_reserva : '');
+          return DB.from('uso_items').update({ sap_estado: 'baja', baja_por: usuario(), baja_at: nowISO() }).eq('id', itemId).eq('sap_estado', 'cargado')
+            .then(function () { return self._audit({ uso_id: usoId, item_id: itemId, accion: 'dar_baja', estado_anterior: 'cargado', estado_nuevo: 'baja', detalle: det }); });
+        })
         .then(function () { return self.getUso(usoId); })
         .then(function (u) {
           if (u && (u.items || []).length && u.items.every(function (x) { return x.sap_estado === 'baja'; })) {
             return DB.from('usos_internos').update({ estado: 'terminado' }).eq('id', usoId)
-              .then(function () { return self._audit({ uso_id: usoId, accion: 'terminar', estado_nuevo: 'terminado' }); });
+              .then(function () { return self._audit({ uso_id: usoId, accion: 'terminar', estado_nuevo: 'terminado', detalle: 'Uso interno ' + (u.nro || '') }); });
           }
         });
     },
