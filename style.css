@@ -513,6 +513,8 @@ tr:hover .copy-btn { opacity:1; }
 .ceco-modal__head { display:flex; flex-direction:column; gap:3px; padding:2px; }
 .ceco-modal__cod { font-size:17px; font-weight:800; color:var(--alas-brand); font-family:'Sora',sans-serif; letter-spacing:-.01em; }
 .ceco-modal__desc { font-size:13px; color:var(--alas-text-2); font-weight:600; }
+/* Detalle CECO — modal angosto/compacto */
+.modal--ceco { width:min(440px, calc(100vw - 32px)); }
 /* Detalle CECO — tarjetas compactas, datos grandes (Area al final, en verde) */
 .ceco-grid { display:grid; grid-template-columns:1fr; gap:6px; margin-top:11px; }
 .ceco-fld { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 12px; border-radius:11px; background:linear-gradient(180deg,#f7fbff,#eef6fb); border:1px solid #dce8f2; }

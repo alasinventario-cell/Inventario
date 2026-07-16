@@ -140,7 +140,7 @@
   /* ── Modales (apilables) ──────────────────────────────────── */
   function openModal(inner, opts){
     opts=opts||{};
-    var bd=elFrom('<div class="modal-backdrop"><div class="modal '+(opts.wide?'modal--wide':'')+'"><div class="modal__bar"></div>'+inner+'</div></div>');
+    var bd=elFrom('<div class="modal-backdrop"><div class="modal '+(opts.wide?'modal--wide':'')+(opts.cls?' '+opts.cls:'')+'"><div class="modal__bar"></div>'+inner+'</div></div>');
     q('#modalHost').appendChild(bd);
     requestAnimationFrame(function(){ bd.classList.add('is-open'); });
     if(window.gsap && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
@@ -1188,7 +1188,8 @@
             '<span class="ceco-fld__v ceco-fld__v--area">'+esc(area||'—')+'</span></div>'+
         '</div>'+
       '</div>'+
-      '<div class="modal__foot"><button class="btn btn--primary" data-close>Cerrar</button></div>'
+      '<div class="modal__foot"><button class="btn btn--primary" data-close>Cerrar</button></div>',
+      { cls:'modal--ceco' }
     );
     wireCopy(m.bd);
   }
