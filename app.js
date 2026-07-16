@@ -944,7 +944,10 @@
       var bajaBtn = hasCargado
         ? '<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.docBaja+' Dar de baja</button>'
         : (allBaja ? '<span class="date-baja-done">'+ICONS.check+' Terminado</span>' : '');
-      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+bajaBtn+'</div></td></tr>';
+      // Seleccionar todo el grupo (solo si tiene lineas seleccionables: pendiente/cargado)
+      var hasSel=groups[f].some(function(r){return r.it.sap_estado==='pendiente'||r.it.sap_estado==='cargado';});
+      var selAll=hasSel?'<button class="date-selall" data-selall="'+esc(f)+'" title="Seleccionar todas las líneas del grupo" aria-label="Seleccionar todo el grupo">'+ICONS.check+'</button>':'';
+      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+selAll+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+bajaBtn+'</div></td></tr>';
       groups[f].forEach(function(r){
         var it=r.it, u=r.uso, hl=(state._highlightUso&&u.id===state._highlightUso);
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
@@ -1022,6 +1025,10 @@
       if(bsp){ bsp.hidden=ct.p===0; bsp.innerHTML=ICONS.sap+' Cargar SAP'+(ct.p?' ('+ct.p+')':''); }
       if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.docBaja+' Dar de baja'+(ct.c?' ('+ct.c+')':''); }
       var cc=host.querySelector('.bulk-count'); if(cc) cc.textContent=n;
+      // El "seleccionar todo" del grupo queda marcado solo si TODAS sus lineas lo estan
+      host.querySelectorAll('.date-selall').forEach(function(sb){ var f=sb.getAttribute('data-selall');
+        var cbs=host.querySelectorAll('tr[data-d="'+f+'"] .baja-check');
+        sb.classList.toggle('is-on', cbs.length>0 && Array.prototype.every.call(cbs,function(c){return c.checked;})); });
       var g=window.gsap, anim=g && !reduce;
       if(n>0){
         if(!_bulkShown){ _bulkShown=true; bar.hidden=false;
@@ -1042,6 +1049,13 @@
     host.querySelectorAll('.baja-check').forEach(function(cb){ cb.addEventListener('change',function(){ setSel(cb); updateBulk(); }); });
     host.querySelectorAll('.date-ceco-btn').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); host.querySelectorAll('tr[data-d="'+b.getAttribute('data-ceco-date')+'"] .baja-check[data-estado="pendiente"]').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
     host.querySelectorAll('.date-baja-btn').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); host.querySelectorAll('tr[data-d="'+b.getAttribute('data-baja-date')+'"] .baja-check[data-estado="cargado"]').forEach(function(cb){ if(!cb.checked){ cb.checked=true; setSel(cb); } }); updateBulk(); }); });
+    // Seleccionar / deseleccionar todas las lineas del grupo (updateBulk re-sincroniza el estado)
+    host.querySelectorAll('.date-selall').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation();
+      var f=b.getAttribute('data-selall'); var cbs=host.querySelectorAll('tr[data-d="'+f+'"] .baja-check');
+      var turnOn=Array.prototype.some.call(cbs,function(c){return !c.checked;});
+      cbs.forEach(function(cb){ if(cb.checked!==turnOn){ cb.checked=turnOn; setSel(cb); } });
+      updateBulk();
+    }); });
     var bClr=host.querySelector('#bulkClear'); if(bClr) bClr.addEventListener('click',function(){ host.querySelectorAll('.baja-check:checked').forEach(function(cb){ cb.checked=false; setSel(cb); }); updateBulk(); });
     var bBaja=host.querySelector('#bulkBaja'); if(bBaja) bBaja.addEventListener('click',function(){ bulkBaja(sel, host); });
     var bCeco=host.querySelector('#bulkCeco'); if(bCeco) bCeco.addEventListener('click',function(){ bulkAsignarCeco(sel, host); });

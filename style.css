@@ -562,6 +562,14 @@ tr.row-date:hover td { background:#eef3f9; }
   color:var(--alas-text-3); transform:rotate(-90deg); transition:transform .22s var(--alas-ease); }
 .row-date__chev svg { width:15px; height:15px; }
 tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-brand); }
+/* Seleccionar todo el grupo: checkbox en el encabezado, al lado del sector */
+.date-selall { display:inline-flex; align-items:center; justify-content:center; width:23px; height:23px; margin-right:12px; flex-shrink:0;
+  border-radius:7px; border:1.6px solid var(--gray-300); background:#fff; color:transparent; cursor:pointer;
+  transition:background .15s var(--alas-ease), border-color .15s var(--alas-ease), color .15s var(--alas-ease), transform .12s var(--alas-ease); }
+.date-selall svg { width:14px; height:14px; }
+.date-selall:hover { border-color:var(--alas-brand); background:#eef6fb; }
+.date-selall:active { transform:scale(.9); }
+.date-selall.is-on { background:var(--alas-brand); border-color:var(--alas-brand); color:#fff; }
 .row-date__sec { display:inline-flex; align-items:center; margin-right:12px; padding:4px 12px; border-radius:9px; background:var(--alas-brand);
   color:#fff; font-size:13px; font-weight:800; letter-spacing:.01em; box-shadow:0 3px 8px rgba(11,95,141,.18); }
 .inv-table tbody tr.is-collapsed { display:none; }
