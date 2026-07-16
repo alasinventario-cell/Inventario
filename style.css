@@ -408,6 +408,16 @@ button.kpi:hover::before { transform:scaleY(1); }
 .btn--danger-soft:hover { background:#fee2e2; }
 
 .table-wrap { border:1px solid #dbe4ee; border-radius:14px; overflow-x:auto; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,.03); }
+/* Vista de lista: la toolbar y la barra de seleccion quedan fijas arriba; solo la
+   tabla scrollea internamente, con la cabecera (thead sticky) pegada al tope.
+   Se encadena la altura con flex + :has() solo cuando hay una vista de lista, para
+   no tocar el scroll normal del dashboard/menu/resumen. */
+.stage__body:has(.view--list) { display:flex; flex-direction:column; overflow:hidden; }
+#viewRoot:has(.view--list) { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.view--list { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.view--list #listHost { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+.view--list .bulk-bar { flex:0 0 auto; }
+.view--list .table-wrap { flex:0 1 auto; min-height:0; overflow:auto; }
 .inv-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 .inv-table thead th { position:sticky; top:0; z-index:1; background:#fbfcfe; text-align:left; padding:10px 11px; font-size:10.5px;
   font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--alas-text-3); border-bottom:1px solid #e6edf5; white-space:nowrap; }
@@ -503,6 +513,16 @@ tr:hover .copy-btn { opacity:1; }
 .ceco-modal__head { display:flex; flex-direction:column; gap:3px; padding:2px; }
 .ceco-modal__cod { font-size:17px; font-weight:800; color:var(--alas-brand); font-family:'Sora',sans-serif; letter-spacing:-.01em; }
 .ceco-modal__desc { font-size:13px; color:var(--alas-text-2); font-weight:600; }
+/* Detalle CECO — tarjetas compactas, datos grandes (Area al final, en verde) */
+.ceco-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+.ceco-fld { padding:12px 14px; border-radius:14px; background:linear-gradient(180deg,#f7fbff,#eef6fb); border:1px solid #dce8f2; }
+.ceco-fld__l { display:block; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--alas-text-3); margin-bottom:7px; }
+.ceco-fld__row { display:flex; align-items:center; gap:8px; }
+.ceco-fld__v { flex:1 1 auto; min-width:0; font-size:20px; font-weight:800; color:var(--alas-text-1); font-family:'Sora',sans-serif; letter-spacing:-.01em; font-variant-numeric:tabular-nums; word-break:break-all; line-height:1.15; }
+.ceco-fld__row .copy-btn { opacity:1; }
+.ceco-fld--area { background:linear-gradient(180deg,#eef8f1,#e2f2e8); border-color:#cfe8d6; }
+.ceco-fld__v--area { color:#15803d; font-size:17px; }
+@media (max-width:520px){ .ceco-grid { grid-template-columns:1fr; } }
 
 /* Variantes: reposo con tinte suave, hover relleno sólido + glow */
 .action-btn.a-sap   { background:rgba(59,130,246,.13); color:#1d4ed8; border-color:rgba(59,130,246,.16); }

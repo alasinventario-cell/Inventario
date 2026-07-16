@@ -80,6 +80,18 @@
       document.body.appendChild(ta); ta.focus(); ta.select(); var ok=document.execCommand('copy'); ta.remove(); return ok; }
     catch(e){ return false; }
   }
+  function copyBtn(text){
+    return '<button class="copy-btn" data-copy="'+esc(text)+'" aria-label="Copiar" title="Copiar">'+
+      '<svg class="copy-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="11" height="11" rx="2.2" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '<svg class="copy-ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+    '</button>';
+  }
+  function wireCopy(root){
+    (root||document).querySelectorAll('[data-copy]').forEach(function(b){
+      if(b._copyWired) return; b._copyWired=true;
+      b.addEventListener('click',function(e){ e.stopPropagation(); copyText(b.getAttribute('data-copy'), b); });
+    });
+  }
   function copyText(text, btn){
     var done=function(ok){
       if(btn){ btn.classList.remove('is-copied','is-failed'); void btn.offsetWidth; btn.classList.add(ok?'is-copied':'is-failed');
@@ -1158,19 +1170,27 @@
   // Reporte de TODO lo cargado en una fecha (puede abarcar varios documentos)
   // Modal con el detalle del CECO de una línea (se abre desde el chip "Ver")
   function cecoDetailModal(it){
-    openModal(
+    function fld(label, val){
+      var v=(val==null||val==='')?'—':String(val);
+      return '<div class="ceco-fld"><span class="ceco-fld__l">'+esc(label)+'</span>'+
+        '<div class="ceco-fld__row"><span class="ceco-fld__v">'+esc(v)+'</span>'+(v!=='—'?copyBtn(v):'')+'</div></div>';
+    }
+    var area=API.cecoArea(it.ceco)||'';
+    var m=openModal(
       '<div class="modal__head"><div class="modal__title">Detalle del CECO</div><button class="modal__close" data-close>&times;</button></div>'+
       '<div class="modal__body">'+
         '<div class="ceco-modal__head"><span class="ceco-modal__cod">'+esc(it.cod_mercaderia||'—')+'</span><span class="ceco-modal__desc">'+esc(it.descripcion||'—')+'</span></div>'+
-        '<div class="caso-preview" style="margin-top:12px">'+
-          '<div class="caso-preview__row"><span>Cuenta Mayor</span><span>'+esc(it.cuenta_mayor||'—')+'</span></div>'+
-          '<div class="caso-preview__row"><span>CECO (Centro)</span><span>'+esc(it.ceco||'—')+'</span></div>'+
-          '<div class="caso-preview__row"><span>Área CECO</span><span>'+esc(API.cecoArea(it.ceco)||'—')+'</span></div>'+
-          '<div class="caso-preview__row"><span>Orden</span><span>'+esc(it.orden||'—')+'</span></div>'+
+        '<div class="ceco-grid">'+
+          fld('Cuenta Mayor', it.cuenta_mayor)+
+          fld('CECO (Centro)', it.ceco)+
+          fld('Orden', it.orden)+
+          '<div class="ceco-fld ceco-fld--area"><span class="ceco-fld__l">Área CECO</span>'+
+            '<span class="ceco-fld__v ceco-fld__v--area">'+esc(area||'—')+'</span></div>'+
         '</div>'+
       '</div>'+
       '<div class="modal__foot"><button class="btn btn--primary" data-close>Cerrar</button></div>'
     );
+    wireCopy(m.bd);
   }
   function reporteFechaModal(fecha, rows){
     var items=(rows||[]).map(function(r){ return r.it; });
@@ -1201,7 +1221,7 @@
     var showSector=!filter.sector, sig=filter.sector||filter.estado||'list';
     var iconSvg = filter.sector ? (function(){ var c=SECTOR_CARDS.find(function(s){return s.key===filter.sector;}); return c?ICONS[c.icon]:ICONS.file; })()
                 : (filter.estado==='pendientes' ? ICONS.clock : (filter.estado==='terminados' ? ICONS.check : ICONS.file));
-    root.innerHTML='<div class="view">'+
+    root.innerHTML='<div class="view view--list">'+
       '<div class="list-toolbar list-toolbar--3">'+
         '<div class="lt-left"><button class="btn btn--secondary" id="btnVolverMenu">'+ICONS.back+' Volver al menú</button></div>'+
         '<div class="lt-center"><span class="lt-center__ic">'+iconSvg+'</span><span class="lt-center__title">'+esc(titulo)+'</span></div>'+
@@ -1225,7 +1245,7 @@
   function renderPorBaja(){
     state.view='porbaja'; setActive('porbaja'); toggleSearch(true); resetSearch('Buscar por reserva, código…'); setBreadcrumb(['MENU','PARA DAR DE BAJA']);
     var root=q('#viewRoot');
-    root.innerHTML='<div class="view">'+
+    root.innerHTML='<div class="view view--list">'+
       '<div class="list-toolbar"><div><div class="list-title">Para dar de baja</div>'+
         '<p class="list-hint">Materiales con N.º de reserva cargado, esperando la baja en SAP.</p></div>'+
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+ fechaToolbarHTML() +'</div></div>'+
