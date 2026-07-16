@@ -1232,9 +1232,15 @@
     wireMonthNav(root, function(){ if(state._reRender) state._reRender(); });
     if(showSector) wireSectorFilter(root, function(){ if(state._reRender) state._reRender(); });
     animateToolbar(root);
+    // Flujo por linea: Pendientes muestra SOLO lo que sigue pendiente; apenas se
+    // carga a SAP (queda 'cargado' con reserva) pasa a "Para dar de baja".
+    // Terminados muestra solo las lineas dadas de baja.
+    var itemOk = filter.estado==='pendientes' ? function(it){ return it.sap_estado==='pendiente'; }
+               : filter.estado==='terminados' ? function(it){ return it.sap_estado==='baja'; }
+               : function(){ return true; };
     API.listUsos(filter).then(function(usos){
       var rows=[];
-      usos.forEach(function(u){ (u.items||[]).forEach(function(it){ rows.push({ uso:u, it:it }); }); });
+      usos.forEach(function(u){ (u.items||[]).forEach(function(it){ if(itemOk(it)) rows.push({ uso:u, it:it }); }); });
       state._rows=rows;
       state._reRender=function(){ paintTable(q('#listHost'), rows, {showSector:showSector, monthFilter:true, sectorFilter:showSector, sig:sig}); };
       state._reRender();
@@ -1246,11 +1252,14 @@
     state.view='porbaja'; setActive('porbaja'); toggleSearch(true); resetSearch('Buscar por reserva, código…'); setBreadcrumb(['MENU','PARA DAR DE BAJA']);
     var root=q('#viewRoot');
     root.innerHTML='<div class="view view--list">'+
-      '<div class="list-toolbar"><div><div class="list-title">Para dar de baja</div>'+
-        '<p class="list-hint">Materiales con N.º de reserva cargado, esperando la baja en SAP.</p></div>'+
+      '<div class="list-toolbar"><div style="display:flex;align-items:center;gap:14px;">'+
+        '<button class="btn btn--secondary" id="btnVolverMenu">'+ICONS.back+' Volver al menú</button>'+
+        '<div><div class="list-title">Para dar de baja</div>'+
+        '<p class="list-hint">Materiales con N.º de reserva cargado, esperando la baja en SAP.</p></div></div>'+
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+ fechaToolbarHTML() +'</div></div>'+
       sectorFilterHTML()+
       '<div id="listHost"></div></div>';
+    q('#btnVolverMenu').addEventListener('click',function(){ go('menu'); });
     wireFechaToolbar();
     wireSectorFilter(root, function(){ if(state._reRender) state._reRender(); });
     animateToolbar(root);
