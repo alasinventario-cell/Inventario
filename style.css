@@ -428,6 +428,9 @@ button.kpi:hover::before { transform:scaleY(1); }
 .cell-muted { color:var(--alas-text-3); }
 .cell-sap { white-space:nowrap; }
 .truncate { max-width:158px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* Descripcion / Uso: texto completo, envuelto en varias lineas (sin cortar con "...") */
+.cell-wrap { white-space:normal; word-break:break-word; overflow-wrap:anywhere; line-height:1.35; min-width:170px; max-width:260px; }
+.cell-wrap--uso { max-width:220px; font-weight:600; color:var(--alas-text-2); }
 
 /* ── Badges de estado ─────────────────────────────────────── */
 .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:800;

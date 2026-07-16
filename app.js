@@ -917,10 +917,10 @@
         body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
           '<td class="cell-check">'+chk+'</td>'+
           '<td class="cell-cod">'+esc(it.cod_mercaderia)+'</td>'+
-          '<td class="cell-desc"><div class="truncate" title="'+esc(it.descripcion)+'">'+esc(it.descripcion)+'</div></td>'+
+          '<td class="cell-desc"><div class="cell-wrap" title="'+esc(it.descripcion)+'">'+esc(it.descripcion)+'</div></td>'+
           '<td class="cell-num">'+esc(it.cantidad)+'</td>'+
           '<td class="cell-muted">'+esc(it.um)+'</td>'+
-          '<td><div class="truncate" title="'+esc(it.uso_texto)+'">'+esc(it.uso_texto||'—')+'</div></td>'+
+          '<td><div class="cell-wrap cell-wrap--uso" title="'+esc(it.uso_texto)+'">'+esc(it.uso_texto||'—')+'</div></td>'+
           '<td class="cell-ceco">'+(it.ceco?'<button class="ceco-chip ceco-chip--ok" data-cecoview="'+it.id+'"><span class="cc-lbl">Listo</span><span class="cc-hover">Ver</span></button>':'<span class="ceco-chip ceco-chip--falta">Falta</span>')+'</td>'+
           '<td class="cell-muted">'+(it.n_reserva?'<b>'+esc(it.n_reserva)+'</b>':'—')+'</td>'+
           '<td class="cell-sap">'+sapBadge(it.sap_estado)+'</td>'+
