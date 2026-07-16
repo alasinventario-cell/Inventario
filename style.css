@@ -513,11 +513,11 @@ tr:hover .copy-btn { opacity:1; }
 .ceco-modal__head { display:flex; flex-direction:column; gap:3px; padding:2px; }
 .ceco-modal__cod { font-size:17px; font-weight:800; color:var(--alas-brand); font-family:'Sora',sans-serif; letter-spacing:-.01em; }
 .ceco-modal__desc { font-size:13px; color:var(--alas-text-2); font-weight:600; }
-/* Detalle CECO — modal angosto/compacto */
-.modal--ceco { width:min(440px, calc(100vw - 32px)); }
-/* Detalle CECO — tarjetas compactas, datos grandes (Area al final, en verde) */
-.ceco-grid { display:grid; grid-template-columns:1fr; gap:6px; margin-top:11px; }
-.ceco-fld { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 12px; border-radius:11px; background:linear-gradient(180deg,#f7fbff,#eef6fb); border:1px solid #dce8f2; }
+/* Detalle CECO — modal angosto tipo nota (.modal.modal--ceco para ganarle a .modal) */
+.modal.modal--ceco { width:min(392px, calc(100vw - 32px)); }
+/* Detalle CECO — filas compactas con un poco de aire vertical */
+.ceco-grid { display:grid; grid-template-columns:1fr; gap:9px; margin-top:14px; }
+.ceco-fld { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 13px; border-radius:12px; background:linear-gradient(180deg,#f7fbff,#eef6fb); border:1px solid #dce8f2; }
 .ceco-fld__l { flex:0 0 auto; font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--alas-text-3); }
 .ceco-fld__row { display:flex; align-items:center; gap:8px; min-width:0; }
 .ceco-fld__v { min-width:0; font-size:15px; font-weight:800; color:var(--alas-text-1); font-family:'Sora',sans-serif; letter-spacing:-.01em; font-variant-numeric:tabular-nums; word-break:break-all; line-height:1.1; text-align:right; }
