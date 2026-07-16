@@ -74,6 +74,23 @@
     setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ t.remove(); },350); }, 2600);
   }
 
+  // Copia texto al portapapeles y anima el boton (check verde) o marca error (rojo).
+  function _fallbackCopy(text){
+    try{ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; ta.style.pointerEvents='none';
+      document.body.appendChild(ta); ta.focus(); ta.select(); var ok=document.execCommand('copy'); ta.remove(); return ok; }
+    catch(e){ return false; }
+  }
+  function copyText(text, btn){
+    var done=function(ok){
+      if(btn){ btn.classList.remove('is-copied','is-failed'); void btn.offsetWidth; btn.classList.add(ok?'is-copied':'is-failed');
+        setTimeout(function(){ btn.classList.remove('is-copied','is-failed'); }, 1300); }
+      if(!ok) toast('No se pudo copiar','err');
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ done(_fallbackCopy(text)); });
+    } else { done(_fallbackCopy(text)); }
+  }
+
   var ICONS = {
     warehouse:'<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L2 8v13h20V8L12 3zm0 2.2L19 8.7V19h-3v-6H8v6H5V8.7L12 5.2zM10 15h4v4h-4v-4z"/></svg>',
     gear:'<svg fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94L2.85 15.06a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
@@ -83,6 +100,7 @@
     edit:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-7M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     thumb:'<svg fill="currentColor" viewBox="0 0 24 24"><path d="M2 21h2V9H2v12zM23 10a2 2 0 00-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L14 1 7.6 7.4c-.4.4-.6.9-.6 1.4V19a2 2 0 002 2h9c.8 0 1.5-.5 1.8-1.2l3-7c.1-.2.2-.5.2-.8v-2z"/></svg>',
     file:'<svg fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm0 2l4 4h-4V4zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>',
+    docBaja:'<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/><path d="M12 12.5v4.5m0 0l-2-2m2 2l2-2"/></svg>',
     print:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>',
     entregado:'<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     sap:'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-width="1.6"/></svg>',
@@ -904,11 +922,17 @@
       var open=isOpen(f);
       var fp=String(f).split('|'), fFecha=fp[0], fSec=fp[1];
       var hasCargado=groups[f].some(function(r){return r.it.sap_estado==='cargado';});
+      var allBaja=groups[f].every(function(r){return r.it.sap_estado==='baja';});
       var sinCeco=groups[f].filter(function(r){return !r.it.ceco;}).length;
       var cecoBtn = sinCeco===0
         ? '<span class="date-ceco-done">'+ICONS.check+' CECO</span>'
         : '<button class="date-ceco-btn" data-ceco-date="'+esc(f)+'">'+ICONS.tag+' Asignar CECO ('+sinCeco+')</button>';
-      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+(hasCargado?'<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.check+' Dar de baja</button>':'')+'</div></td></tr>';
+      // Baja: mientras hay lineas cargadas esperando -> accion (icono documento);
+      // cuando TODO el grupo esta en baja -> estado "Terminado" (check verde).
+      var bajaBtn = hasCargado
+        ? '<button class="date-baja-btn" data-baja-date="'+esc(f)+'">'+ICONS.docBaja+' Dar de baja</button>'
+        : (allBaja ? '<span class="date-baja-done">'+ICONS.check+' Terminado</span>' : '');
+      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+bajaBtn+'</div></td></tr>';
       groups[f].forEach(function(r){
         var it=r.it, u=r.uso, hl=(state._highlightUso&&u.id===state._highlightUso);
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
@@ -920,7 +944,13 @@
           '<td class="cell-desc"><div class="cell-wrap" title="'+esc(it.descripcion)+'">'+esc(it.descripcion)+'</div></td>'+
           '<td class="cell-num">'+esc(it.cantidad)+'</td>'+
           '<td class="cell-muted">'+esc(it.um)+'</td>'+
-          '<td><div class="cell-wrap cell-wrap--uso" title="'+esc(it.uso_texto)+'">'+esc(it.uso_texto||'—')+'</div></td>'+
+          '<td>'+(it.uso_texto
+            ? '<div class="uso-cell"><div class="cell-wrap cell-wrap--uso" title="'+esc(it.uso_texto)+'">'+esc(it.uso_texto)+'</div>'+
+                '<button class="copy-btn" data-copy="'+esc(it.uso_texto)+'" aria-label="Copiar uso" title="Copiar uso">'+
+                  '<svg class="copy-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="11" height="11" rx="2.2" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+                  '<svg class="copy-ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+                '</button></div>'
+            : '<div class="cell-wrap cell-wrap--uso">—</div>')+'</td>'+
           '<td class="cell-ceco">'+(it.ceco?'<button class="ceco-chip ceco-chip--ok" data-cecoview="'+it.id+'"><span class="cc-lbl">Listo</span><span class="cc-hover">Ver</span></button>':'<span class="ceco-chip ceco-chip--falta">Falta</span>')+'</td>'+
           '<td class="cell-muted">'+(it.n_reserva?'<b>'+esc(it.n_reserva)+'</b>':'—')+'</td>'+
           '<td class="cell-sap">'+sapBadge(it.sap_estado)+'</td>'+
@@ -931,7 +961,7 @@
     });
     host.innerHTML=
       '<div class="bulk-bar" id="bulkBar" hidden><div class="bulk-bar__info"><span class="bulk-count">0</span> línea(s) seleccionada(s)</div>'+
-        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--sap" id="bulkSap" hidden>'+ICONS.sap+' Cargar SAP</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.check+' Dar de baja</button></div></div>'+
+        '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--sap" id="bulkSap" hidden>'+ICONS.sap+' Cargar SAP</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.docBaja+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
       '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
       '<th>CECO</th><th>N.Reserva</th><th>SAP</th><th class="th-ent">Entregado</th><th></th>'+
@@ -959,6 +989,9 @@
     });
 
     // ── Chip CECO "Ver" → modal con el detalle ──
+    host.querySelectorAll('[data-copy]').forEach(function(b){
+      b.addEventListener('click',function(e){ e.stopPropagation(); copyText(b.getAttribute('data-copy'), b); });
+    });
     host.querySelectorAll('[data-cecoview]').forEach(function(b){
       b.addEventListener('click',function(e){ e.stopPropagation(); var id=+b.getAttribute('data-cecoview'); var r=(state._rows||[]).find(function(x){return x.it.id===id;}); if(r) cecoDetailModal(r.it); });
     });
@@ -971,7 +1004,7 @@
       var ct=selCounts(), bc=host.querySelector('#bulkCeco'), bb=host.querySelector('#bulkBaja'), bsp=host.querySelector('#bulkSap');
       if(bc){ bc.hidden=ct.p===0; bc.innerHTML=ICONS.tag+' Asignar CECO'+(ct.p?' ('+ct.p+')':''); }
       if(bsp){ bsp.hidden=ct.p===0; bsp.innerHTML=ICONS.sap+' Cargar SAP'+(ct.p?' ('+ct.p+')':''); }
-      if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.check+' Dar de baja'+(ct.c?' ('+ct.c+')':''); }
+      if(bb){ bb.hidden=ct.c===0; bb.innerHTML=ICONS.docBaja+' Dar de baja'+(ct.c?' ('+ct.c+')':''); }
       var cc=host.querySelector('.bulk-count'); if(cc) cc.textContent=n;
       var g=window.gsap, anim=g && !reduce;
       if(n>0){
@@ -1216,7 +1249,7 @@
     if(it.sap_estado==='baja') return '<span class="row-ro">—</span>';
     var h='';
     if(it.sap_estado==='pendiente') h+=actBtn('a-sap','Cargar a SAP',ICONS.sap,'cargar',u.id,it.id);
-    if(it.sap_estado==='cargado')   h+=actBtn('a-baja','Dar de baja',ICONS.check,'baja',u.id,it.id);
+    if(it.sap_estado==='cargado')   h+=actBtn('a-baja','Dar de baja',ICONS.docBaja,'baja',u.id,it.id);
     h+=actBtn('a-edit','Editar',ICONS.edit,'editar',u.id,it.id);
     h+=actBtn('a-del','Eliminar',ICONS.trash,'eliminar',u.id,it.id);
     return h;
