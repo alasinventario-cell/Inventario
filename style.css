@@ -431,18 +431,20 @@ button.kpi:hover::before { transform:scaleY(1); }
 /* Descripcion / Uso: texto completo, envuelto en varias lineas (sin cortar con "...") */
 .cell-wrap { white-space:normal; word-break:break-word; overflow-wrap:anywhere; line-height:1.35; min-width:170px; max-width:260px; }
 .cell-wrap--uso { max-width:220px; font-weight:600; color:var(--alas-text-2); }
-/* Uso + boton copiar */
+/* Codigo / Uso + boton copiar */
 .uso-cell { display:flex; align-items:flex-start; gap:8px; }
 .uso-cell .cell-wrap--uso { flex:1 1 auto; }
+.cod-cell { display:inline-flex; align-items:center; gap:8px; }
 .copy-btn { flex:0 0 auto; width:26px; height:26px; margin-top:1px; border-radius:7px; border:1px solid var(--alas-border);
   background:#fff; color:var(--alas-text-3); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; position:relative;
   opacity:.55; transition:opacity var(--fast), background var(--fast), color var(--fast), border-color var(--fast), transform var(--fast); }
+.cod-cell .copy-btn { margin-top:0; }
 tr:hover .copy-btn { opacity:1; }
 .copy-btn:hover { color:var(--alas-brand); border-color:rgba(11,95,141,.35); background:#f0f6fc; }
 .copy-btn:active { transform:scale(.88); }
 .copy-btn svg { width:14px; height:14px; position:absolute; transition:opacity .18s ease, transform .28s cubic-bezier(.34,1.56,.64,1); }
 .copy-ic-check { opacity:0; transform:scale(.4); }
-.copy-btn.is-copied { color:#fff; background:var(--alas-success); border-color:var(--alas-success); opacity:1; }
+.copy-btn.is-copied { color:#fff; background:var(--alas-brand); border-color:var(--alas-brand); opacity:1; }
 .copy-btn.is-copied .copy-ic-copy { opacity:0; transform:scale(.4); }
 .copy-btn.is-copied .copy-ic-check { opacity:1; transform:scale(1); }
 .copy-btn.is-failed { color:#fff; background:var(--alas-danger); border-color:var(--alas-danger); opacity:1; }
