@@ -477,6 +477,8 @@
     API.listAuditoria().then(function(list){
       var items=(list||[]).slice(0,20);
       body.innerHTML = items.length ? items.map(notifItemHTML).join('') : '<div class="notif-empty">Sin actividad reciente</div>';
+      // Entrada en cascada de los items (patrón Control de Facturas)
+      if(items.length && window.gsap) window.gsap.from(body.querySelectorAll('.notif-item'),{ opacity:0, x:-10, duration:.26, stagger:.03, ease:'power2.out', clearProps:'all' });
     }).catch(function(){ body.innerHTML='<div class="notif-empty">Error al cargar</div>'; });
   }
   function pollNotif(){
@@ -485,7 +487,7 @@
         list=list||[];
         if(!NOTIF.lastCheck){ NOTIF.lastCheck=new Date().toISOString(); localStorage.setItem('inv.notifLastCheck',NOTIF.lastCheck); return; }
         var nuevos=list.filter(function(a){ return a.created_at && a.created_at>NOTIF.lastCheck; }).length;
-        if(nuevos>NOTIF.count){ if(!NOTIF.open) notifBeep(); NOTIF.count=nuevos; var b=q('#notifBadge'); if(b){ b.textContent=nuevos>9?'9+':String(nuevos); b.hidden=false; } }
+        if(nuevos>NOTIF.count){ if(!NOTIF.open) notifBeep(); NOTIF.count=nuevos; var b=q('#notifBadge'); if(b){ b.textContent=nuevos>9?'9+':String(nuevos); b.hidden=false; if(window.gsap) window.gsap.fromTo(b,{ scale:.4 },{ scale:1, duration:.45, ease:'back.out(2.6)', clearProps:'transform' }); } }
       }).catch(function(){});
     }
     check();
@@ -554,7 +556,13 @@
       btn.addEventListener('click',function(){ go(btn.getAttribute('data-view')); });
     });
   }
-  function setActive(view){ document.querySelectorAll('.sidebar-icon[data-view]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view')===view); }); }
+  function setActive(view){
+    document.querySelectorAll('.sidebar-icon[data-view]').forEach(function(b){
+      var on=b.getAttribute('data-view')===view, was=b.classList.contains('active');
+      b.classList.toggle('active', on);
+      if(on && !was && window.gsap) window.gsap.fromTo(b,{ scale:.78 },{ scale:1, duration:.4, ease:'back.out(2.2)', clearProps:'transform' });
+    });
+  }
   function setBreadcrumb(parts){
     var bc=q('#breadcrumb'); if(!bc) return;
     bc.innerHTML = parts.map(function(p,i){ return (i?'<span class="sep">›</span>':'')+'<span>'+esc(p)+'</span>'; }).join('');
