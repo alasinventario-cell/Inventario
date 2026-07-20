@@ -28,10 +28,17 @@
 <body>
 
   <!-- Loader institucional -->
-  <div id="loader" class="loader">
-    <div class="loader__inner">
-      <img src="/logo-alas-s.a.png" alt="ALAS" class="loader__logo" />
-      <div class="loader__bar"><span></span></div>
+  <div id="loader" class="loader" role="status" aria-label="Cargando">
+    <div class="loader__stage">
+      <svg class="loader__svg" width="272" height="272" viewBox="0 0 272 272" aria-hidden="true">
+        <circle cx="136" cy="136" r="114" fill="none" stroke="rgba(11,95,141,.09)" stroke-width="1.5"/>
+        <circle class="loader__arc" cx="136" cy="136" r="114" fill="none" stroke="#0B5F8D" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div class="loader__hub">
+        <span class="loader__ring"></span>
+        <span class="loader__surface"></span>
+        <img src="/logo-icon.png" alt="" class="loader__logo" draggable="false"/>
+      </div>
     </div>
   </div>
 
