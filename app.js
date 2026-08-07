@@ -301,7 +301,7 @@
       if(_addB) _addB.addEventListener('click',function(){ var term=inp.value.trim(); close(); cfg.onAddNew(term, function(opt){ value=String(opt.value); _dynOpts=[opt]; paint(); if(cfg.onChange) cfg.onChange(value, opt); }); });
       requestAnimationFrame(function(){ dd.classList.add('open'); inp.focus(); });
       onDoc=function(e){ if(dd && !dd.contains(e.target) && !disp.contains(e.target)) close(); };
-      onScroll=function(){ close(); };
+      onScroll=function(e){ if(dd && e && e.target && e.target.nodeType===1 && dd.contains(e.target)) return; close(); }; // no cerrar al scrollear la propia lista
       onKey=function(e){ if(e.key==='Escape'){ e.stopPropagation(); close(); } };
       setTimeout(function(){ document.addEventListener('mousedown',onDoc); document.addEventListener('keydown',onKey,true); window.addEventListener('scroll',onScroll,true); window.addEventListener('resize',onScroll); },0);
     }
