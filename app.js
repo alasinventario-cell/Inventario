@@ -143,12 +143,24 @@
     // Tamaño único para todos los modales: se ignora opts.wide (unificado en el CSS).
     var bd=elFrom('<div class="modal-backdrop"><div class="modal'+(opts.cls?' '+opts.cls:'')+'"><div class="modal__bar"></div>'+inner+'</div></div>');
     q('#modalHost').appendChild(bd);
-    requestAnimationFrame(function(){ bd.classList.add('is-open'); });
-    if(window.gsap && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+    var box=bd.querySelector('.modal');
+    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(window.gsap && !reduce){
+      bd.style.transition='none'; box.style.transition='none';
+      bd.classList.add('is-open');
+      window.gsap.fromTo(bd, { opacity:0 }, { opacity:1, duration:.24, ease:'power2.out' });
+      window.gsap.fromTo(box, { y:26, opacity:0, scale:.96 }, { y:0, opacity:1, scale:1, duration:.36, ease:'power3.out', clearProps:'transform,opacity', delay:.02 });
       var _mb=bd.querySelector('.modal__body');
-      if(_mb && _mb.children.length){ window.gsap.from(_mb.children, { y:14, opacity:0, duration:.42, stagger:.05, ease:'power2.out', delay:.14, overwrite:'auto', clearProps:'transform,opacity' }); }
+      if(_mb && _mb.children.length){ window.gsap.from(_mb.children, { y:12, opacity:0, duration:.3, stagger:.035, ease:'power2.out', delay:.12, overwrite:'auto', clearProps:'transform,opacity' }); }
+    } else {
+      requestAnimationFrame(function(){ bd.classList.add('is-open'); });
     }
-    function close(){ bd.classList.remove('is-open'); setTimeout(function(){ bd.remove(); },320); }
+    function close(){
+      if(window.gsap && !reduce){
+        window.gsap.to(box, { y:14, opacity:0, scale:.97, duration:.2, ease:'power2.in' });
+        window.gsap.to(bd, { opacity:0, duration:.22, ease:'power2.in', onComplete:function(){ bd.remove(); } });
+      } else { bd.classList.remove('is-open'); setTimeout(function(){ bd.remove(); },320); }
+    }
     // Solo cierra con la X o botones [data-close] (Cancelar/Entendido). Sin clic-afuera ni ESC.
     bd.querySelectorAll('[data-close]').forEach(function(b){ b.addEventListener('click',close); });
     return { bd:bd, close:close };
@@ -278,8 +290,7 @@
     function renderList(f){
       var list=dd&&dd.querySelector('.ssel-list'); if(!list) return; f=(f||'');
       if(cfg.asyncSearch){
-        var term=f.trim();
-        if(!term){ list.innerHTML='<div class="ssel-empty">Escribí para buscar (código o descripción)…</div>'; return; }
+        var term=f.trim(); // término vacío = muestra las primeras mercaderías (sugerencias)
         list.innerHTML='<div class="ssel-empty">Buscando…</div>';
         var myReq=++searchSeq;
         cfg.asyncSearch(term).then(function(items){ if(myReq!==searchSeq||!dd) return; doRender(items||[]); })
