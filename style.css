@@ -352,14 +352,14 @@ button.kpi:hover::before { transform:scaleY(1); }
 .dash-section__head span:first-child { font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.12em; color:var(--alas-text-3); }
 .dash-section__head .hr { flex:1; height:1px; background:var(--alas-border); }
 .sector-list { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.sector-card { display:flex; align-items:center; gap:24px; min-height:210px; padding:28px 32px;
+.sector-card { display:flex; align-items:center; gap:22px; min-height:150px; padding:24px 28px;
   border:1px solid var(--alas-border); border-radius:20px; background:#fff; text-align:left;
   transition:transform .28s var(--alas-ease), box-shadow .28s var(--alas-ease), border-color .28s var(--alas-ease); }
 .sector-card:hover { transform:translateY(-4px); border-color:#c8dcea; box-shadow:0 16px 34px rgba(11,95,141,.14); }
-.sector-card__ic { width:86px; height:86px; border-radius:22px; background:var(--gray-100); color:var(--alas-brand);
+.sector-card__ic { width:66px; height:66px; border-radius:18px; background:var(--gray-100); color:var(--alas-brand);
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
   transition:background .28s var(--alas-ease), color .28s var(--alas-ease); }
-.sector-card__ic svg { width:42px; height:42px; }
+.sector-card__ic svg { width:32px; height:32px; }
 .sector-card:hover .sector-card__ic { background:#e8f1f8; }
 .sector-card__body { flex:1; min-width:0; align-items:flex-start; }
 .sector-card__name { font-size:19px; }
@@ -372,8 +372,8 @@ button.kpi:hover::before { transform:scaleY(1); }
 .sector-card__desc { font-size:12.5px; color:var(--alas-text-3); margin-top:3px; }
 .sector-card__bar { display:block; height:6px; border-radius:999px; background:var(--gray-100); overflow:hidden; margin-top:11px; }
 .sector-card__bar-fill { display:block; height:100%; border-radius:999px; transition:width var(--alas-dur-page) var(--alas-ease); }
-.sector-card__count-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; width:88px; flex-shrink:0; }
-.sector-card__count { font-family:'Sora',sans-serif; font-weight:800; font-size:32px; color:var(--alas-brand); text-align:center; letter-spacing:-.02em; line-height:1; }
+.sector-card__count-wrap { display:flex; flex-direction:column; align-items:center; gap:5px; width:112px; flex-shrink:0; }
+.sector-card__count { font-family:'Sora',sans-serif; font-weight:800; font-size:50px; color:var(--alas-brand); text-align:center; letter-spacing:-.03em; line-height:.95; }
 .sector-card__count-lbl { font-size:10px; font-weight:800; color:var(--alas-text-3); text-transform:uppercase; letter-spacing:.5px; text-align:center; line-height:1.25; white-space:normal; }
 .sector-card__arrow { color:var(--gray-300); display:flex; transition:transform .28s var(--alas-ease), color .28s var(--alas-ease); }
 .sector-card__arrow svg { width:20px; height:20px; }
@@ -526,7 +526,7 @@ tr:hover .copy-btn { opacity:1; }
 .ceco-modal__cod { font-size:17px; font-weight:800; color:var(--alas-brand); font-family:'Sora',sans-serif; letter-spacing:-.01em; }
 .ceco-modal__desc { font-size:13px; color:var(--alas-text-2); font-weight:600; }
 /* Detalle CECO — modal angosto tipo nota (.modal.modal--ceco para ganarle a .modal) */
-.modal.modal--ceco { width:min(392px, calc(100vw - 32px)); }
+.modal.modal--ceco { width:min(820px, calc(100vw - 32px)); }
 /* Detalle CECO — filas compactas con un poco de aire vertical */
 .ceco-grid { display:grid; grid-template-columns:1fr; gap:9px; margin-top:14px; }
 .ceco-fld { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 13px; border-radius:12px; background:linear-gradient(180deg,#f7fbff,#eef6fb); border:1px solid #dce8f2; }
@@ -636,11 +636,11 @@ tr.row-date.is-open:hover td { background:#daeafb; }
 .modal-backdrop { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:18px; z-index:100;
   background:rgba(15,23,42,0); opacity:0; visibility:hidden; pointer-events:none;
   transition:opacity 300ms var(--alas-ease), visibility 0s linear 300ms, background-color 300ms var(--alas-ease); }
-.modal-backdrop.is-open { visibility:visible; opacity:1; background:rgba(15,23,42,.45); pointer-events:auto; transition-delay:0s; }
-.modal { position:relative; width:min(760px, calc(100vw - 32px)); max-height:92vh; overflow:hidden; border-radius:22px;
+.modal-backdrop.is-open { visibility:visible; opacity:1; background:rgba(15,23,42,.45); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); pointer-events:auto; transition-delay:0s; }
+.modal { position:relative; width:min(820px, calc(100vw - 32px)); max-height:90vh; overflow:hidden; border-radius:22px;
   background:#fff; box-shadow:0 30px 80px rgba(11,95,141,.22), 0 8px 24px rgba(15,23,42,.10); display:flex; flex-direction:column;
   opacity:0; transform:translateY(22px) scale(.965); transition:opacity 360ms var(--alas-ease), transform 360ms var(--alas-ease); }
-.modal--wide { width:min(980px, calc(100vw - 32px)); }
+.modal--wide { width:min(820px, calc(100vw - 32px)); }
 .modal-backdrop.is-open .modal { opacity:1; transform:translateY(0) scale(1); }
 .modal__bar { height:4px; background:linear-gradient(90deg,#0e6fa8,#0B5F8D 55%,#084f78); }
 .modal__head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 28px 18px; }

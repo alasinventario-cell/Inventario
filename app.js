@@ -140,7 +140,8 @@
   /* ── Modales (apilables) ──────────────────────────────────── */
   function openModal(inner, opts){
     opts=opts||{};
-    var bd=elFrom('<div class="modal-backdrop"><div class="modal '+(opts.wide?'modal--wide':'')+(opts.cls?' '+opts.cls:'')+'"><div class="modal__bar"></div>'+inner+'</div></div>');
+    // Tamaño único para todos los modales: se ignora opts.wide (unificado en el CSS).
+    var bd=elFrom('<div class="modal-backdrop"><div class="modal'+(opts.cls?' '+opts.cls:'')+'"><div class="modal__bar"></div>'+inner+'</div></div>');
     q('#modalHost').appendChild(bd);
     requestAnimationFrame(function(){ bd.classList.add('is-open'); });
     if(window.gsap && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
@@ -148,9 +149,8 @@
       if(_mb && _mb.children.length){ window.gsap.from(_mb.children, { y:14, opacity:0, duration:.42, stagger:.05, ease:'power2.out', delay:.14, overwrite:'auto', clearProps:'transform,opacity' }); }
     }
     function close(){ bd.classList.remove('is-open'); setTimeout(function(){ bd.remove(); },320); }
-    bd.addEventListener('click',function(e){ if(e.target===bd) close(); });
+    // Solo cierra con la X o botones [data-close] (Cancelar/Entendido). Sin clic-afuera ni ESC.
     bd.querySelectorAll('[data-close]').forEach(function(b){ b.addEventListener('click',close); });
-    document.addEventListener('keydown',function onEsc(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown',onEsc); } });
     return { bd:bd, close:close };
   }
 
@@ -822,7 +822,7 @@
     var root=q('#viewRoot');
     root.innerHTML=
       '<div class="view dash">'+
-        '<header class="dash-hero"><h1 class="dash-title">Inventario · Control de Usos Internos</h1>'+
+        '<header class="dash-hero"><h1 class="dash-title">Usos Internos</h1>'+
           '<div class="dash-hero__ctl">'+monthNavHTML()+'<button class="dash-cta dash-cta--ghost" id="d_resumen">'+ICONS.chart+' Ver resumen</button></div></header>'+
         '<div class="dash-kpis">'+
           kpiCard('kpi--pend', ICONS.clock, 'Pendientes',       'k_pend',  'En proceso',      'pendientes')+
