@@ -1680,7 +1680,7 @@
     return '<div style="font-family:'+ff+';color:'+ink+';max-width:740px;">'+
       // Encabezado con logo
       '<table width="100%" style="border-collapse:collapse;"><tr>'+
-        '<td style="vertical-align:middle;"><img src="/logo-alas-s.a.png" alt="ALAS" style="height:50px;display:block;"></td>'+
+        '<td style="vertical-align:middle;"><img src="logo-alas-s.a.png" alt="ALAS" style="height:50px;display:block;"></td>'+
         '<td style="text-align:right;vertical-align:middle;">'+
           '<div style="font-size:19px;font-weight:bold;color:'+blue+';">Control de Usos Internos</div>'+
           '<div style="font-size:11.5px;color:'+muted+';">Comprobante de entrega de mercadería</div>'+
@@ -1707,12 +1707,19 @@
     '</div>';
   }
   function printReporte(u){
-    var old=q('#printArea'); if(old) old.remove();
-    var area=document.createElement('div'); area.id='printArea'; area.innerHTML=printReporteHTML(u);
-    document.body.appendChild(area);
-    var done=false; function go(){ if(done) return; done=true; window.print(); setTimeout(function(){ area.remove(); }, 500); }
-    var img=area.querySelector('img');
-    if(img && !img.complete){ img.onload=go; img.onerror=go; setTimeout(go, 1200); } else { go(); }
+    // Impresión en un iframe aislado (evita que transforms/estilos del launcher
+    // desplacen el contenido y salga en blanco, y no lo bloquean los popups).
+    var old=q('#printFrame'); if(old) old.remove();
+    var f=document.createElement('iframe'); f.id='printFrame';
+    f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+    document.body.appendChild(f);
+    var doc=f.contentWindow.document;
+    doc.open();
+    doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Comprobante de entrega</title><base href="'+location.href+'"><style>@page{margin:14mm;}body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}</style></head><body>'+printReporteHTML(u)+'</body></html>');
+    doc.close();
+    var done=false; function go(){ if(done) return; done=true; try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ console.error('[print]',e); } setTimeout(function(){ f.remove(); }, 1000); }
+    var img=doc.querySelector('img');
+    if(img && !img.complete){ img.onload=go; img.onerror=go; setTimeout(go, 1500); } else { setTimeout(go, 250); }
     // Imprimir = entregado: marca las líneas del comprobante y refresca la columna.
     var ids=(u.items||[]).map(function(it){ return it.id; }).filter(Boolean);
     if(ids.length && API.marcarEntregado){ API.marcarEntregado(ids).then(function(){ setTimeout(function(){ if(typeof refreshCurrent==='function') refreshCurrent(); }, 700); }).catch(function(){}); }
