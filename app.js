@@ -1420,7 +1420,14 @@
       '<div class="modal__body">'+
         '<div class="field"><label class="field__label">Fecha de emisión <span class="req">*</span></label><input class="input" type="date" id="w_fecha" value="'+hoy+'"></div>'+
         '<div class="field"><label class="field__label">Departamento / Sector <span class="req">*</span></label>'+
-          '<div class="sector-grid" id="w_sectores">'+ (window.SECTORES||[]).map(function(s){ return '<button type="button" class="sector-btn" data-sec="'+esc(s)+'">'+esc(s)+'</button>'; }).join('') +'</div></div>'+
+          '<div class="sector-grid sector-grid--cards" id="w_sectores">'+ (window.SECTORES||SECTOR_CARDS.map(function(s){return s.key;})).map(function(sk){
+            var c=SECTOR_CARDS.find(function(x){return x.key===sk;});
+            var ic=c?ICONS[c.icon]:ICONS.building, name=c?c.label:sk, desc=c?(SECTOR_DESC[sk]||''):'';
+            return '<button type="button" class="sector-card2" data-sec="'+esc(sk)+'">'+
+              '<span class="sector-card2__ic">'+ic+'</span>'+
+              '<span class="sector-card2__txt"><span class="sector-card2__name">'+esc(name)+'</span><span class="sector-card2__desc">'+esc(desc)+'</span></span>'+
+              '<span class="sector-card2__check">'+ICONS.check+'</span></button>';
+          }).join('') +'</div></div>'+
         '<div class="field"><label class="field__label">Mercaderías <span class="req">*</span></label>'+
           '<div class="items-box"><div id="w_items"><div class="empty-mini">Sin mercaderías agregadas</div></div>'+
           '<div class="items-actions">'+
@@ -1434,9 +1441,14 @@
     );
 
     q('#w_fecha',m.bd).addEventListener('change',function(e){ draft.fecha_emision=e.target.value; });
-    m.bd.querySelectorAll('#w_sectores .sector-btn').forEach(function(b){
-      b.addEventListener('click',function(){ draft.sector=b.getAttribute('data-sec'); m.bd.querySelectorAll('#w_sectores .sector-btn').forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); });
+    m.bd.querySelectorAll('#w_sectores .sector-card2').forEach(function(b){
+      b.addEventListener('click',function(){ draft.sector=b.getAttribute('data-sec'); m.bd.querySelectorAll('#w_sectores .sector-card2').forEach(function(x){x.classList.remove('active');}); b.classList.add('active');
+        if(window.gsap){ window.gsap.fromTo(b,{scale:.97},{scale:1,duration:.32,ease:'back.out(2.2)',clearProps:'transform'}); } });
     });
+    // Entrada fluida: las tarjetas de sector aparecen escalonadas al abrir el modal.
+    if(window.gsap && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+      window.gsap.from(m.bd.querySelectorAll('.sector-card2'),{ y:16, opacity:0, duration:.42, stagger:.06, ease:'power3.out', delay:.26, clearProps:'transform,opacity', overwrite:'auto' });
+    }
     q('#w_add',m.bd).addEventListener('click',function(){ itemModal(function(item){ draft.items.push(item); paintItems(); }); });
     q('#w_import',m.bd).addEventListener('click',function(){ var f=q('#w_file',m.bd); if(f) f.click(); });
     q('#w_file',m.bd).addEventListener('change',function(e){
@@ -1470,16 +1482,31 @@
       }).catch(function(){ ov.error('Error al guardar'); var b=q('#w_save',m.bd); if(b) b.disabled=false; });
     });
 
+    var _prevCount=0;
     function paintItems(){
       var host=q('#w_items',m.bd);
-      if(!draft.items.length){ host.innerHTML='<div class="empty-mini">Sin mercaderías agregadas</div>'; return; }
-      host.innerHTML=draft.items.map(function(it,idx){
-        return '<div class="item-row"><div class="item-row__main"><div class="item-row__cod">'+esc(it.cod_mercaderia)+(it.ceco?' <span class="item-row__ceco">'+esc(it.ceco)+'</span>':'')+'</div>'+
+      if(!draft.items.length){ host.innerHTML='<div class="empty-mini">Sin mercaderías agregadas</div>'; _prevCount=0; return; }
+      var hadEmpty=!!host.querySelector('.empty-mini');
+      host.innerHTML='<div class="items-count">'+draft.items.length+' mercadería(s)</div>'+draft.items.map(function(it,idx){
+        return '<div class="item-row"><span class="item-row__num">'+(idx+1)+'</span><div class="item-row__main"><div class="item-row__cod">'+esc(it.cod_mercaderia)+(it.ceco?' <span class="item-row__ceco">'+esc(it.ceco)+'</span>':'')+'</div>'+
           '<div class="item-row__desc">'+esc(it.descripcion)+' · '+esc(it.uso_texto||'')+'</div></div>'+
           '<div class="item-row__qty">'+esc(it.cantidad)+' '+esc(it.um)+'</div>'+
           '<button class="icon-btn item-row__del" data-del="'+idx+'" title="Quitar">&times;</button></div>';
       }).join('');
-      host.querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click',function(){ draft.items.splice(+b.getAttribute('data-del'),1); paintItems(); }); });
+      host.querySelectorAll('[data-del]').forEach(function(b){ b.addEventListener('click',function(){
+        var i=+b.getAttribute('data-del'), row=b.closest('.item-row');
+        if(window.gsap && row){ window.gsap.to(row,{ x:14, opacity:0, height:0, marginBottom:0, paddingTop:0, paddingBottom:0, duration:.24, ease:'power2.in', onComplete:function(){ draft.items.splice(i,1); paintItems(); } }); }
+        else { draft.items.splice(i,1); paintItems(); }
+      }); });
+      // Animar SOLO las filas nuevas (evita re-animar todo al agregar).
+      if(window.gsap){
+        var rows=host.querySelectorAll('.item-row');
+        var start=hadEmpty?0:Math.min(_prevCount, rows.length);
+        var fresh=Array.prototype.slice.call(rows, start);
+        if(fresh.length){ window.gsap.from(fresh,{ y:12, opacity:0, duration:.36, stagger:.05, ease:'power3.out', clearProps:'transform,opacity' }); }
+        window.gsap.from(host.querySelector('.items-count'),{ opacity:0, y:-6, duration:.3, ease:'power2.out', clearProps:'transform,opacity' });
+      }
+      _prevCount=draft.items.length;
     }
   }
 

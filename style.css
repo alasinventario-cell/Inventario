@@ -689,10 +689,35 @@ tr.row-date.is-open:hover td { background:#daeafb; }
 .sector-btn:hover { border-color:#c8d8f8; background:#fff; transform:translateY(-2px); box-shadow:0 8px 18px rgba(11,95,141,.10); }
 .sector-btn.active { border-color:var(--alas-brand); background:#eef6fb; color:var(--alas-brand); box-shadow:0 0 0 3px rgba(11,95,141,.14); }
 
+/* Tarjetas de sector PRO (wizard) */
+.sector-grid--cards { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.sector-card2 { position:relative; display:flex; align-items:center; gap:13px; padding:15px 16px; border:1.5px solid #e4e8ef; border-radius:15px;
+  background:#fbfcfe; cursor:pointer; text-align:left; will-change:transform;
+  transition:transform .2s var(--alas-ease-spring), box-shadow .2s var(--alas-ease), border-color .16s var(--alas-ease), background .16s var(--alas-ease); }
+.sector-card2__ic { width:42px; height:42px; flex-shrink:0; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  background:#eef4fb; color:var(--alas-brand); transition:background .18s var(--alas-ease), color .18s var(--alas-ease); }
+.sector-card2__ic svg { width:22px; height:22px; }
+.sector-card2__txt { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.sector-card2__name { font-size:13.5px; font-weight:800; color:var(--alas-text-1); line-height:1.15; }
+.sector-card2__desc { font-size:11.5px; font-weight:600; color:var(--alas-text-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sector-card2__check { position:absolute; top:10px; right:10px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:var(--alas-brand); color:#fff; opacity:0; transform:scale(.5); transition:opacity .2s var(--alas-ease), transform .24s var(--alas-ease-spring); }
+.sector-card2__check svg { width:14px; height:14px; }
+.sector-card2:hover { border-color:#c3d6ef; background:#fff; transform:translateY(-3px); box-shadow:0 12px 26px rgba(11,95,141,.12); }
+.sector-card2:hover .sector-card2__ic { background:#e0edfa; }
+.sector-card2.active { border-color:var(--alas-brand); background:#eef6fb; box-shadow:0 0 0 3px rgba(11,95,141,.16), 0 10px 24px rgba(11,95,141,.14); }
+.sector-card2.active .sector-card2__ic { background:var(--alas-brand); color:#fff; }
+.sector-card2.active .sector-card2__check { opacity:1; transform:scale(1); }
+
 /* Lista de ítems en el wizard */
 .items-box { border:1.5px solid #eef2f7; border-radius:14px; padding:10px; margin-top:6px; background:#fbfcfe; }
-.item-row { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; background:var(--gray-50); margin-bottom:6px; }
+.items-count { font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--alas-text-3); padding:2px 4px 8px; }
+.item-row { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:11px; background:#fff; border:1px solid var(--alas-border); margin-bottom:7px; overflow:hidden;
+  transition:border-color .16s var(--alas-ease), box-shadow .16s var(--alas-ease); }
+.item-row:hover { border-color:#c8dcea; box-shadow:0 4px 12px rgba(15,23,42,.06); }
 .item-row:last-child { margin-bottom:0; }
+.item-row__num { flex-shrink:0; width:24px; height:24px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  background:#eef4fb; color:var(--alas-brand); font-size:12px; font-weight:800; }
 .item-row__main { flex:1; min-width:0; }
 .item-row__cod { font-weight:800; color:var(--alas-brand); font-size:12.5px; }
 .item-row__ceco { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:6px; background:#e8f1f8; color:var(--alas-brand); font-size:10.5px; font-weight:800; letter-spacing:.02em; vertical-align:middle; }
@@ -700,11 +725,13 @@ tr.row-date.is-open:hover td { background:#daeafb; }
 .item-row__qty { font-weight:800; font-size:13px; white-space:nowrap; }
 .item-row__del { color:var(--alas-text-3); }
 .item-row__del:hover { color:var(--alas-danger); }
-.add-item-btn { width:100%; padding:11px; border:1.5px dashed var(--gray-300); border-radius:10px; background:transparent;
-  color:var(--alas-brand); font-weight:700; font-size:13px; transition:all var(--fast);
+.add-item-btn { width:100%; padding:13px; border:1.5px dashed var(--gray-300); border-radius:12px; background:transparent;
+  color:var(--alas-brand); font-weight:700; font-size:13px; cursor:pointer;
+  transition:border-color .16s var(--alas-ease), background .16s var(--alas-ease), transform .16s var(--alas-ease-spring), box-shadow .16s var(--alas-ease);
   display:flex; align-items:center; justify-content:center; gap:8px; }
 .add-item-btn svg { width:16px; height:16px; flex-shrink:0; }
-.add-item-btn:hover { border-color:var(--alas-brand); background:#f5fafd; }
+.add-item-btn:hover { border-color:var(--alas-brand); background:#f5fafd; transform:translateY(-2px); box-shadow:0 6px 16px rgba(11,95,141,.10); }
+.add-item-btn:active { transform:translateY(0); }
 .items-actions { display:flex; gap:8px; margin-top:8px; }
 .items-actions .add-item-btn { flex:1; }
 .add-item-btn--import { border-style:solid; border-color:rgba(37,99,235,.30); color:#1d4ed8; background:#eff5ff; }
