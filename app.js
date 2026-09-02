@@ -209,7 +209,7 @@
     var cols=IMPORT_COLS.map(function(c){return c.label;});
     var ex=['LA6901998','GUANTE DE CUERO CAÑO LARGO','12','PAR','Renovación por desgaste, EPP','61212411','FSI51HI000','1014452'];
     openModal(
-      '<div class="modal__head"><div class="modal__title">No se pudo importar el Excel</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">No se pudo importar el Excel</div></div>'+
       '<div class="modal__body">'+
         '<div class="import-err">'+ICONS.file+'<div><b>Faltan columnas'+(missing&&missing.length?': '+esc(missing.join(', ')):'')+'</b><div class="import-err__sub">Revisá que la primera fila tenga los encabezados correctos.</div></div></div>'+
         '<p class="list-hint" style="margin:14px 0 8px">El Excel debe tener estas columnas en la <b>primera fila</b> (los nombres pueden variar un poco). Ejemplo:</p>'+
@@ -307,6 +307,8 @@
       document.body.appendChild(dd); position(); renderList('');
       var inp=dd.querySelector('.ssel-inp'); var _deb=null;
       inp.addEventListener('input',function(){ if(cfg.asyncSearch){ clearTimeout(_deb); _deb=setTimeout(function(){ renderList(inp.value); },260); } else { renderList(inp.value); } });
+      // Enter = elegir el primer resultado (búsqueda ágil por teclado)
+      inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); var first=dd&&dd.querySelector('.ssel-item'); if(first) first.click(); } });
       var _addB=dd.querySelector('#sselAddNew');
       if(_addB) _addB.addEventListener('mousedown',function(e){ e.preventDefault(); }); // no perder foco/cerrar antes
       if(_addB) _addB.addEventListener('click',function(){ var term=inp.value.trim(); close(); cfg.onAddNew(term, function(opt){ value=String(opt.value); _dynOpts=[opt]; paint(); if(cfg.onChange) cfg.onChange(value, opt); }); });
@@ -323,7 +325,10 @@
     }
     disp.addEventListener('click',function(){ isOpen?close():open(); });
     disp.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); isOpen?close():open(); } });
-    return { getValue:function(){ return value; }, setValue:function(v){ value=(v!=null?String(v):null); paint(); }, option:function(){ return optByVal(value); } };
+    // Auto-apertura: al abrir un modal de búsqueda, el dropdown se abre y enfoca solo
+    // (espera a que termine la animación del modal para posicionarse bien).
+    if(cfg.autoOpen){ setTimeout(function(){ if(!isOpen && document.body.contains(disp)) open(); }, 430); }
+    return { getValue:function(){ return value; }, setValue:function(v){ value=(v!=null?String(v):null); paint(); }, open:open, option:function(){ return optByVal(value); } };
   }
 
   /* ── CasoPicker: selector de Caso/CECO como modal-tabla ───── */
@@ -340,7 +345,7 @@
       var m=openModal(
         '<div class="modal__head"><div class="modal__title">Elegir caso / CECO</div>'+
           '<div class="modal__head-actions"><div class="cp-search"><span>'+ICONS.search+'</span><input id="cp_q" placeholder="Buscar forma, CECO, cuenta, orden…" autocomplete="off"></div>'+
-          '<button class="modal__close" data-close>&times;</button></div></div>'+
+          '</div></div>'+
         '<div class="modal__body cp-body"><div class="cp-table-wrap"><table class="cp-table"><thead><tr>'+
           '<th>Forma de carga</th><th>Cuenta Mayor</th><th>CECO</th><th>Área</th><th>Orden</th><th>Detalle</th>'+
           '</tr></thead><tbody id="cp_rows"></tbody></table></div></div>'+
@@ -370,7 +375,7 @@
     }
     function openNewCaso(prefill, pickerM){
       var mf=openModal(
-        '<div class="modal__head"><div class="modal__title">Agregar CECO / caso nuevo</div><button class="modal__close" data-close>&times;</button></div>'+
+        '<div class="modal__head"><div class="modal__title">Agregar CECO / caso nuevo</div></div>'+
         '<div class="modal__body"><div class="nc-grid">'+
           '<div class="field nc-wide"><label class="field__label">Forma de carga *</label><input class="input" id="nc_forma" placeholder="Ej: MANT.LOCALES E INST." autocomplete="off"></div>'+
           '<div class="field"><label class="field__label">Cuenta Mayor</label><input class="input" id="nc_cuenta" placeholder="61234006" autocomplete="off"></div>'+
@@ -414,7 +419,7 @@
       '<span class="date-quick-ic">'+(k==='todos'?'&times;':ICONS.calendar)+'</span>'+
       '<span class="date-quick-txt"><span class="date-quick-lbl">'+lbl+'</span><span class="date-quick-sub">'+sub+'</span></span></button>'; }
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Filtrar por fechas</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Filtrar por fechas</div></div>'+
       '<div class="modal__body">'+
         '<div class="date-section-title">'+ICONS.calendar+' Rango personalizado</div>'+
         '<div class="date-fields">'+
@@ -826,7 +831,7 @@
     return '<'+tag+' class="kpi '+cls+'"'+(goKey?' data-go="'+goKey+'"':'')+'>'+
       '<span class="kpi__top"><span class="kpi__label">'+label+'</span><span class="kpi__ic">'+ic+'</span></span>'+
       '<span class="kpi__value" id="'+valId+'">0</span>'+
-      '<span class="kpi__foot">'+foot+(goKey?' '+ARROW:'')+'</span></'+tag+'>';
+      '<span class="kpi__foot"><span class="kpi__chip">'+foot+'</span>'+(goKey?'<span class="kpi__go">Ver '+ARROW+'</span>':'')+'</span></'+tag+'>';
   }
 
   function renderMenu(){
@@ -1098,7 +1103,7 @@
   // Alta de material nuevo en el catálogo (desde el buscador de mercaderías)
   function openNewMaterial(prefill, select){
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Agregar material nuevo</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Agregar material nuevo</div></div>'+
       '<div class="modal__body">'+
         '<div class="field"><label class="field__label">Código <span class="req">*</span></label><input class="input" id="nm_cod" placeholder="Ej: LA6901998" autocomplete="off"></div>'+
         '<div class="grid-2"><div class="field"><label class="field__label">Descripción <span class="req">*</span></label><input class="input" id="nm_desc" placeholder="Descripción del material" autocomplete="off"></div>'+
@@ -1127,7 +1132,7 @@
     if(!items.length){ toast('Seleccioná líneas pendientes','err'); return; }
     var chosen=null;
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Asignar CECO a '+items.length+' línea(s)</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Asignar CECO a '+items.length+' línea(s)</div></div>'+
       '<div class="modal__body">'+
         '<p class="list-hint" style="margin:0 0 14px">Elegí el caso / CECO que se aplicará a las <b>'+items.length+'</b> líneas pendientes seleccionadas.</p>'+
         '<div class="field"><label class="field__label">Caso / CECO <span class="req">*</span></label><div id="bulk_caso_host"></div></div>'+
@@ -1161,7 +1166,7 @@
     var sinCeco=items.filter(function(x){ var r=byId[x.itemId]; return r && !r.it.ceco; }).length;
     if(sinCeco){ toast('Primero asigná CECO a '+sinCeco+' línea(s) sin CECO','err'); return; }
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Cargar a SAP — '+items.length+' línea(s)</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Cargar a SAP — '+items.length+' línea(s)</div></div>'+
       '<div class="modal__body">'+
         '<p class="list-hint" style="margin:0 0 14px">Ingresá el <b>N.º de reserva</b> que devolvió SAP; se aplica a las <b>'+items.length+'</b> líneas pendientes seleccionadas.</p>'+
         '<div class="field"><label class="field__label">N.º de Reserva (SAP) <span class="req">*</span></label><input class="input" id="bs_reserva" placeholder="Ej: 0001490246" autocomplete="off"></div>'+
@@ -1183,7 +1188,7 @@
     var items=Object.keys(sel).map(function(k){return sel[k];}).filter(function(x){return x.estado==='cargado';});
     if(!items.length) return;
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Dar de baja en lote</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Dar de baja en lote</div></div>'+
       '<div class="modal__body"><div class="baja-hero"><span class="baja-hero__ic">'+ICONS.check+'</span><div><div class="baja-hero__t">Dar de baja '+items.length+' línea(s)</div><div class="baja-hero__s">Se marcarán como <b>consumidas en SAP</b> y quedan terminadas.</div></div></div></div>'+
       '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--success" id="okBulk">'+ICONS.check+' Confirmar baja ('+items.length+')</button></div>'
     );
@@ -1210,7 +1215,7 @@
     }
     var area=API.cecoArea(it.ceco)||'';
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Detalle del CECO</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Detalle del CECO</div></div>'+
       '<div class="modal__body">'+
         '<div class="ceco-modal__head"><span class="ceco-modal__cod">'+esc(it.cod_mercaderia||'—')+'</span><span class="ceco-modal__desc">'+esc(it.descripcion||'—')+'</span></div>'+
         '<div class="ceco-grid">'+
@@ -1311,12 +1316,18 @@
     return '<button class="action-btn '+cls+'" aria-label="'+esc(label)+'" data-act="'+act+'" data-uso="'+usoId+'"'+(itemId?' data-item="'+itemId+'"':'')+'>'+
       '<span class="tip">'+esc(label)+'</span>'+icon+'</button>';
   }
+  // Acción PRINCIPAL del flujo (siguiente paso): ícono + texto para que se entienda.
+  function actBtnLabeled(cls,label,icon,act,usoId,itemId){
+    return '<button class="action-btn action-btn--pill '+cls+'" data-act="'+act+'" data-uso="'+usoId+'"'+(itemId?' data-item="'+itemId+'"':'')+'>'+
+      icon+'<span class="ab-lbl">'+esc(label)+'</span></button>';
+  }
   function rowActions(u,it){
     // Línea terminada (dada de baja): solo lectura (se imprime desde "Ver reporte").
     if(it.sap_estado==='baja') return '<span class="row-ro">—</span>';
     var h='';
-    if(it.sap_estado==='pendiente') h+=actBtn('a-sap','Cargar a SAP',ICONS.sap,'cargar',u.id,it.id);
-    if(it.sap_estado==='cargado')   h+=actBtn('a-baja','Dar de baja',ICONS.docBaja,'baja',u.id,it.id);
+    // Siguiente paso destacado con texto; acciones secundarias como íconos.
+    if(it.sap_estado==='pendiente') h+=actBtnLabeled('a-sap','Cargar a SAP',ICONS.sap,'cargar',u.id,it.id);
+    if(it.sap_estado==='cargado')   h+=actBtnLabeled('a-baja','Dar de baja',ICONS.docBaja,'baja',u.id,it.id);
     h+=actBtn('a-edit','Editar',ICONS.edit,'editar',u.id,it.id);
     h+=actBtn('a-del','Eliminar',ICONS.trash,'eliminar',u.id,it.id);
     return h;
@@ -1342,7 +1353,7 @@
     if(act==='editar'){ resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); editItemModal(usoId, it); }); return; }
     if(act==='eliminar'){
       resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;}); var last=(u.items||[]).length<=1;
-        var m=openModal('<div class="modal__head"><div class="modal__title">Eliminar material</div><button class="modal__close" data-close>&times;</button></div>'+
+        var m=openModal('<div class="modal__head"><div class="modal__title">Eliminar material</div></div>'+
           '<div class="modal__body"><p style="font-size:13.5px;line-height:1.6;color:var(--alas-text-2)">¿Seguro que querés eliminar esta línea del uso interno?</p>'+
           '<div class="caso-preview"><div class="caso-preview__row"><span>Mercadería</span><span>'+esc(it.cod_mercaderia)+'</span></div>'+
           '<div class="caso-preview__row"><span>Cantidad</span><span>'+esc(it.cantidad)+' '+esc(it.um)+'</span></div>'+
@@ -1358,7 +1369,7 @@
       resolveUso(usoId,itemId).then(function(u){ done(); var it=(u.items||[]).find(function(x){return x.id===itemId;});
         function di(l,v,wide){ return '<div class="detail-item'+(wide?' detail-item--wide':'')+'"><span class="detail-item__l">'+l+'</span><span class="detail-item__v">'+v+'</span></div>'; }
         var m=openModal(
-          '<div class="modal__head"><div class="modal__title">Dar de baja en SAP</div><button class="modal__close" data-close>&times;</button></div>'+
+          '<div class="modal__head"><div class="modal__title">Dar de baja en SAP</div></div>'+
           '<div class="modal__body">'+
             '<div class="baja-hero"><span class="baja-hero__ic">'+ICONS.check+'</span><div><div class="baja-hero__t">Confirmar baja de la línea</div><div class="baja-hero__s">Se marca como <b>consumida en SAP</b> y la línea queda terminada.</div></div></div>'+
             '<div class="detail-card">'+
@@ -1405,7 +1416,7 @@
     var draft={ fecha_emision:hoy, sector:null, items:[] };
 
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Nuevo Uso Interno</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Nuevo Uso Interno</div></div>'+
       '<div class="modal__body">'+
         '<div class="field"><label class="field__label">Fecha de emisión <span class="req">*</span></label><input class="input" type="date" id="w_fecha" value="'+hoy+'"></div>'+
         '<div class="field"><label class="field__label">Departamento / Sector <span class="req">*</span></label>'+
@@ -1475,7 +1486,7 @@
   /* ── Modal: agregar mercadería (incluye caso / CECO) ──────── */
   function itemModal(onAdd){
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Agregar mercadería</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Agregar mercadería</div></div>'+
       '<div class="modal__body">'+
         '<div class="field"><label class="field__label">Cod. Mercadería <span class="req">*</span></label><div id="i_cod_host"></div></div>'+
         '<div class="grid-2"><div class="field"><label class="field__label">Cantidad <span class="req">*</span></label><input class="input" type="number" min="0" step="1" id="i_cant"></div>'+
@@ -1491,10 +1502,10 @@
       '<div class="modal__foot"><button class="btn btn--secondary" data-close>Cancelar</button><button class="btn btn--primary" id="i_save">Guardar</button></div>'
     );
     var um=q('#i_um',m.bd), prev=q('#i_prev',m.bd), chosenMerc=null, chosenCaso=null;
-    SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Buscar mercadería (código o descripción)…',
+    SSelect(q('#i_cod_host',m.bd), { icon:ICONS.tag, placeholder:'Buscar mercadería (código o descripción)…', autoOpen:true,
       asyncSearch:function(t){ return API.searchMercaderias(t).then(function(rows){ return rows.map(function(mm){ return { value:mm.codigo, label:mm.codigo+' — '+mm.descripcion, um:mm.um, descripcion:mm.descripcion }; }); }); },
       addNewLabel:'Agregar material nuevo', onAddNew:function(term, select){ openNewMaterial(term, select); },
-      onChange:function(v,opt){ chosenMerc=opt?{codigo:opt.value,descripcion:opt.descripcion,um:opt.um}:null; um.value=opt?opt.um:''; } });
+      onChange:function(v,opt){ chosenMerc=opt?{codigo:opt.value,descripcion:opt.descripcion,um:opt.um}:null; um.value=opt?opt.um:''; if(opt){ var c=q('#i_cant',m.bd); if(c) c.focus(); } } });
     CasoPicker(q('#i_caso_host',m.bd), { placeholder:'Elegir caso / CECO…', onChange:function(c){ chosenCaso=c; paintPrev(); } });
     function paintPrev(){ if(!chosenCaso){ prev.style.display='none'; return; } prev.style.display='block';
       q('#ip_cuenta',m.bd).textContent=chosenCaso.cuenta_mayor||'—'; q('#ip_ceco',m.bd).textContent=chosenCaso.ceco||'—';
@@ -1514,7 +1525,7 @@
   /* ── Modal: editar material ───────────────────────────────── */
   function editItemModal(usoId, it){
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Editar material</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Editar material</div></div>'+
       '<div class="modal__body">'+
         '<div class="field"><label class="field__label">Cod. Mercadería <span class="req">*</span></label><div id="i_cod_host"></div></div>'+
         '<div class="grid-2"><div class="field"><label class="field__label">Cantidad <span class="req">*</span></label><input class="input" type="number" min="0" step="1" id="i_cant"></div>'+
@@ -1574,7 +1585,7 @@
           '<div class="caso-preview__row"><span>CECO</span><span id="p_ceco">—</span></div>'+
           '<div class="caso-preview__row"><span>Orden</span><span id="p_orden">—</span></div></div>';
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Cargar a SAP — '+esc(it.cod_mercaderia)+'</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Cargar a SAP — '+esc(it.cod_mercaderia)+'</div></div>'+
       '<div class="modal__body">'+
         '<p style="font-size:12.5px;color:var(--alas-text-3);margin-bottom:14px">Ingresá el <b>N.º de reserva</b> que devolvió SAP para marcar la línea como cargada.</p>'+
         casoBlock +
@@ -1611,9 +1622,10 @@
 
   function reporteModal(u){
     var m=openModal(
-      '<div class="modal__head"><div class="modal__title">Reporte · '+esc(u.nro||'Uso Interno')+'</div><button class="modal__close" data-close>&times;</button></div>'+
+      '<div class="modal__head"><div class="modal__title">Reporte · '+esc(u.nro||'Uso Interno')+'</div></div>'+
       '<div class="modal__body">'+'<div style="max-width:760px;margin:0 auto">'+reporteEmailHTML(u)+'</div>'+
         '<div class="report-actions" style="max-width:760px;margin:20px auto 0">'+
+          '<button class="btn btn--secondary" data-close>Cerrar</button>'+
           '<button class="btn btn--primary" id="r_copy">📋 Copiar para Outlook</button>'+
           '<button class="btn btn--success" id="r_print">'+ICONS.print+' Imprimir</button>'+
         '</div></div>', { wide:true });
