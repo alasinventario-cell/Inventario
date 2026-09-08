@@ -31,7 +31,32 @@
     check: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
     alert: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
     calEmpty: '<svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l6 4M15 15l-6 4"/></svg>',
+    chk: '<svg fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
   };
+
+  /* ── Seleccionador PRO (custom select animado) ───────────────────────── */
+  function mountSelect(container, opts, initial) {
+    var value = initial, open = false;
+    container.classList.add('ci-sel');
+    container.innerHTML = '<button type="button" class="ci-sel__btn"><span class="ci-sel__val"></span><span class="ci-sel__cv">' + ICO.chevronD + '</span></button><div class="ci-sel__menu" hidden></div>';
+    var btn = container.querySelector('.ci-sel__btn'), valEl = container.querySelector('.ci-sel__val'), menu = container.querySelector('.ci-sel__menu');
+    function paintVal() { valEl.textContent = value; }
+    function renderMenu() {
+      menu.innerHTML = opts.map(function (o) { return '<button type="button" class="ci-sel__opt' + (o === value ? ' on' : '') + '" data-v="' + esc(o) + '">' + esc(o) + (o === value ? ICO.chk : '') + '</button>'; }).join('');
+      menu.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); value = b.getAttribute('data-v'); paintVal(); close(); }); });
+    }
+    function onDoc(e) { if (!container.contains(e.target)) close(); }
+    function onEsc(e) { if (e.key === 'Escape') close(); }
+    function openM() {
+      renderMenu(); menu.hidden = false; open = true; container.classList.add('open');
+      document.addEventListener('mousedown', onDoc, true); document.addEventListener('keydown', onEsc, true);
+      if (G() && !reduce()) { G().fromTo(menu, { opacity: 0, y: -6, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .2, ease: 'back.out(2)', transformOrigin: 'top center' }); G().fromTo(menu.querySelectorAll('.ci-sel__opt'), { opacity: 0, y: 5 }, { opacity: 1, y: 0, duration: .18, stagger: .025, ease: 'power2.out', delay: .03 }); }
+    }
+    function close() { menu.hidden = true; open = false; container.classList.remove('open'); document.removeEventListener('mousedown', onDoc, true); document.removeEventListener('keydown', onEsc, true); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); open ? close() : openM(); });
+    paintVal();
+    return { getValue: function () { return value; } };
+  }
 
   /* ── Config ──────────────────────────────────────────────────────────── */
   var DEPOSITOS = ['Depósito Central', 'Fábrica', 'Depósito Luque Sanber'];
@@ -440,33 +465,73 @@
     if (G() && !reduce()) G().to(t, { opacity: 0, duration: .12, ease: 'power2.in', onComplete: function () { t.remove(); } }); else t.remove();
   }
 
-  /* ── Modal crear ─────────────────────────────────────────────────────── */
+  /* ── Modal crear (wizard 2 pasos) ────────────────────────────────────── */
   function openModal(fechaDef) {
     var ov = el('<div class="ci-ov"></div>');
     ov.innerHTML =
       '<div class="ci-modal" role="dialog" aria-modal="true">' +
-        '<div class="ci-modal__h"><h3>Programar inventario</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
+        '<div class="ci-modal__h"><h3>Programar inventario</h3>' +
+          '<div class="ci-steps">' +
+            '<div class="ci-steps__i on" id="st1"><span class="ci-steps__n">1</span><span class="ci-steps__l">Datos</span></div>' +
+            '<span class="ci-steps__bar"></span>' +
+            '<div class="ci-steps__i" id="st2"><span class="ci-steps__n">2</span><span class="ci-steps__l">Mercaderías</span></div>' +
+          '</div>' +
+          '<button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
-          '<div class="ci-field"><label>Nombre del inventario *</label><input id="mNombre" placeholder="Ej: Inventario cíclico Picking"></div>' +
-          '<div class="ci-grid2"><div class="ci-field"><label>Fecha *</label><input id="mFecha" type="date" value="' + fechaDef + '"></div>' +
-          '<div class="ci-field"><label>Hora</label><input id="mHora" type="time" value="' + nowHM() + '"></div></div>' +
-          '<div class="ci-field"><label>Depósito</label><div class="ci-depsel" id="mDep">' +
-            DEPOSITOS.map(function (d, i) { return '<button type="button" data-i="' + i + '" class="' + (i === S.depIdx ? 'on' : '') + '">' + DEP_ICO[i] + esc(d) + '</button>'; }).join('') + '</div></div>' +
-          '<div class="ci-grid2"><div class="ci-field"><label>Sector</label><select id="mSector">' + SECTORES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
-          '<div class="ci-field"><label>Prioridad</label><select id="mPrio"><option>NORMAL</option><option>ALTA</option><option>BAJA</option></select></div></div>' +
-          '<div class="ci-grid2"><div class="ci-field"><label>Responsable</label><input id="mResp" placeholder="Nombre del responsable"></div>' +
-          '<div class="ci-field"><label>Ubicación</label><input id="mUbic" placeholder="Rack A01 – A20"></div></div>' +
-          '<div class="ci-field"><label>Mercaderías a contar <span class="ci-items__count" id="mItemsCount"></span></label><div class="ci-items">' +
-            '<div class="ci-items__search"><input id="mItem" placeholder="Buscar mercadería por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
-            '<div class="ci-items__list" id="mItemsList"></div>' +
-            '<div class="ci-items__empty" id="mItemsEmpty">Todavía no agregaste mercaderías. Buscá y agregá las que vas a contar.</div>' +
-          '</div></div>' +
-          '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
+          '<div class="ci-step" id="step1">' +
+            '<div class="ci-field"><label>Nombre del inventario *</label><input id="mNombre" placeholder="Ej: Inventario cíclico Picking"></div>' +
+            '<div class="ci-grid2"><div class="ci-field"><label>Fecha *</label><input id="mFecha" type="date" value="' + fechaDef + '"></div>' +
+            '<div class="ci-field"><label>Hora</label><input id="mHora" type="time" value="' + nowHM() + '"></div></div>' +
+            '<div class="ci-field"><label>Depósito</label><div class="ci-depsel" id="mDep">' +
+              DEPOSITOS.map(function (d, i) { return '<button type="button" data-i="' + i + '" class="' + (i === S.depIdx ? 'on' : '') + '">' + DEP_ICO[i] + esc(d) + '</button>'; }).join('') + '</div></div>' +
+            '<div class="ci-grid2"><div class="ci-field"><label>Sector</label><div id="mSector"></div></div>' +
+            '<div class="ci-field"><label>Prioridad</label><div id="mPrio"></div></div></div>' +
+            '<div class="ci-grid2"><div class="ci-field"><label>Responsable</label><input id="mResp" placeholder="Nombre del responsable"></div>' +
+            '<div class="ci-field"><label>Ubicación</label><input id="mUbic" placeholder="Rack A01 – A20"></div></div>' +
+            '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
+          '</div>' +
+          '<div class="ci-step" id="step2" hidden>' +
+            '<div class="ci-step2-head"><h4>Mercaderías a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
+            '<div class="ci-items">' +
+              '<div class="ci-items__search"><input id="mItem" placeholder="Buscar mercadería por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
+              '<div class="ci-items__list" id="mItemsList"></div>' +
+              '<div class="ci-items__empty" id="mItemsEmpty">Todavía no agregaste mercaderías. Buscá y agregá las que vas a contar.</div>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
-        '<div class="ci-modal__f"><button class="ci-mbtn ghost" id="mCancel">Cancelar</button><button class="ci-mbtn primary" id="mSave">' + ICO.plus + ' Programar</button></div>' +
+        '<div class="ci-modal__f">' +
+          '<button class="ci-mbtn ghost" id="mBack" style="margin-right:auto" hidden>' + ICO.left + ' Atrás</button>' +
+          '<button class="ci-mbtn ghost" id="mCancel">Cancelar</button>' +
+          '<button class="ci-mbtn primary" id="mNext">Siguiente ' + ICO.right + '</button>' +
+          '<button class="ci-mbtn primary" id="mSave" hidden>' + ICO.plus + ' Programar</button>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(ov);
+    var selSector = mountSelect(ov.querySelector('#mSector'), SECTORES, SECTORES[0]);
+    var selPrio = mountSelect(ov.querySelector('#mPrio'), ['NORMAL', 'ALTA', 'BAJA'], 'NORMAL');
     var depSel = S.depIdx;
+
+    // ── Navegación de pasos ──
+    var step = 1;
+    function goStep(n) {
+      step = n;
+      ov.querySelector('#step1').hidden = n !== 1;
+      ov.querySelector('#step2').hidden = n !== 2;
+      ov.querySelector('#mBack').hidden = n === 1;
+      ov.querySelector('#mNext').hidden = n === 2;
+      ov.querySelector('#mSave').hidden = n === 1;
+      var i1 = ov.querySelector('#st1'), i2 = ov.querySelector('#st2');
+      i1.classList.toggle('on', n === 1); i1.classList.toggle('done', n > 1); i2.classList.toggle('on', n === 2);
+      var panel = ov.querySelector(n === 1 ? '#step1' : '#step2');
+      if (G() && !reduce()) G().fromTo(panel, { opacity: 0, x: n === 2 ? 20 : -20 }, { opacity: 1, x: 0, duration: .3, ease: 'power3.out', clearProps: 'all' });
+      setTimeout(function () { var f = ov.querySelector(n === 2 ? '#mItem' : '#mNombre'); if (f) f.focus(); }, 70);
+    }
+    ov.querySelector('#mNext').addEventListener('click', function () {
+      var nombre = ov.querySelector('#mNombre').value.trim();
+      if (!nombre) { var inp = ov.querySelector('#mNombre'); inp.focus(); if (G() && !reduce()) G().fromTo(inp, { x: -6 }, { x: 0, duration: .4, ease: 'elastic.out(1,0.4)' }); return; }
+      goStep(2);
+    });
+    ov.querySelector('#mBack').addEventListener('click', function () { goStep(1); });
     ov.querySelectorAll('#mDep [data-i]').forEach(function (b) {
       b.addEventListener('click', function () {
         depSel = +b.getAttribute('data-i');
@@ -525,11 +590,11 @@
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
       var nombre = ov.querySelector('#mNombre').value.trim();
-      if (!nombre) { ov.querySelector('#mNombre').focus(); return; }
+      if (!nombre) { goStep(1); ov.querySelector('#mNombre').focus(); return; }
       DATA.push({
         id: seq, codigo: 'INV-' + pad(1000 + seq++), fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
-        nombre: nombre, deposito: DEPOSITOS[depSel], sector: ov.querySelector('#mSector').value, tipo: 'General',
-        ubicacion: ov.querySelector('#mUbic').value.trim(), estado: 'programado', prioridad: ov.querySelector('#mPrio').value,
+        nombre: nombre, deposito: DEPOSITOS[depSel], sector: selSector.getValue(), tipo: 'General',
+        ubicacion: ov.querySelector('#mUbic').value.trim(), estado: 'programado', prioridad: selPrio.getValue(),
         responsable: ov.querySelector('#mResp').value.trim(), items: items.slice(), observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
       });
       S.depIdx = depSel;
@@ -538,7 +603,7 @@
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 });
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' });
-      G().from(ov.querySelectorAll('.ci-modal__b > .ci-field, .ci-modal__b > .ci-grid2'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
+      G().from(ov.querySelectorAll('#step1 > .ci-field, #step1 > .ci-grid2'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
     }
     setTimeout(function () { ov.querySelector('#mNombre').focus(); }, 60);
   }
