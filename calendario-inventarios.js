@@ -63,6 +63,7 @@
   var DEP_ICO = [ICO.warehouse, ICO.factory, ICO.building];
   var SECTORES = ['Picking', 'Reserva', 'Recepción', 'Devoluciones', 'Expedición'];
   var TIPOS = ['Cíclico', 'General', 'Puntual', 'Rotativo'];
+  var MOTIVOS = ['Averiado', 'Vencido', 'Extraviado', 'Error de carga SAP', 'Devolución pendiente', 'Robo/Merma', 'Otro'];
   var EST = {
     programado: { label: 'Programado', short: 'Prog.', ico: ICO.circle },
     en_proceso: { label: 'En proceso', short: 'Curso', ico: ICO.play },
@@ -639,26 +640,80 @@
     return _marcas;
   }
 
-  /* ── Detalle ─────────────────────────────────────────────────────────── */
+  /* ── Detalle + Conteo ────────────────────────────────────────────────── */
   function openDetail(id) {
     var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
+    var itemsArr = (x.items || []).map(function (i) { return typeof i === 'string' ? { codigo: i, descripcion: '', um: 'UN' } : i; });
+    x.items = itemsArr; // normaliza
     var ov = el('<div class="ci-ov"></div>');
     function drow(k, v) { return '<div class="ci-detail-row"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>'; }
+    function cntCard(it, i) {
+      return '<div class="ci-cnt" data-i="' + i + '">' +
+        '<div class="ci-cnt__mat"><span class="ci-cnt__cod">' + esc(it.codigo) + '</span><span class="ci-cnt__desc">' + esc(it.descripcion || '') + '</span></div>' +
+        '<div class="ci-cnt__grid">' +
+          '<div class="ci-cnt__f"><label>Figura en SAP</label><input type="number" min="0" class="cnt-sap" value="' + (it.sap == null ? '' : it.sap) + '" placeholder="0"></div>' +
+          '<div class="ci-cnt__f"><label>Contado</label><input type="number" min="0" class="cnt-cont" value="' + (it.contado == null ? '' : it.contado) + '" placeholder="0"></div>' +
+          '<div class="ci-diff"><span class="ci-diff__n">—</span><span class="ci-diff__l">Sin datos</span></div>' +
+        '</div>' +
+        '<div class="ci-cnt__motivo" hidden><select class="cnt-mot"><option value="">Motivo…</option>' + MOTIVOS.map(function (m) { return '<option' + (it.motivo === m ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select><input class="cnt-nota" placeholder="Nota (opcional)" value="' + esc(it.nota || '') + '"></div>' +
+      '</div>';
+    }
+    var conteoHtml = itemsArr.length
+      ? '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div><div class="ci-cnt-list" id="dCntList">' + itemsArr.map(cntCard).join('') + '</div>'
+      : '<div class="ci-cnt-head"><h4>Conteo</h4></div><div class="ci-items__empty" style="padding:16px 0">Este inventario no tiene materiales cargados. Editá el inventario para agregarlos.</div>';
     ov.innerHTML =
-      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(560px,100%)">' +
+      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(600px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
           '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
-          drow('Código', x.codigo) + drow('Tipo', x.tipo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) +
-          drow('Ubicación', x.ubicacion || '—') + drow('Fecha', x.fecha) + drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') +
-          drow('Ítems (' + (x.items || []).length + ')', (x.items || []).map(function (i) { return typeof i === 'string' ? i : i.codigo; }).join(', ') || '—') + drow('Prioridad', x.prioridad) + drow('Diferencias', x.diffs ? 'Sí' : 'No') + drow('Observación', x.observacion || '—') +
+          '<div class="ci-grid2" style="gap:0 18px">' +
+            drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
+            drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') + drow('Marca/familia', x.tipo) + drow('Prioridad', x.prioridad) +
+          '</div>' +
+          conteoHtml +
         '</div>' +
         '<div class="ci-modal__f">' +
-          '<button class="ci-mbtn ghost" id="dEstado">Avanzar estado</button>' +
-          '<button class="ci-mbtn primary" id="dClose">Cerrar</button>' +
+          '<button class="ci-mbtn ghost" id="dEstado" style="margin-right:auto">Avanzar estado</button>' +
+          '<button class="ci-mbtn ghost" id="dClose">Cerrar</button>' +
+          (itemsArr.length ? '<button class="ci-mbtn primary" id="dGuardar">' + ICO.chk + ' Guardar conteo</button>' : '') +
         '</div>' +
       '</div>';
     document.body.appendChild(ov);
+
+    // ── Conteo: cálculo en vivo ──
+    function updateSummary() {
+      var ok = 0, sob = 0, fal = 0;
+      itemsArr.forEach(function (it) { if (it.diff == null) return; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; });
+      x.diffs = (sob + fal) > 0;
+      var sum = ov.querySelector('#dSum');
+      if (sum) sum.innerHTML = '<span class="ok">' + ICO.chk + ok + '</span><span class="sob">+' + sob + ' sobra</span><span class="fal">' + fal + ' falta</span>';
+    }
+    function bindCard(card) {
+      var i = +card.getAttribute('data-i'), it = itemsArr[i];
+      var sapI = card.querySelector('.cnt-sap'), conI = card.querySelector('.cnt-cont'), mot = card.querySelector('.ci-cnt__motivo');
+      var dEl = card.querySelector('.ci-diff'), nEl = dEl.querySelector('.ci-diff__n'), lEl = dEl.querySelector('.ci-diff__l');
+      function recompute(anim) {
+        var s = parseFloat(sapI.value), c = parseFloat(conI.value);
+        it.sap = isNaN(s) ? null : s; it.contado = isNaN(c) ? null : c;
+        card.classList.remove('d-ok', 'd-sob', 'd-fal'); dEl.classList.remove('ok', 'sob', 'fal');
+        if (it.sap == null || it.contado == null) { it.diff = null; nEl.textContent = '—'; lEl.textContent = 'Sin datos'; mot.hidden = true; }
+        else {
+          var d = it.contado - it.sap; it.diff = d;
+          if (d === 0) { dEl.classList.add('ok'); card.classList.add('d-ok'); nEl.textContent = '0'; lEl.textContent = 'Coincide'; mot.hidden = true; }
+          else if (d > 0) { dEl.classList.add('sob'); card.classList.add('d-sob'); nEl.textContent = '+' + d; lEl.textContent = 'Sobra'; mot.hidden = false; }
+          else { dEl.classList.add('fal'); card.classList.add('d-fal'); nEl.textContent = String(d); lEl.textContent = 'Faltante'; mot.hidden = false; }
+          if (anim && G() && !reduce()) G().fromTo(dEl, { scale: .8 }, { scale: 1, duration: .3, ease: 'back.out(3)' });
+        }
+        updateSummary();
+      }
+      sapI.addEventListener('input', function () { recompute(true); });
+      conI.addEventListener('input', function () { recompute(true); });
+      mot.querySelector('.cnt-mot').addEventListener('change', function (e) { it.motivo = e.target.value; });
+      mot.querySelector('.cnt-nota').addEventListener('input', function (e) { it.nota = e.target.value; });
+      recompute(false);
+    }
+    ov.querySelectorAll('.ci-cnt').forEach(bindCard);
+
     function close() { if (G() && !reduce()) { G().to(ov, { opacity: 0, duration: .16, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
     ov.querySelector('#dClose').addEventListener('click', close);
@@ -668,7 +723,18 @@
       x.estado = i < 0 ? 'programado' : order[(i + 1) % order.length];
       close(); paintKpis(); paintCalendar(false); paintList(true);
     });
-    if (G() && !reduce()) { G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 }); G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' }); }
+    var gb = ov.querySelector('#dGuardar');
+    if (gb) gb.addEventListener('click', function () {
+      var counted = itemsArr.filter(function (it) { return it.diff != null; }).length;
+      if (counted && x.estado === 'programado') x.estado = 'en_proceso';
+      if (counted === itemsArr.length && itemsArr.length) x.estado = 'realizado';
+      close(); paintKpis(); paintCalendar(false); paintList(true);
+    });
+    if (G() && !reduce()) {
+      G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
+      G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' });
+      G().from(ov.querySelectorAll('.ci-cnt'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
+    }
   }
 
   /* ── Entrada GSAP ────────────────────────────────────────────────────── */

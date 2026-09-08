@@ -287,6 +287,32 @@
 .ci-items__empty{font-size:12px;font-weight:600;color:var(--ci-muted)}
 .ci-items__count{font-size:11px;font-weight:700;color:var(--ci-primary)}
 
+/* Conteo (SAP vs contado, diferencia, motivo) */
+.ci-cnt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 2px}
+.ci-cnt-head h4{margin:0;font-size:14px;font-weight:800;color:var(--ci-text)}
+.ci-cnt-sum{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800}
+.ci-cnt-sum span{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px}
+.ci-cnt-sum .ok{background:#e9f7ef;color:#127a4b} .ci-cnt-sum .sob{background:#eef5fc;color:#0b5f8d} .ci-cnt-sum .fal{background:#fdeded;color:#c0392b}
+.ci-cnt-list{display:flex;flex-direction:column;gap:9px}
+.ci-cnt{border:1px solid var(--ci-border);border-radius:13px;background:#fff;padding:10px 12px;display:flex;flex-direction:column;gap:9px;transition:border-color .15s,box-shadow .15s}
+.ci-cnt.d-ok{border-left:4px solid var(--ci-real)} .ci-cnt.d-sob{border-left:4px solid var(--ci-prog)} .ci-cnt.d-fal{border-left:4px solid var(--ci-pend)}
+.ci-cnt__mat{display:flex;align-items:center;gap:9px;min-width:0}
+.ci-cnt__cod{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:var(--ci-primary);background:#eef5fc;border-radius:6px;padding:2px 7px}
+.ci-cnt__desc{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ci-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-cnt__grid{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end}
+.ci-cnt__f{display:flex;flex-direction:column;gap:4px}
+.ci-cnt__f label{font-size:10.5px;font-weight:700;color:var(--ci-muted);text-transform:uppercase;letter-spacing:.3px}
+.ci-cnt__f input{height:38px;border:1.5px solid var(--ci-border-2);border-radius:10px;padding:0 10px;font-size:15px;font-weight:800;color:var(--ci-text);text-align:center;font-variant-numeric:tabular-nums;outline:none;transition:border-color .15s,box-shadow .15s}
+.ci-cnt__f input:focus{border-color:var(--ci-primary);box-shadow:0 0 0 4px rgba(8,119,175,.13)}
+.ci-diff{align-self:stretch;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:104px;border-radius:10px;padding:4px 12px;font-weight:800;text-align:center}
+.ci-diff__n{font-size:16px;line-height:1;font-variant-numeric:tabular-nums}
+.ci-diff__l{font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.ci-diff.ok{background:#e9f7ef;color:#127a4b} .ci-diff.sob{background:#eef5fc;color:#0b5f8d} .ci-diff.fal{background:#fdeded;color:#c0392b}
+.ci-cnt__motivo{display:grid;grid-template-columns:1fr 1.4fr;gap:9px}
+.ci-cnt__motivo[hidden]{display:none}
+.ci-cnt__motivo select,.ci-cnt__motivo input{height:36px;border:1.5px solid var(--ci-border-2);border-radius:10px;padding:0 10px;font-size:13px;font-family:inherit;color:var(--ci-text);outline:none;background:#fff}
+.ci-cnt__motivo select:focus,.ci-cnt__motivo input:focus{border-color:var(--ci-primary);box-shadow:0 0 0 4px rgba(8,119,175,.13)}
+
 .ci-detail-row{display:flex;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--ci-border)}
 .ci-detail-row .k{width:120px;flex-shrink:0;color:var(--ci-muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
 .ci-detail-row .v{color:var(--ci-text);font-weight:600}
