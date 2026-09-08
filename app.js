@@ -898,8 +898,8 @@
     var estadoSegs=[{label:'Pendiente',value:ec.pendiente,color:'#d97706'},{label:'Cargado',value:ec.cargado,color:'#2a78d6'},{label:'Baja',value:ec.baja,color:'#16a34a'}];
     var estadoTotal=ec.pendiente+ec.cargado+ec.baja;
     var top=aggTopItems(usos,7);
-    return statTilesHTML(usos)+
-      panel('Usos internos por mes', timeSub, chartAreaHTML(months), true)+
+    return panel('Usos internos por mes', timeSub, chartAreaHTML(months), true)+
+      statTilesHTML(usos)+
       '<div class="dash-2col">'+
         panel('Usos por sector','', svgDonut(sectorRows, String(tot), 'usos'))+
         panel('Estado de líneas SAP','', estadoTotal? svgDonut(estadoSegs, String(estadoTotal), 'líneas') : '<div class="chart-empty">Sin líneas aún</div>')+
