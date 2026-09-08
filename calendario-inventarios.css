@@ -23,6 +23,8 @@
 .ci-head__ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;color:#fff;
   background:linear-gradient(135deg,#1478b8,var(--ci-primary-2)); box-shadow:0 6px 16px rgba(8,119,175,.35)}
 .ci-head__ic svg{width:22px;height:22px}
+.ci-head__logo{display:grid;place-items:center;height:44px}
+.ci-head__logo img{height:40px;width:auto;display:block}
 .ci-head__ttl{font-family:'Sora','Inter',sans-serif; font-weight:800; font-size:20px; line-height:1.1; margin:0}
 .ci-head__sub{font-size:11px; font-weight:600; color:var(--ci-muted); margin:2px 0 0}
 .ci-head__spacer{flex:1}

@@ -136,7 +136,7 @@
   function buildHeader() {
     var h = el('<div class="ci-head"></div>');
     h.innerHTML =
-      '<div class="ci-head__brand"><span class="ci-head__ic">' + ICO.cal + '</span>' +
+      '<div class="ci-head__brand"><span class="ci-head__logo"><img src="/logo-alas-s.a.png" alt="ALAS"></span>' +
       '<div><h1 class="ci-head__ttl">Calendario de inventarios</h1><p class="ci-head__sub">Planificación y control por depósito</p></div></div>' +
       '<div class="ci-head__spacer"></div>' +
       '<div class="ci-seg" id="ciSeg"></div>' +
