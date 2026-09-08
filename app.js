@@ -603,6 +603,7 @@
     state.view=view;
     toggleSearch(view!=='menu');
     if(view==='menu'){ setActive('menu'); resetSearch('Buscar MENU'); setBreadcrumb(['MENU']); renderMenu(); return; }
+    if(view==='calendario'){ setActive('calendario'); toggleSearch(false); resetSearch(); setBreadcrumb(['MENU','CALENDARIO']); if(window.CalendarioInv){ window.CalendarioInv.render(q('#viewRoot')); } return; }
     if(view==='uso-interno'){ setActive('uso-interno'); wizardNuevo(); setActive(state.sector?'menu':'menu'); return; }
     if(view==='pendientes'){ setActive('pendientes'); resetSearch('Buscar PENDIENTES'); setBreadcrumb(['MENU','PENDIENTES']); renderLista({ estado:'pendientes' }, 'Pendientes'); return; }
     if(view==='terminados'){ setActive('terminados'); resetSearch('Buscar TERMINADOS'); setBreadcrumb(['MENU','TERMINADOS']); renderLista({ estado:'terminados' }, 'Terminados'); return; }
