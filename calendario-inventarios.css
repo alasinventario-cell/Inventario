@@ -10,6 +10,8 @@
   --ci-prog:#2a78d6; --ci-proc:#eab308; --ci-real:#16a34a; --ci-pend:#ef4444;
   --ci-ease:cubic-bezier(.16,1,.3,1);
 }
+/* [hidden] debe ganarle a los display de los componentes (botones, chips, etc.). */
+.ci-ov [hidden], .ci-root [hidden]{display:none !important}
 /* El apartado ocupa todo el stage (sin el padding grande de stage__body). */
 .stage__body:has(.ci-root){padding:0 !important; overflow:hidden !important; display:flex; flex-direction:column}
 #viewRoot:has(.ci-root){flex:1 1 auto; min-height:0; display:flex; flex-direction:column}
