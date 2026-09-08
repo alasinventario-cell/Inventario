@@ -171,7 +171,7 @@
   function buildHeader() {
     var h = el('<div class="ci-head"></div>');
     h.innerHTML =
-      '<div class="ci-head__brand"><span class="ci-head__logo"><img src="/logo-alas-s.a.png" alt="ALAS"></span>' +
+      '<div class="ci-head__brand"><span class="ci-head__ic">' + ICO.cal + '</span>' +
       '<div><h1 class="ci-head__ttl">Calendario de inventarios</h1><p class="ci-head__sub">Planificación y control por depósito</p></div></div>' +
       '<div class="ci-head__spacer"></div>' +
       '<div class="ci-seg" id="ciSeg"></div>' +
@@ -479,7 +479,6 @@
           '<button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
           '<div class="ci-step" id="step1">' +
-            '<div class="ci-field"><label>Nombre del inventario *</label><input id="mNombre" placeholder="Ej: Inventario cíclico Picking"></div>' +
             '<div class="ci-grid2"><div class="ci-field"><label>Fecha *</label><input id="mFecha" type="date" value="' + fechaDef + '"></div>' +
             '<div class="ci-field"><label>Hora</label><input id="mHora" type="time" value="' + nowHM() + '"></div></div>' +
             '<div class="ci-field"><label>Depósito</label><div class="ci-depsel" id="mDep">' +
@@ -491,11 +490,14 @@
             '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
           '</div>' +
           '<div class="ci-step" id="step2" hidden>' +
-            '<div class="ci-step2-head"><h4>Mercaderías a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
+            '<div class="ci-field"><label>Marca / familia</label>' +
+              '<div class="ci-items__search"><input id="mMarca" placeholder="Elegí una marca/familia (ej: GUANTE, CINTA)…" autocomplete="off"><div class="ci-items__results" id="mMarcaRes" hidden></div></div>' +
+            '</div>' +
+            '<div class="ci-step2-head"><h4>Material a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
             '<div class="ci-items">' +
-              '<div class="ci-items__search"><input id="mItem" placeholder="Buscar mercadería por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
+              '<div class="ci-items__search"><input id="mItem" placeholder="Buscar material por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
               '<div class="ci-items__list" id="mItemsList"></div>' +
-              '<div class="ci-items__empty" id="mItemsEmpty">Todavía no agregaste mercaderías. Buscá y agregá las que vas a contar.</div>' +
+              '<div class="ci-items__empty" id="mItemsEmpty">Elegí una marca y buscá los materiales a contar.</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -524,13 +526,9 @@
       i1.classList.toggle('on', n === 1); i1.classList.toggle('done', n > 1); i2.classList.toggle('on', n === 2);
       var panel = ov.querySelector(n === 1 ? '#step1' : '#step2');
       if (G() && !reduce()) G().fromTo(panel, { opacity: 0, x: n === 2 ? 20 : -20 }, { opacity: 1, x: 0, duration: .3, ease: 'power3.out', clearProps: 'all' });
-      setTimeout(function () { var f = ov.querySelector(n === 2 ? '#mItem' : '#mNombre'); if (f) f.focus(); }, 70);
+      if (n === 2) setTimeout(function () { var f = ov.querySelector('#mMarca'); if (f) f.focus(); }, 70);
     }
-    ov.querySelector('#mNext').addEventListener('click', function () {
-      var nombre = ov.querySelector('#mNombre').value.trim();
-      if (!nombre) { var inp = ov.querySelector('#mNombre'); inp.focus(); if (G() && !reduce()) G().fromTo(inp, { x: -6 }, { x: 0, duration: .4, ease: 'elastic.out(1,0.4)' }); return; }
-      goStep(2);
-    });
+    ov.querySelector('#mNext').addEventListener('click', function () { goStep(2); });
     ov.querySelector('#mBack').addEventListener('click', function () { goStep(1); });
     ov.querySelectorAll('#mDep [data-i]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -544,7 +542,7 @@
     // ── Cargador de mercaderías (buscador real desde InventarioAPI) ──
     var items = [];
     var itInput = ov.querySelector('#mItem'), itList = ov.querySelector('#mItemsList'), itEmpty = ov.querySelector('#mItemsEmpty'), itCount = ov.querySelector('#mItemsCount');
-    var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1;
+    var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1, marca = '';
     function renderItems() {
       itEmpty.hidden = items.length > 0;
       itCount.textContent = items.length ? '· ' + items.length : '';
@@ -568,10 +566,11 @@
       if (G() && !reduce()) G().fromTo(itRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' });
     }
     function doSearch() {
-      var term = itInput.value.trim();
-      var api = window.InventarioAPI;
-      if (!api || !api.searchMercaderias) { closeRes(); return; }
-      api.searchMercaderias(term).then(function (rows) { results = (rows || []).slice(0, 30); hl = -1; renderRes(); });
+      var term = itInput.value.trim().toLowerCase();
+      var pool = window.MERCADERIAS_DEMO || [];
+      if (marca) pool = pool.filter(function (m) { return familyOf(m.descripcion) === marca; });
+      results = (term ? pool.filter(function (m) { return (m.codigo + ' ' + m.descripcion).toLowerCase().indexOf(term) >= 0; }) : pool).slice(0, 30);
+      hl = -1; renderRes();
     }
     itInput.addEventListener('input', function () { clearTimeout(searchT2); searchT2 = setTimeout(doSearch, 160); });
     itInput.addEventListener('focus', function () { if (itInput.value.trim() || !items.length) doSearch(); });
@@ -584,16 +583,39 @@
     });
     itInput.addEventListener('blur', function () { setTimeout(closeRes, 120); });
 
+    // ── Picker de Marca / familia ──
+    var mkInput = ov.querySelector('#mMarca'), mkRes = ov.querySelector('#mMarcaRes'), mkT = null, mkResults = [], mkHl = -1;
+    function closeMk() { mkRes.hidden = true; mkResults = []; mkHl = -1; }
+    function setMarca(name) { marca = name || ''; mkInput.value = marca; closeMk(); itEmpty.textContent = marca ? ('Buscá materiales de ' + marca + ' para contar.') : 'Elegí una marca y buscá los materiales a contar.'; doSearch(); itInput.focus(); }
+    function renderMk() {
+      if (!mkResults.length) { mkRes.innerHTML = '<div class="ci-res__empty">Sin marcas</div>'; mkRes.hidden = false; return; }
+      mkRes.innerHTML = mkResults.map(function (m, i) { return '<button type="button" class="ci-res' + (i === mkHl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__desc" style="font-weight:700">' + esc(m.name) + '</span><span class="ci-res__um">' + m.n + '</span></button>'; }).join('');
+      mkRes.hidden = false;
+      mkRes.querySelectorAll('[data-i]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); setMarca(mkResults[+b.getAttribute('data-i')].name); }); });
+      if (G() && !reduce()) G().fromTo(mkRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' });
+    }
+    function doMk() { var term = mkInput.value.trim().toUpperCase(); var all = getMarcas(); mkResults = (term ? all.filter(function (m) { return m.name.indexOf(term) >= 0; }) : all).slice(0, 50); mkHl = -1; renderMk(); }
+    mkInput.addEventListener('input', function () { marca = ''; clearTimeout(mkT); mkT = setTimeout(doMk, 130); });
+    mkInput.addEventListener('focus', doMk);
+    mkInput.addEventListener('keydown', function (e) {
+      if (mkRes.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); mkHl = Math.min(mkHl + 1, mkResults.length - 1); renderMk(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); mkHl = Math.max(mkHl - 1, 0); renderMk(); }
+      else if (e.key === 'Enter') { e.preventDefault(); var s = mkResults[mkHl >= 0 ? mkHl : 0]; if (s) setMarca(s.name); }
+      else if (e.key === 'Escape') { closeMk(); }
+    });
+    mkInput.addEventListener('blur', function () { setTimeout(closeMk, 120); });
+
     function close() { if (G() && !reduce()) { G().to(ov.querySelector('.ci-modal'), { opacity: 0, y: 10, scale: .97, duration: .16 }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
     ov.querySelector('#mCancel').addEventListener('click', close);
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
-      var nombre = ov.querySelector('#mNombre').value.trim();
-      if (!nombre) { goStep(1); ov.querySelector('#mNombre').focus(); return; }
+      var sector = selSector.getValue();
+      var nombre = 'Inventario ' + (marca || sector);
       DATA.push({
         id: seq, codigo: 'INV-' + pad(1000 + seq++), fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
-        nombre: nombre, deposito: DEPOSITOS[depSel], sector: selSector.getValue(), tipo: 'General',
+        nombre: nombre, deposito: DEPOSITOS[depSel], sector: sector, tipo: marca || 'General',
         ubicacion: ov.querySelector('#mUbic').value.trim(), estado: 'programado', prioridad: selPrio.getValue(),
         responsable: ov.querySelector('#mResp').value.trim(), items: items.slice(), observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
       });
@@ -605,9 +627,17 @@
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' });
       G().from(ov.querySelectorAll('#step1 > .ci-field, #step1 > .ci-grid2'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
     }
-    setTimeout(function () { ov.querySelector('#mNombre').focus(); }, 60);
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  // "Marca / familia": el Excel no tiene columna Marca → agrupamos por la 1ª palabra de la descripción.
+  function familyOf(d) { return String(d || '').trim().split(/\s+/)[0].toUpperCase(); }
+  var _marcas = null;
+  function getMarcas() {
+    if (_marcas) return _marcas;
+    var c = {}; (window.MERCADERIAS_DEMO || []).forEach(function (m) { var f = familyOf(m.descripcion); if (f) c[f] = (c[f] || 0) + 1; });
+    _marcas = Object.keys(c).map(function (k) { return { name: k, n: c[k] }; }).sort(function (a, b) { return b.n - a.n; });
+    return _marcas;
+  }
 
   /* ── Detalle ─────────────────────────────────────────────────────────── */
   function openDetail(id) {
