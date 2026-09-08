@@ -61,12 +61,22 @@
   /* ── Datos demo ──────────────────────────────────────────────────────── */
   var RESP = ['Carlos Gómez', 'David Espinola', 'Elias Cabrera', 'Jonathan Peralta', 'Lisandro López'];
   var seq = 1;
-  function mk(off, hora, nombre, dep, sector, estado, prio, resp, skus, diffs) {
+  function sampleItems() {
+    var src = window.MERCADERIAS_DEMO || [];
+    var n = 2 + Math.floor(Math.random() * 4), a = [], used = {};
+    for (var i = 0; i < n && src.length; i++) {
+      var m = src[Math.floor(Math.random() * src.length)];
+      if (!m || used[m.codigo]) continue; used[m.codigo] = 1;
+      a.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN' });
+    }
+    return a;
+  }
+  function mk(off, hora, nombre, dep, sector, estado, prio, resp, _skus, diffs) {
     var d = new Date(); d.setDate(d.getDate() + off);
     return {
       id: seq, codigo: 'INV-' + pad(1000 + seq++), fecha: iso(d), hora: hora, nombre: nombre, deposito: dep,
       sector: sector, tipo: TIPOS[(seq) % TIPOS.length], ubicacion: 'Rack ' + sector.slice(0, 1) + pad((seq * 3) % 40) + ' – ' + sector.slice(0, 1) + pad((seq * 3 % 40) + 20),
-      estado: estado, prioridad: prio, responsable: resp, skus: skus, observacion: '', diffs: !!diffs, orden: null,
+      estado: estado, prioridad: prio, responsable: resp, items: sampleItems(), observacion: '', diffs: !!diffs, orden: null,
     };
   }
   var DATA = [
@@ -283,7 +293,7 @@
       '<div class="ci-row__meta">' +
         '<span class="ci-pill">' + ICO.clock + '<span>' + esc(x.hora) + '</span></span>' +
         '<span class="ci-pill">' + ICO.user + '<span>' + esc(x.responsable || '—') + '</span></span>' +
-        '<span class="ci-pill">' + ICO.box + '<span>' + esc(x.sector) + ' · ' + x.skus + ' SKUs</span></span>' +
+        '<span class="ci-pill">' + ICO.box + '<span>' + esc(x.sector) + ' · ' + (x.items ? x.items.length : 0) + ' ítems</span></span>' +
       '</div></div>' +
       '<span class="ci-badge-st st-' + x.estado + '">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
     '</div>';
@@ -415,7 +425,7 @@
         '<div class="ci-tip__row">' + ICO.box + '<span>' + esc(x.nombre) + '</span></div>' +
         '<div class="ci-tip__row">' + ICO.pin + '<span>' + esc(x.ubicacion) + '</span></div>' +
         '<div class="ci-tip__row">' + ICO.user + '<span>Responsable: <b>' + esc(x.responsable || '—') + '</b></span></div>' +
-        '<div class="ci-tip__row">' + ICO.box + '<span><b>' + x.skus + '</b> SKUs</span></div>' +
+        '<div class="ci-tip__row">' + ICO.box + '<span><b>' + (x.items ? x.items.length : 0) + '</b> ítems a contar</span></div>' +
         '<span class="ci-tip__st st-' + x.estado + '">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
       '</div>';
     document.body.appendChild(tipEl);
@@ -443,18 +453,72 @@
           '<div class="ci-field"><label>Depósito</label><div class="ci-depsel" id="mDep">' +
             DEPOSITOS.map(function (d, i) { return '<button type="button" data-i="' + i + '" class="' + (i === S.depIdx ? 'on' : '') + '">' + DEP_ICO[i] + esc(d) + '</button>'; }).join('') + '</div></div>' +
           '<div class="ci-grid2"><div class="ci-field"><label>Sector</label><select id="mSector">' + SECTORES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
-          '<div class="ci-field"><label>Tipo de inventario</label><select id="mTipo">' + TIPOS.map(function (t) { return '<option>' + t + '</option>'; }).join('') + '</select></div></div>' +
+          '<div class="ci-field"><label>Prioridad</label><select id="mPrio"><option>NORMAL</option><option>ALTA</option><option>BAJA</option></select></div></div>' +
           '<div class="ci-grid2"><div class="ci-field"><label>Responsable</label><input id="mResp" placeholder="Nombre del responsable"></div>' +
           '<div class="ci-field"><label>Ubicación</label><input id="mUbic" placeholder="Rack A01 – A20"></div></div>' +
-          '<div class="ci-grid2"><div class="ci-field"><label>SKUs estimados</label><input id="mSkus" type="number" min="0" placeholder="0"></div>' +
-          '<div class="ci-field"><label>Prioridad</label><select id="mPrio"><option>NORMAL</option><option>ALTA</option><option>BAJA</option></select></div></div>' +
+          '<div class="ci-field"><label>Mercaderías a contar <span class="ci-items__count" id="mItemsCount"></span></label><div class="ci-items">' +
+            '<div class="ci-items__search"><input id="mItem" placeholder="Buscar mercadería por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
+            '<div class="ci-items__list" id="mItemsList"></div>' +
+            '<div class="ci-items__empty" id="mItemsEmpty">Todavía no agregaste mercaderías. Buscá y agregá las que vas a contar.</div>' +
+          '</div></div>' +
           '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
         '</div>' +
         '<div class="ci-modal__f"><button class="ci-mbtn ghost" id="mCancel">Cancelar</button><button class="ci-mbtn primary" id="mSave">' + ICO.plus + ' Programar</button></div>' +
       '</div>';
     document.body.appendChild(ov);
     var depSel = S.depIdx;
-    ov.querySelectorAll('#mDep [data-i]').forEach(function (b) { b.addEventListener('click', function () { depSel = +b.getAttribute('data-i'); ov.querySelectorAll('#mDep [data-i]').forEach(function (z) { z.classList.remove('on'); }); b.classList.add('on'); }); });
+    ov.querySelectorAll('#mDep [data-i]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        depSel = +b.getAttribute('data-i');
+        ov.querySelectorAll('#mDep [data-i]').forEach(function (z) { z.classList.remove('on'); });
+        b.classList.add('on');
+        if (G() && !reduce()) { G().fromTo(b, { scale: .9 }, { scale: 1, duration: .3, ease: 'back.out(3)' }); var s = b.querySelector('svg'); if (s) G().fromTo(s, { scale: .5, y: -3 }, { scale: 1, y: 0, duration: .34, ease: 'back.out(4)' }); }
+      });
+    });
+
+    // ── Cargador de mercaderías (buscador real desde InventarioAPI) ──
+    var items = [];
+    var itInput = ov.querySelector('#mItem'), itList = ov.querySelector('#mItemsList'), itEmpty = ov.querySelector('#mItemsEmpty'), itCount = ov.querySelector('#mItemsCount');
+    var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1;
+    function renderItems() {
+      itEmpty.hidden = items.length > 0;
+      itCount.textContent = items.length ? '· ' + items.length : '';
+      itList.innerHTML = items.map(function (it, i) {
+        return '<span class="ci-chip" title="' + esc(it.descripcion || '') + '"><span class="ci-chip__n">' + (i + 1) + '</span>' + esc(it.codigo) + '<button type="button" class="ci-chip__x" data-del="' + i + '" aria-label="Quitar">' + ICO.x + '</button></span>';
+      }).join('');
+      itList.querySelectorAll('[data-del]').forEach(function (b) {
+        b.addEventListener('click', function () { items.splice(+b.getAttribute('data-del'), 1); renderItems(); });
+      });
+      if (G() && !reduce() && itList.lastElementChild) G().fromTo(itList.lastElementChild, { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(3)' });
+    }
+    function closeRes() { itRes.hidden = true; results = []; hl = -1; }
+    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN' }); renderItems(); } itInput.value = ''; closeRes(); itInput.focus(); }
+    function renderRes() {
+      if (!results.length) { itRes.innerHTML = '<div class="ci-res__empty">Sin resultados</div>'; itRes.hidden = false; return; }
+      itRes.innerHTML = results.map(function (m, i) {
+        return '<button type="button" class="ci-res' + (i === hl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__cod">' + esc(m.codigo) + '</span><span class="ci-res__desc">' + esc(m.descripcion) + '</span><span class="ci-res__um">' + esc(m.um || 'UN') + '</span></button>';
+      }).join('');
+      itRes.hidden = false;
+      itRes.querySelectorAll('[data-i]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); addMerc(results[+b.getAttribute('data-i')]); }); });
+      if (G() && !reduce()) G().fromTo(itRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' });
+    }
+    function doSearch() {
+      var term = itInput.value.trim();
+      var api = window.InventarioAPI;
+      if (!api || !api.searchMercaderias) { closeRes(); return; }
+      api.searchMercaderias(term).then(function (rows) { results = (rows || []).slice(0, 30); hl = -1; renderRes(); });
+    }
+    itInput.addEventListener('input', function () { clearTimeout(searchT2); searchT2 = setTimeout(doSearch, 160); });
+    itInput.addEventListener('focus', function () { if (itInput.value.trim() || !items.length) doSearch(); });
+    itInput.addEventListener('keydown', function (e) {
+      if (itRes.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); hl = Math.min(hl + 1, results.length - 1); renderRes(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); hl = Math.max(hl - 1, 0); renderRes(); }
+      else if (e.key === 'Enter') { e.preventDefault(); addMerc(results[hl >= 0 ? hl : 0]); }
+      else if (e.key === 'Escape') { closeRes(); }
+    });
+    itInput.addEventListener('blur', function () { setTimeout(closeRes, 120); });
+
     function close() { if (G() && !reduce()) { G().to(ov.querySelector('.ci-modal'), { opacity: 0, y: 10, scale: .97, duration: .16 }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
     ov.querySelector('#mCancel').addEventListener('click', close);
@@ -464,14 +528,18 @@
       if (!nombre) { ov.querySelector('#mNombre').focus(); return; }
       DATA.push({
         id: seq, codigo: 'INV-' + pad(1000 + seq++), fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
-        nombre: nombre, deposito: DEPOSITOS[depSel], sector: ov.querySelector('#mSector').value, tipo: ov.querySelector('#mTipo').value,
+        nombre: nombre, deposito: DEPOSITOS[depSel], sector: ov.querySelector('#mSector').value, tipo: 'General',
         ubicacion: ov.querySelector('#mUbic').value.trim(), estado: 'programado', prioridad: ov.querySelector('#mPrio').value,
-        responsable: ov.querySelector('#mResp').value.trim(), skus: +ov.querySelector('#mSkus').value || 0, observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
+        responsable: ov.querySelector('#mResp').value.trim(), items: items.slice(), observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
       });
       S.depIdx = depSel;
       close(); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
     });
-    if (G() && !reduce()) { G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 }); G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' }); }
+    if (G() && !reduce()) {
+      G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 });
+      G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' });
+      G().from(ov.querySelectorAll('.ci-modal__b > .ci-field, .ci-modal__b > .ci-grid2'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
+    }
     setTimeout(function () { ov.querySelector('#mNombre').focus(); }, 60);
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
@@ -488,7 +556,7 @@
           '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
           drow('Código', x.codigo) + drow('Tipo', x.tipo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) +
           drow('Ubicación', x.ubicacion || '—') + drow('Fecha', x.fecha) + drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') +
-          drow('SKUs', x.skus) + drow('Prioridad', x.prioridad) + drow('Diferencias', x.diffs ? 'Sí' : 'No') + drow('Observación', x.observacion || '—') +
+          drow('Ítems (' + (x.items || []).length + ')', (x.items || []).map(function (i) { return typeof i === 'string' ? i : i.codigo; }).join(', ') || '—') + drow('Prioridad', x.prioridad) + drow('Diferencias', x.diffs ? 'Sí' : 'No') + drow('Observación', x.observacion || '—') +
         '</div>' +
         '<div class="ci-modal__f">' +
           '<button class="ci-mbtn ghost" id="dEstado">Avanzar estado</button>' +

@@ -562,8 +562,8 @@
     // Cargar catálogos y arrancar
     API.listCasos().then(function(cs){
       state.casos=cs||[]; state.mercaderias=[];
-      hideLoader(); go('menu');
-    }).catch(function(e){ console.error(e); state.mercaderias=[]; hideLoader(); go('menu'); });
+      hideLoader(); go(window.CalendarioInv?'calendario':'menu');
+    }).catch(function(e){ console.error(e); state.mercaderias=[]; hideLoader(); go(window.CalendarioInv?'calendario':'menu'); });
   }
 
   /* ── Navegación ───────────────────────────────────────────── */
@@ -849,9 +849,11 @@
         '</div>'+
         '<section class="dash-section"><div class="dash-section__head"><span>Sectores</span><span class="hr"></span></div>'+
           '<div class="sector-list" id="d_sectores"></div></section>'+
+        '<section class="dash-section" style="margin-top:8px"><div class="dash-section__head"><span>Resumen y gráficos</span><span class="hr"></span></div>'+
+          '<div id="d_resumenBody"></div></section>'+
       '</div>';
 
-    q('#d_resumen').addEventListener('click',function(){ go('resumen'); });
+    q('#d_resumen').addEventListener('click',function(){ var t=q('#d_resumenBody'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); });
     root.querySelectorAll('.kpi[data-go]').forEach(function(b){ b.addEventListener('click',function(){ go(b.getAttribute('data-go')); }); });
 
     var host=q('#d_sectores');
@@ -877,9 +879,32 @@
         var enCurso=0; usos.forEach(function(u){ if(u.sector!==s.key||u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente'||it.sap_estado==='cargado') enCurso++; }); });
         countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), enCurso);
       });
+      var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); }
     }
     wireMonthNav(root, fillMenu);
     API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); });
+  }
+
+  /* ── Cuerpo del Resumen (reutilizable: vista propia + embebido en Usos Internos) ── */
+  function resumenBodyHTML(){
+    function panel(title, sub, inner, wide){ return '<div class="panel'+(wide?' panel--wide':'')+'"><div class="panel__head"><span class="panel__title">'+title+'</span>'+(sub?'<span class="panel__sub">'+sub+'</span>':'')+'</div><div class="panel__body">'+inner+'</div></div>'; }
+    var usos=(state._menuUsos||[]).filter(inMonth);
+    var tot=usos.filter(function(u){return u.estado!=='anulado';}).length;
+    var months = aggByMonth(state._menuUsos||[]);
+    var _yrs={}; (state._menuUsos||[]).forEach(function(u){ if(u.estado!=='anulado') _yrs[String(u.fecha_emision).slice(0,4)]=1; });
+    var _yl=Object.keys(_yrs).sort(); var timeSub=_yl.length?(_yl.length>1?_yl[0]+'–'+_yl[_yl.length-1]:_yl[0]):'';
+    var sectorRows=SECTOR_CARDS.map(function(s){ var c=usos.filter(function(u){return u.sector===s.key&&u.estado!=='anulado';}).length; return {label:s.label,value:c,color:SECTOR_COLOR[s.key]}; });
+    var ec={pendiente:0,cargado:0,baja:0}; usos.forEach(function(u){ if(u.estado==='anulado')return; (u.items||[]).forEach(function(it){ if(ec[it.sap_estado]!=null) ec[it.sap_estado]++; }); });
+    var estadoSegs=[{label:'Pendiente',value:ec.pendiente,color:'#d97706'},{label:'Cargado',value:ec.cargado,color:'#2a78d6'},{label:'Baja',value:ec.baja,color:'#16a34a'}];
+    var estadoTotal=ec.pendiente+ec.cargado+ec.baja;
+    var top=aggTopItems(usos,7);
+    return statTilesHTML(usos)+
+      panel('Usos internos por mes', timeSub, chartAreaHTML(months), true)+
+      '<div class="dash-2col">'+
+        panel('Usos por sector','', svgDonut(sectorRows, String(tot), 'usos'))+
+        panel('Estado de líneas SAP','', estadoTotal? svgDonut(estadoSegs, String(estadoTotal), 'líneas') : '<div class="chart-empty">Sin líneas aún</div>')+
+      '</div>'+
+      panel('Ítems más pedidos','ranking por cantidad', chartRankHTML(top), true);
   }
 
   /* ── Vista RESUMEN (gráficos) ─────────────────────────────── */
@@ -895,28 +920,8 @@
       '<div class="dash" style="margin-top:2px"><div id="resumenBody"></div></div></div>';
     q('#btnVolverMenu').addEventListener('click',function(){ go('menu'); });
 
-    function panel(title, sub, inner, wide){ return '<div class="panel'+(wide?' panel--wide':'')+'"><div class="panel__head"><span class="panel__title">'+title+'</span>'+(sub?'<span class="panel__sub">'+sub+'</span>':'')+'</div><div class="panel__body">'+inner+'</div></div>'; }
-
     function fillResumen(){
-      var usos=(state._menuUsos||[]).filter(inMonth);
-      var tot=usos.filter(function(u){return u.estado!=='anulado';}).length;
-      var months = aggByMonth(state._menuUsos||[]);
-      var _yrs={}; (state._menuUsos||[]).forEach(function(u){ if(u.estado!=='anulado') _yrs[String(u.fecha_emision).slice(0,4)]=1; });
-      var _yl=Object.keys(_yrs).sort(); var timeSub=_yl.length?(_yl.length>1?_yl[0]+'–'+_yl[_yl.length-1]:_yl[0]):'';
-      var sectorRows=SECTOR_CARDS.map(function(s){ var c=usos.filter(function(u){return u.sector===s.key&&u.estado!=='anulado';}).length; return {label:s.label,value:c,color:SECTOR_COLOR[s.key]}; });
-      var ec={pendiente:0,cargado:0,baja:0}; usos.forEach(function(u){ if(u.estado==='anulado')return; (u.items||[]).forEach(function(it){ if(ec[it.sap_estado]!=null) ec[it.sap_estado]++; }); });
-      var estadoSegs=[{label:'Pendiente',value:ec.pendiente,color:'#d97706'},{label:'Cargado',value:ec.cargado,color:'#2a78d6'},{label:'Baja',value:ec.baja,color:'#16a34a'}];
-      var estadoTotal=ec.pendiente+ec.cargado+ec.baja;
-      var top=aggTopItems(usos,7);
-
-      var body=statTilesHTML(usos)+
-        panel('Usos internos por mes', timeSub, chartAreaHTML(months), true)+
-        '<div class="dash-2col">'+
-          panel('Usos por sector','', svgDonut(sectorRows, String(tot), 'usos'))+
-          panel('Estado de líneas SAP','', estadoTotal? svgDonut(estadoSegs, String(estadoTotal), 'líneas') : '<div class="chart-empty">Sin líneas aún</div>')+
-        '</div>'+
-        panel('Ítems más pedidos','ranking por cantidad', chartRankHTML(top), true);
-      q('#resumenBody').innerHTML=body;
+      q('#resumenBody').innerHTML=resumenBodyHTML();
       wireChartTips(root);
       animateCharts(root);
     }
