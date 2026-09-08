@@ -266,6 +266,20 @@
 .ci-mbtn.ghost{background:#f1f5f9;color:var(--ci-text-2)} .ci-mbtn.ghost:hover{background:#e6edf3}
 .ci-mbtn.primary{background:linear-gradient(135deg,#1478b8,var(--ci-primary-2));color:#fff;box-shadow:0 6px 16px rgba(8,119,175,.3)}
 .ci-mbtn:active{transform:scale(.97)} .ci-mbtn svg{width:17px;height:17px}
+.ci-mbtn:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.3);box-shadow:none}
+.ci-mbtn:disabled:active{transform:none}
+/* Marca elegida (chip) + sección de material bloqueada */
+.ci-marca-chip{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1.5px solid var(--ci-primary);background:var(--ci-primary-soft);border-radius:13px}
+.ci-marca-chip[hidden]{display:none}
+.ci-marca-chip__ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#1478b8,var(--ci-primary-2));flex-shrink:0}
+.ci-marca-chip__ic svg{width:20px;height:20px}
+.ci-marca-chip__body{min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.ci-marca-chip__name{font-family:'Sora','Inter',sans-serif;font-weight:800;font-size:16px;color:var(--ci-primary)}
+.ci-marca-chip__n{font-size:11.5px;font-weight:600;color:var(--ci-text-2)}
+.ci-marca-chip__x{margin-left:auto;height:32px;padding:0 12px;border:0;border-radius:9px;background:#fff;color:var(--ci-primary);font-weight:700;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .15s}
+.ci-marca-chip__x:hover{background:#dcebf7} .ci-marca-chip__x svg{width:13px;height:13px}
+.ci-mat-sec{display:flex;flex-direction:column;gap:12px;transition:opacity .2s var(--ci-ease)}
+.ci-mat-sec.locked{opacity:.45;pointer-events:none;filter:saturate(.4)}
 /* Cargador de ítems (buscador de mercaderías real) */
 .ci-items{display:flex;flex-direction:column;gap:9px}
 .ci-items__search{position:relative}

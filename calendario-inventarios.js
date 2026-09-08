@@ -32,6 +32,7 @@
     alert: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
     calEmpty: '<svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l6 4M15 15l-6 4"/></svg>',
     chk: '<svg fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    tag: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg>',
   };
 
   /* ── Seleccionador PRO (custom select animado) ───────────────────────── */
@@ -492,13 +493,16 @@
           '</div>' +
           '<div class="ci-step" id="step2" hidden>' +
             '<div class="ci-field"><label>Marca / familia</label>' +
-              '<div class="ci-items__search"><input id="mMarca" placeholder="Elegí una marca/familia (ej: GUANTE, CINTA)…" autocomplete="off"><div class="ci-items__results" id="mMarcaRes" hidden></div></div>' +
+              '<div class="ci-items__search" id="mMarcaSearch"><input id="mMarca" placeholder="Elegí una marca/familia (ej: GUANTE, CINTA)…" autocomplete="off"><div class="ci-items__results" id="mMarcaRes" hidden></div></div>' +
+              '<div class="ci-marca-chip" id="mMarcaChip" hidden></div>' +
             '</div>' +
-            '<div class="ci-step2-head"><h4>Material a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
-            '<div class="ci-items">' +
-              '<div class="ci-items__search"><input id="mItem" placeholder="Buscar material por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
-              '<div class="ci-items__list" id="mItemsList"></div>' +
-              '<div class="ci-items__empty" id="mItemsEmpty">Elegí una marca y buscá los materiales a contar.</div>' +
+            '<div class="ci-mat-sec locked" id="mMatSec">' +
+              '<div class="ci-step2-head"><h4>Material a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
+              '<div class="ci-items">' +
+                '<div class="ci-items__search"><input id="mItem" placeholder="Buscar material por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
+                '<div class="ci-items__list" id="mItemsList"></div>' +
+                '<div class="ci-items__empty" id="mItemsEmpty">Elegí una marca arriba para ver sus materiales.</div>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -522,7 +526,7 @@
       ov.querySelector('#step2').hidden = n !== 2;
       ov.querySelector('#mBack').hidden = n === 1;
       ov.querySelector('#mNext').hidden = n === 2;
-      ov.querySelector('#mSave').hidden = n === 1;
+      var sv = ov.querySelector('#mSave'); sv.hidden = n === 1; sv.disabled = items.length === 0;
       var i1 = ov.querySelector('#st1'), i2 = ov.querySelector('#st2');
       i1.classList.toggle('on', n === 1); i1.classList.toggle('done', n > 1); i2.classList.toggle('on', n === 2);
       var panel = ov.querySelector(n === 1 ? '#step1' : '#step2');
@@ -554,6 +558,8 @@
         b.addEventListener('click', function () { items.splice(+b.getAttribute('data-del'), 1); renderItems(); });
       });
       if (G() && !reduce() && itList.lastElementChild) G().fromTo(itList.lastElementChild, { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(3)' });
+      var sv = ov.querySelector('#mSave');
+      if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
     function closeRes() { itRes.hidden = true; results = []; hl = -1; }
     function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN' }); renderItems(); } itInput.value = ''; closeRes(); itInput.focus(); }
@@ -587,7 +593,28 @@
     // ── Picker de Marca / familia ──
     var mkInput = ov.querySelector('#mMarca'), mkRes = ov.querySelector('#mMarcaRes'), mkT = null, mkResults = [], mkHl = -1;
     function closeMk() { mkRes.hidden = true; mkResults = []; mkHl = -1; }
-    function setMarca(name) { marca = name || ''; mkInput.value = marca; closeMk(); itEmpty.textContent = marca ? ('Buscá materiales de ' + marca + ' para contar.') : 'Elegí una marca y buscá los materiales a contar.'; doSearch(); itInput.focus(); }
+    function clearMarca() {
+      marca = '';
+      ov.querySelector('#mMarcaSearch').hidden = false; ov.querySelector('#mMarcaChip').hidden = true;
+      ov.querySelector('#mMatSec').classList.add('locked');
+      mkInput.value = ''; itInput.value = ''; closeRes(); closeMk();
+      itEmpty.textContent = 'Elegí una marca arriba para ver sus materiales.';
+      setTimeout(function () { mkInput.focus(); }, 40);
+    }
+    function setMarca(name) {
+      marca = name || '';
+      if (!marca) { clearMarca(); return; }
+      var info = getMarcas().find(function (m) { return m.name === marca; }) || { n: 0 };
+      var search = ov.querySelector('#mMarcaSearch'), chip = ov.querySelector('#mMarcaChip');
+      search.hidden = true; chip.hidden = false;
+      chip.innerHTML = '<span class="ci-marca-chip__ic">' + ICO.tag + '</span><span class="ci-marca-chip__body"><span class="ci-marca-chip__name">' + esc(marca) + '</span><span class="ci-marca-chip__n">' + info.n + ' materiales en esta familia</span></span><button type="button" class="ci-marca-chip__x" id="mMarcaClear">' + ICO.x + ' Cambiar</button>';
+      chip.querySelector('#mMarcaClear').addEventListener('click', clearMarca);
+      ov.querySelector('#mMatSec').classList.remove('locked');
+      itEmpty.textContent = 'Buscá materiales de ' + marca + ' para contar.';
+      closeMk();
+      if (G() && !reduce()) G().fromTo(chip, { opacity: 0, y: -6, scale: .98 }, { opacity: 1, y: 0, scale: 1, duration: .24, ease: 'back.out(2)' });
+      doSearch(); setTimeout(function () { itInput.focus(); }, 40);
+    }
     function renderMk() {
       if (!mkResults.length) { mkRes.innerHTML = '<div class="ci-res__empty">Sin marcas</div>'; mkRes.hidden = false; return; }
       mkRes.innerHTML = mkResults.map(function (m, i) { return '<button type="button" class="ci-res' + (i === mkHl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__desc" style="font-weight:700">' + esc(m.name) + '</span><span class="ci-res__um">' + m.n + '</span></button>'; }).join('');
