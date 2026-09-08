@@ -552,7 +552,7 @@
               '<div class="ci-items__search" id="mMarcaSearch"><input id="mMarca" placeholder="Elegí una marca/familia (ej: GUANTE, CINTA)…" autocomplete="off"><div class="ci-items__results" id="mMarcaRes" hidden></div></div>' +
               '<div class="ci-marca-chip" id="mMarcaChip" hidden></div>' +
             '</div>' +
-            '<div class="ci-mat-sec locked" id="mMatSec">' +
+            '<div class="ci-mat-sec" id="mMatSec" hidden>' +
               '<div class="ci-step2-head"><h4>Material a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
               '<div class="ci-items">' +
                 '<div class="ci-items__search"><input id="mItem" placeholder="Buscar material por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
@@ -652,7 +652,7 @@
     function clearMarca() {
       marca = '';
       ov.querySelector('#mMarcaSearch').hidden = false; ov.querySelector('#mMarcaChip').hidden = true;
-      ov.querySelector('#mMatSec').classList.add('locked');
+      ov.querySelector('#mMatSec').hidden = true;
       mkInput.value = ''; itInput.value = ''; closeRes(); closeMk();
       itEmpty.textContent = 'Elegí una marca arriba para ver sus materiales.';
       setTimeout(function () { mkInput.focus(); }, 40);
@@ -665,10 +665,10 @@
       search.hidden = true; chip.hidden = false;
       chip.innerHTML = '<span class="ci-marca-chip__ic">' + ICO.tag + '</span><span class="ci-marca-chip__body"><span class="ci-marca-chip__name">' + esc(marca) + '</span><span class="ci-marca-chip__n">' + info.n + ' materiales en esta familia</span></span><button type="button" class="ci-marca-chip__x" id="mMarcaClear">' + ICO.x + ' Cambiar</button>';
       chip.querySelector('#mMarcaClear').addEventListener('click', clearMarca);
-      ov.querySelector('#mMatSec').classList.remove('locked');
+      var matSec = ov.querySelector('#mMatSec'); matSec.hidden = false;
       itEmpty.textContent = 'Buscá materiales de ' + marca + ' para contar.';
       closeMk();
-      if (G() && !reduce()) G().fromTo(chip, { opacity: 0, y: -6, scale: .98 }, { opacity: 1, y: 0, scale: 1, duration: .24, ease: 'back.out(2)' });
+      if (G() && !reduce()) { G().fromTo(chip, { opacity: 0, y: -6, scale: .98 }, { opacity: 1, y: 0, scale: 1, duration: .24, ease: 'back.out(2)' }); G().fromTo(matSec, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .28, ease: 'power2.out', delay: .04 }); }
       doSearch(); setTimeout(function () { itInput.focus(); }, 40);
     }
     function renderMk() {
