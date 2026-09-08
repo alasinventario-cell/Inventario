@@ -153,6 +153,59 @@
     return Object.keys(set).sort();
   }
 
+  /* ── Capa de datos (Supabase; si no hay cliente → demo en memoria) ─────── */
+  function DB() { return window.__inventarioDB || null; }
+  var REMOTE = !!DB();
+  function userName() { try { return (window.AlasAuthClient && window.AlasAuthClient.getCurrentUser && window.AlasAuthClient.getCurrentUser()) || 'Operador'; } catch (_) { return 'Operador'; } }
+  function mapRow(r, its) {
+    return {
+      id: r.id, codigo: 'INV-' + (1000 + r.id), fecha: String(r.fecha).slice(0, 10), hora: r.hora ? String(r.hora).slice(0, 5) : '',
+      nombre: 'Inventario ' + (r.marca || r.sector || ''), deposito: r.deposito, sector: r.sector, tipo: r.marca || 'General',
+      ubicacion: r.ubicacion || '', estado: r.estado || 'programado', prioridad: r.prioridad || 'NORMAL', responsable: r.responsable || '',
+      items: (its || []).map(function (it) { return { id: it.id, codigo: it.codigo, descripcion: it.descripcion || '', um: it.um || 'UN', sap: it.sap, contado: it.contado, diff: it.diff, motivo: it.motivo || '', nota: it.nota || '' }; }),
+      observacion: r.observacion || '', diffs: !!r.diffs, orden: r.orden,
+    };
+  }
+  function dbLoad(fromISO, toISO) {
+    var db = DB(); if (!db) return Promise.resolve(null);
+    return db.from('inventarios').select('*').gte('fecha', fromISO).lte('fecha', toISO).order('orden', { nullsFirst: false }).order('fecha')
+      .then(function (inv) {
+        if (inv.error) { console.error('[inv] load', inv.error); return []; }
+        var rows = inv.data || []; if (!rows.length) return [];
+        return db.from('inventario_items').select('*').in('inventario_id', rows.map(function (r) { return r.id; }))
+          .then(function (its) {
+            var by = {}; (its.data || []).forEach(function (it) { (by[it.inventario_id] = by[it.inventario_id] || []).push(it); });
+            return rows.map(function (r) { return mapRow(r, by[r.id]); });
+          });
+      });
+  }
+  function dbCreate(obj) {
+    var db = DB(); if (!db) return Promise.resolve(null);
+    var ins = { fecha: obj.fecha, hora: obj.hora || null, deposito: obj.deposito, sector: obj.sector, marca: obj.tipo, prioridad: obj.prioridad, responsable: obj.responsable || null, ubicacion: obj.ubicacion || null, estado: obj.estado || 'programado', observacion: obj.observacion || null, orden: obj.orden, diffs: !!obj.diffs, usuario: userName() };
+    return db.from('inventarios').insert(ins).select().single().then(function (r) {
+      if (r.error) { console.error('[inv] create', r.error); return null; }
+      var id = r.data.id;
+      if (obj.items && obj.items.length) return db.from('inventario_items').insert(obj.items.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN' }; })).then(function () { return id; });
+      return id;
+    });
+  }
+  function dbUpdate(id, patch) { var db = DB(); if (!db) return; db.from('inventarios').update(patch).eq('id', id).then(function (r) { if (r && r.error) console.error('[inv] update', r.error); }); }
+  function dbSaveConteo(id, itemsArr, estado, diffs) {
+    var db = DB(); if (!db) return;
+    db.from('inventario_items').delete().eq('inventario_id', id).then(function () {
+      if (itemsArr.length) db.from('inventario_items').insert(itemsArr.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN', sap: it.sap == null ? null : it.sap, contado: it.contado == null ? null : it.contado, diff: it.diff == null ? null : it.diff, motivo: it.motivo || null, nota: it.nota || null }; })).then(function () {});
+    });
+    db.from('inventarios').update({ estado: estado, diffs: !!diffs }).eq('id', id).then(function () {});
+  }
+  function refresh(animate) {
+    if (!REMOTE) { paintSeg(); paintKpis(); paintCalendar(animate); paintList(animate); return; }
+    var cells = monthCells();
+    dbLoad(iso(cells[0]), iso(cells[cells.length - 1])).then(function (rows) {
+      if (rows) DATA = rows;
+      paintSeg(); paintKpis(); paintCalendar(animate); paintList(animate);
+    });
+  }
+
   /* ── Render principal ────────────────────────────────────────────────── */
   function render(root) {
     S.root = root;
@@ -166,8 +219,10 @@
     view.appendChild(body);
     root.appendChild(view);
     wire();
+    if (REMOTE) DATA = [];
     paintSeg(); paintKpis(); paintCalendar(false); paintList(false);
     entrance();
+    refresh(false);
   }
 
   function buildHeader() {
@@ -349,10 +404,10 @@
   }
   function goMonth(delta) {
     var d = new Date(S.cur.y, S.cur.m + delta, 1); S.cur = { y: d.getFullYear(), m: d.getMonth() }; S.sel = null; S.fResp = '';
-    paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
+    refresh(true);
     var mo = S.root.querySelector('#ciMonth'); if (mo && G() && !reduce()) G().fromTo(mo, { opacity: 0, x: 8 }, { opacity: 1, x: 0, duration: .3, ease: 'power2.out' });
   }
-  function goToday() { var d = new Date(); S.cur = { y: d.getFullYear(), m: d.getMonth() }; S.sel = null; paintSeg(); paintKpis(); paintCalendar(true); paintList(true); }
+  function goToday() { var d = new Date(); S.cur = { y: d.getFullYear(), m: d.getMonth() }; S.sel = null; refresh(true); }
   function selectDay(isoS) { S.sel = (S.sel === isoS ? null : isoS); paintCalendar(false); paintList(true); }
 
   function wire() {
@@ -425,6 +480,7 @@
   function reschedule(id, isoS) {
     var x = DATA.find(function (t) { return t.id === id; }); if (!x || x.fecha === isoS) return;
     x.fecha = isoS;
+    if (REMOTE) dbUpdate(id, { fecha: isoS });
     paintSeg(); paintKpis(); paintCalendar(false); paintList(false);
     var cell = S.root.querySelector('.ci-cell[data-iso="' + isoS + '"]');
     if (cell && G() && !reduce()) G().fromTo(cell, { scale: .9 }, { scale: 1, duration: .4, ease: 'back.out(2.2)' });
@@ -435,7 +491,7 @@
     var fi = cur.findIndex(function (t) { return t.id === fromId; }), ti = cur.findIndex(function (t) { return t.id === targetId; });
     if (fi < 0 || ti < 0) return;
     var moved = cur.splice(fi, 1)[0]; cur.splice(ti, 0, moved);
-    cur.forEach(function (t, i) { var o = DATA.find(function (z) { return z.id === t.id; }); if (o) o.orden = i; });
+    cur.forEach(function (t, i) { var o = DATA.find(function (z) { return z.id === t.id; }); if (o) o.orden = i; if (REMOTE) dbUpdate(t.id, { orden: i }); });
     paintList(false);
     var row = S.root.querySelector('.ci-row[data-rowid="' + fromId + '"]');
     if (row && G() && !reduce()) G().fromTo(row, { backgroundColor: 'rgba(8,119,175,.16)' }, { backgroundColor: 'rgba(255,255,255,0)', duration: .6, ease: 'power2.out', clearProps: 'background-color' });
@@ -640,15 +696,18 @@
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
       var sector = selSector.getValue();
-      var nombre = 'Inventario ' + (marca || sector);
-      DATA.push({
-        id: seq, codigo: 'INV-' + pad(1000 + seq++), fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
-        nombre: nombre, deposito: DEPOSITOS[depSel], sector: sector, tipo: marca || 'General',
+      var obj = {
+        fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
+        deposito: DEPOSITOS[depSel], sector: sector, tipo: marca || 'General',
         ubicacion: ov.querySelector('#mUbic').value.trim(), estado: 'programado', prioridad: selPrio.getValue(),
         responsable: ov.querySelector('#mResp').value.trim(), items: items.slice(), observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
-      });
+      };
       S.depIdx = depSel;
-      close(); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
+      if (REMOTE) { dbCreate(obj).then(function () { close(); refresh(true); }); }
+      else {
+        obj.id = seq; obj.codigo = 'INV-' + pad(1000 + seq++); obj.nombre = 'Inventario ' + (marca || sector);
+        DATA.push(obj); close(); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
+      }
     });
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 });
@@ -748,6 +807,7 @@
     ov.querySelector('#dEstado').addEventListener('click', function () {
       var order = ['programado', 'en_proceso', 'realizado']; var i = order.indexOf(x.estado);
       x.estado = i < 0 ? 'programado' : order[(i + 1) % order.length];
+      if (REMOTE) dbUpdate(x.id, { estado: x.estado });
       close(); paintKpis(); paintCalendar(false); paintList(true);
     });
     var gb = ov.querySelector('#dGuardar');
@@ -755,6 +815,7 @@
       var counted = itemsArr.filter(function (it) { return it.diff != null; }).length;
       if (counted && x.estado === 'programado') x.estado = 'en_proceso';
       if (counted === itemsArr.length && itemsArr.length) x.estado = 'realizado';
+      if (REMOTE) dbSaveConteo(x.id, itemsArr, x.estado, x.diffs);
       close(); paintKpis(); paintCalendar(false); paintList(true);
     });
     if (G() && !reduce()) {
