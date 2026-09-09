@@ -89,7 +89,8 @@
           '<td>' + diffPill(it.diff) + '</td><td class="ci-st__mot">' + esc(it.motivo || '—') + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
-  function progInfo(items) { var c = 0, ok = 0, sob = 0, fal = 0; items.forEach(function (it) { if (it.diff != null) { c++; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; } }); var t = items.length; return { c: c, ok: ok, sob: sob, fal: fal, t: t, pct: t ? Math.round(c / t * 100) : 0 }; }
+  // ok = cantidad de materiales que coinciden; sob/fal = total de UNIDADES que sobran/faltan.
+  function progInfo(items) { var c = 0, ok = 0, sob = 0, fal = 0; items.forEach(function (it) { if (it.diff != null) { c++; if (it.diff === 0) ok++; else if (it.diff > 0) sob += it.diff; else fal += -it.diff; } }); var t = items.length; return { c: c, ok: ok, sob: sob, fal: fal, t: t, pct: t ? Math.round(c / t * 100) : 0 }; }
   // Chips de conteo: sólo aparecen cuando hay resultados; verde = "Coincide".
   function sumChips(ok, sob, fal) {
     var h = '';
@@ -993,7 +994,7 @@
 
     function renderResumen() {
       var ok = 0, sob = 0, fal = 0, cont = 0;
-      itemsArr.forEach(function (it) { if (it.diff != null) { cont++; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; } });
+      itemsArr.forEach(function (it) { if (it.diff != null) { cont++; if (it.diff === 0) ok++; else if (it.diff > 0) sob += it.diff; else fal += -it.diff; } });
       var sr = ov.querySelector('#dSumR'); if (sr) sr.innerHTML = sumChips(ok, sob, fal);
       var pct = itemsArr.length ? Math.round(cont / itemsArr.length * 100) : 0;
       var pf = ov.querySelector('#dProgFill'), pt = ov.querySelector('#dProgTxt');
@@ -1017,7 +1018,7 @@
     // ── Conteo: cálculo en vivo ──
     function updateSummary() {
       var ok = 0, sob = 0, fal = 0;
-      itemsArr.forEach(function (it) { if (it.diff == null) return; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; });
+      itemsArr.forEach(function (it) { if (it.diff == null) return; if (it.diff === 0) ok++; else if (it.diff > 0) sob += it.diff; else fal += -it.diff; });
       x.diffs = (sob + fal) > 0;
       var sum = ov.querySelector('#dSum');
       if (sum) sum.innerHTML = sumChips(ok, sob, fal);
