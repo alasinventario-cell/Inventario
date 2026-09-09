@@ -341,8 +341,7 @@
           '<span class="ci-ev__bar"></span><span class="ci-ev__h">' + esc(x.hora) + '</span><span class="ci-ev__t">' + esc(lbl) + '</span></div>';
       }).join('');
       cell.innerHTML =
-        '<div class="ci-cell__top"><span class="ci-cell__d">' + d.getDate() + '</span>' +
-        '<button class="ci-cell__add" data-add="' + isoS + '" tabindex="-1" aria-label="Nuevo inventario">' + ICO.plus + '</button></div>' +
+        '<div class="ci-cell__top"><span class="ci-cell__d">' + d.getDate() + '</span></div>' +
         '<div class="ci-cell__events">' + evHtml + (evs.length > shown.length ? '<div class="ci-more">+' + (evs.length - shown.length) + ' más</div>' : '') + '</div>';
       grid.appendChild(cell);
     });
@@ -492,16 +491,14 @@
     var grid = S.root.querySelector('#ciGrid');
     grid.querySelectorAll('.ci-cell').forEach(function (cell) {
       var isoS = cell.getAttribute('data-iso');
-      cell.addEventListener('click', function (e) { if (e.target.closest('.ci-cell__add') || e.target.closest('.ci-ev')) return; selectDay(isoS); });
+      // El calendario es de solo lectura: SOLO tooltip (hover) + arrastrar a otra fecha.
       cell.addEventListener('dragover', function (e) { if (S.drag != null) { e.preventDefault(); cell.classList.add('over'); } });
       cell.addEventListener('dragleave', function () { cell.classList.remove('over'); });
       cell.addEventListener('drop', function (e) { e.preventDefault(); cell.classList.remove('over'); var id = +e.dataTransfer.getData('text/plain'); if (id) reschedule(id, isoS); S.drag = null; });
-      var add = cell.querySelector('.ci-cell__add'); if (add) add.addEventListener('click', function (e) { e.stopPropagation(); openModal(isoS); });
       cell.querySelectorAll('.ci-ev').forEach(function (ev) {
         var id = +ev.getAttribute('data-id');
         ev.addEventListener('mouseenter', function () { showTip(id, ev.getBoundingClientRect()); });
         ev.addEventListener('mouseleave', hideTip);
-        ev.addEventListener('click', function (e) { e.stopPropagation(); hideTip(); openDetail(id); });
         ev.addEventListener('dragstart', function (e) { S.drag = id; hideTip(); e.dataTransfer.setData('text/plain', String(id)); e.dataTransfer.effectAllowed = 'move'; });
         ev.addEventListener('dragend', function () { S.drag = null; });
       });

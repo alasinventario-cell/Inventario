@@ -105,7 +105,7 @@
 .ci-dow span{text-align:center;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(8,119,175,.75)}
 .ci-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .ci-cell{position:relative;display:flex;flex-direction:column;border:1px solid var(--ci-border);border-radius:11px;padding:6px;
-  background:var(--ci-surface);cursor:pointer;overflow:hidden;transition:border-color .15s,box-shadow .15s,transform .15s}
+  background:var(--ci-surface);cursor:default;overflow:hidden;transition:border-color .15s,box-shadow .15s,transform .15s}
 .ci-cell.wknd{background:#fafcfe}
 .ci-cell.out{background:#f6f8fb;border-color:transparent}
 .ci-cell:hover{border-color:rgba(8,119,175,.5);box-shadow:0 6px 16px rgba(8,119,175,.12)}
