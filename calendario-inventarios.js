@@ -78,6 +78,18 @@
     if (k === 'en_proceso') return '<span class="ci-cnt-dots" aria-hidden="true"><i></i><i></i><i></i></span>Contando';
     return EST[k].ico + EST[k].label;
   }
+  // Helpers de resumen de materiales (reutilizados en la lista inline y en el modal de conteo)
+  function diffPill(d) { if (d == null) return '<span class="ci-dpill nd">Sin contar</span>'; if (d === 0) return '<span class="ci-dpill ok">' + ICO.chk + 'Coincide</span>'; if (d > 0) return '<span class="ci-dpill sob">+' + d + ' Sobra</span>'; return '<span class="ci-dpill fal">' + d + ' Faltante</span>'; }
+  function matSumTable(items) {
+    return '<table class="ci-st"><thead><tr><th>#</th><th>Material</th><th>SAP</th><th>Contado</th><th>Diferencia</th><th>Motivo</th></tr></thead><tbody>' +
+      items.map(function (it, i) {
+        return '<tr><td class="c">' + (i + 1) + '</td>' +
+          '<td><span class="ci-st__cod">' + esc(it.codigo) + '</span> <span class="ci-st__desc">' + esc(it.descripcion || '') + '</span></td>' +
+          '<td class="c">' + (it.sap == null ? '—' : it.sap) + '</td><td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
+          '<td>' + diffPill(it.diff) + '</td><td class="ci-st__mot">' + esc(it.motivo || '—') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+  function progInfo(items) { var c = 0, ok = 0, sob = 0, fal = 0; items.forEach(function (it) { if (it.diff != null) { c++; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; } }); var t = items.length; return { c: c, ok: ok, sob: sob, fal: fal, t: t, pct: t ? Math.round(c / t * 100) : 0 }; }
   var EST_KEYS = ['programado', 'en_proceso', 'realizado', 'pendiente'];
   var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   var DOW = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -377,7 +389,8 @@
     var flags = '';
     if (x.diffs) flags += '<span class="ci-flag diff">Con diferencias</span>';
     if (x.prioridad === 'ALTA') flags += '<span class="ci-flag">Alta prioridad</span>';
-    return '<div class="ci-row st-' + x.estado + '" data-id="' + x.id + '" data-rowid="' + x.id + '" draggable="true">' +
+    return '<div class="ci-rowwrap" data-id="' + x.id + '">' +
+      '<div class="ci-row st-' + x.estado + '" data-id="' + x.id + '" data-rowid="' + x.id + '" draggable="true">' +
       '<span class="ci-row__bar"></span>' +
       '<span class="ci-row__grip">' + ICO.grip + '</span>' +
       '<span class="ci-row__n">' + (i + 1) + '</span>' +
@@ -389,6 +402,20 @@
         '<span class="ci-pill">' + ICO.box + '<span>' + esc(x.sector) + ' · ' + (x.items ? x.items.length : 0) + ' ítems</span></span>' +
       '</div></div>' +
       '<span class="ci-badge-st st-' + x.estado + '">' + estBadgeInner(x.estado) + '</span>' +
+      '<span class="ci-row__chev">' + ICO.chevronD + '</span>' +
+      '</div>' +
+      '<div class="ci-row-exp" hidden></div>' +
+    '</div>';
+  }
+  function expInnerHtml(x) {
+    var items = x.items || [];
+    var p = progInfo(items);
+    if (!items.length) return '<div class="ci-exp-in"><div class="ci-items__empty" style="padding:12px 0">Sin materiales cargados en este inventario.</div></div>';
+    return '<div class="ci-exp-in">' +
+      '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum"><span class="ok">' + ICO.chk + p.ok + '</span><span class="sob">+' + p.sob + ' sobra</span><span class="fal">' + p.fal + ' falta</span></div></div>' +
+      '<div class="ci-prog"><div class="ci-prog__bar"><i style="width:' + p.pct + '%"></i></div><span class="ci-prog__txt">' + p.c + ' de ' + p.t + ' contados · ' + p.pct + '%</span></div>' +
+      '<div class="ci-sumtable">' + matSumTable(items) + '</div>' +
+      '<div class="ci-exp-foot"><button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
     '</div>';
   }
   function paintEstados() {
@@ -504,12 +531,48 @@
       });
     });
   }
+  function collapseRow(wrap) {
+    if (!wrap || !wrap.classList.contains('open')) return;
+    var exp = wrap.querySelector('.ci-row-exp'); if (!exp) return;
+    wrap.classList.remove('open');
+    if (G() && !reduce()) {
+      G().to(exp, { height: 0, opacity: 0, duration: .28, ease: 'power2.inOut', onComplete: function () { exp.hidden = true; exp.style.height = ''; exp.style.opacity = ''; exp.innerHTML = ''; } });
+    } else { exp.hidden = true; exp.innerHTML = ''; }
+  }
+  function expandRow(wrap) {
+    var id = +wrap.getAttribute('data-id');
+    var x = DATA.find(function (t) { return t.id === id; });
+    var exp = wrap.querySelector('.ci-row-exp'); if (!exp || !x) return;
+    exp.innerHTML = expInnerHtml(x);
+    exp.hidden = false;
+    wrap.classList.add('open');
+    // "Ver conteo" → abre el modal directo en la vista de trabajo.
+    var ver = exp.querySelector('.ci-exp-ver');
+    if (ver) ver.addEventListener('click', function (e) { e.stopPropagation(); openDetail(id, 'trabajo'); });
+    if (G() && !reduce()) {
+      G().set(exp, { height: 'auto', opacity: 1 });
+      var h = exp.offsetHeight;
+      G().fromTo(exp, { height: 0, opacity: 0 }, { height: h, opacity: 1, duration: .36, ease: 'power3.out', onComplete: function () { exp.style.height = 'auto'; } });
+      G().from(exp.querySelectorAll('.ci-exp-in > *'), { opacity: 0, y: 8, duration: .3, stagger: { amount: .22 }, ease: 'power2.out', delay: .08, clearProps: 'all' });
+    }
+  }
+  function toggleRow(wrap) {
+    if (wrap.classList.contains('open')) { collapseRow(wrap); return; }
+    // acordeón: cierra cualquier otra fila abierta
+    var list = S.root.querySelector('#ciList');
+    if (list) list.querySelectorAll('.ci-rowwrap.open').forEach(collapseRow);
+    expandRow(wrap);
+  }
   function wireList() {
     var list = S.root.querySelector('#ciList');
-    list.querySelectorAll('.ci-row').forEach(function (row) {
-      var id = +row.getAttribute('data-id');
-      row.addEventListener('click', function () { openDetail(id); });
-      row.addEventListener('dragstart', function (e) { S.drag = id; e.dataTransfer.setData('text/plain', String(id)); e.dataTransfer.effectAllowed = 'move'; row.classList.add('drag'); });
+    list.querySelectorAll('.ci-rowwrap').forEach(function (wrap) {
+      var row = wrap.querySelector('.ci-row');
+      var id = +wrap.getAttribute('data-id');
+      row.addEventListener('click', function (e) {
+        if (e.target.closest('.ci-row__grip')) return; // el grip es solo para arrastrar
+        toggleRow(wrap);
+      });
+      row.addEventListener('dragstart', function (e) { S.drag = id; e.dataTransfer.setData('text/plain', String(id)); e.dataTransfer.effectAllowed = 'move'; row.classList.add('drag'); collapseRow(wrap); });
       row.addEventListener('dragend', function () { S.drag = null; row.classList.remove('drag'); });
       row.addEventListener('dragover', function (e) { if (S.drag != null && S.drag !== id) { e.preventDefault(); row.classList.add('over'); } });
       row.addEventListener('dragleave', function () { row.classList.remove('over'); });
@@ -858,7 +921,7 @@
   }
 
   /* ── Detalle + Conteo ────────────────────────────────────────────────── */
-  function openDetail(id) {
+  function openDetail(id, start) {
     var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
     var itemsArr = (x.items || []).map(function (i) { return typeof i === 'string' ? { codigo: i, descripcion: '', um: 'UN' } : i; });
     x.items = itemsArr; // normaliza
@@ -978,8 +1041,7 @@
     ov.querySelector('#dClose').addEventListener('click', close);
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     // "Contar materiales" → pasa a Contando (si no está Realizado) y abre la vista de trabajo.
-    var cb = ov.querySelector('#dContar');
-    if (cb) cb.addEventListener('click', function () {
+    function goTrabajo(animItems) {
       if (x.estado !== 'realizado') {
         x.estado = 'en_proceso';
         if (REMOTE) dbUpdate(x.id, { estado: 'en_proceso' });
@@ -987,9 +1049,11 @@
         paintKpis(); paintCalendar(false); paintList(true);
       }
       goView('trabajo');
-      if (G() && !reduce()) G().from(ov.querySelectorAll('#dTrabajo .ci-cnt'), { opacity: 0, y: 10, duration: .3, stagger: { amount: 0.3 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
+      if (animItems && G() && !reduce()) G().from(ov.querySelectorAll('#dTrabajo .ci-cnt'), { opacity: 0, y: 10, duration: .3, stagger: { amount: 0.3 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
       setTimeout(function () { var f = ov.querySelector('.cnt-sap'); if (f) f.focus(); }, 90);
-    });
+    }
+    var cb = ov.querySelector('#dContar');
+    if (cb) cb.addEventListener('click', function () { goTrabajo(true); });
     ov.querySelector('#dBack').addEventListener('click', function () { goView('resumen'); });
     var gb = ov.querySelector('#dGuardar');
     if (gb) gb.addEventListener('click', function () {
@@ -1006,9 +1070,13 @@
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' });
-      G().from(ov.querySelectorAll('#dResumen .ci-detail-row'), { opacity: 0, y: 6, duration: .26, stagger: { amount: 0.22 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
-      G().from(ov.querySelectorAll('.ci-sumtable tbody tr'), { opacity: 0, y: 8, duration: .3, stagger: { amount: 0.35 }, ease: 'power2.out', delay: .22, clearProps: 'all' });
+      if (start !== 'trabajo') {
+        G().from(ov.querySelectorAll('#dResumen .ci-detail-row'), { opacity: 0, y: 6, duration: .26, stagger: { amount: 0.22 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
+        G().from(ov.querySelectorAll('.ci-sumtable tbody tr'), { opacity: 0, y: 8, duration: .3, stagger: { amount: 0.35 }, ease: 'power2.out', delay: .22, clearProps: 'all' });
+      }
     }
+    // Salto directo a la vista de conteo (desde "Ver conteo" del acordeón de la lista).
+    if (start === 'trabajo' && itemsArr.length) goTrabajo(true);
   }
 
   /* ── Feedback GSAP de click en TODOS los botones (delegado, una sola vez) ── */
