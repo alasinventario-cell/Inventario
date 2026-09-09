@@ -400,8 +400,11 @@
   function rowHtml(x, i) {
     var d = new Date(x.fecha + 'T00:00:00');
     var flags = '';
-    if (x.diffs) flags += '<span class="ci-flag diff">Con diferencias</span>';
-    if (x.prioridad === 'ALTA') flags += '<span class="ci-flag">Alta prioridad</span>';
+    var pf = progInfo(x.items || []);
+    if (pf.fal > 0) flags += '<span class="ci-flag fal">' + pf.fal + ' Faltante' + (pf.fal === 1 ? '' : 's') + '</span>';
+    if (pf.sob > 0) flags += '<span class="ci-flag sob">+' + pf.sob + ' Sobrante' + (pf.sob === 1 ? '' : 's') + '</span>';
+    if (pf.t > 0 && pf.c === pf.t && pf.fal === 0 && pf.sob === 0) flags += '<span class="ci-flag ok">' + ICO.chk + 'Sin diferencias</span>';
+    if (x.prioridad === 'ALTA') flags += '<span class="ci-flag alta">Alta prioridad</span>';
     return '<div class="ci-rowwrap" data-id="' + x.id + '">' +
       '<div class="ci-row st-' + x.estado + '" data-id="' + x.id + '" data-rowid="' + x.id + '" draggable="true">' +
       '<span class="ci-row__bar"></span>' +

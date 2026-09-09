@@ -201,8 +201,12 @@
 .ci-row__main{min-width:0;flex:1}
 .ci-row__ttl{font-size:14px;font-weight:700;color:var(--ci-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
 .ci-row__flags{display:inline-flex;gap:5px}
-.ci-flag{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:99px;background:#eef2f6;color:var(--ci-muted)}
-.ci-flag.diff{background:#fdeded;color:#c0392b}
+.ci-flag{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:2px 7px;border-radius:99px;background:#eef2f6;color:var(--ci-muted)}
+.ci-flag svg{width:11px;height:11px}
+.ci-flag.diff,.ci-flag.fal{background:#fdeded;color:#c0392b}
+.ci-flag.sob{background:#eef5fc;color:#0b5f8d}
+.ci-flag.ok{background:#e9f7ef;color:#127a4b}
+.ci-flag.alta{background:#fdf6e6;color:#a9740c}
 .ci-row__meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
 .ci-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--ci-text-2);background:#eef2f6;border-radius:99px;padding:2px 7px;max-width:170px}
 .ci-pill svg{width:12px;height:12px;flex-shrink:0} .ci-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
