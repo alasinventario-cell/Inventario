@@ -133,6 +133,9 @@ h1,h2,h3,.display { font-family:'Sora', system-ui, sans-serif; letter-spacing:-.
   display:inline-flex; align-items:center; justify-content:center; transition:background .16s var(--alas-ease), color .16s var(--alas-ease); }
 .notif-btn svg { width:19px; height:19px; }
 .notif-btn:hover { background:var(--gray-100); color:var(--alas-brand); }
+.refresh-btn svg { transition:transform .5s cubic-bezier(.4,0,.2,1); }
+.refresh-btn:hover svg { transform:rotate(180deg); }
+.refresh-btn:active svg { transform:rotate(360deg); transition-duration:.35s; }
 .notif-badge { position:absolute; top:4px; right:4px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--alas-danger);
   color:#fff; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #fff; }
 .notif-badge[hidden] { display:none; }

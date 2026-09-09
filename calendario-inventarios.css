@@ -439,8 +439,8 @@
 .ci-upd-lead b{color:var(--ci-text);font-weight:800}
 
 /* Combo Marca (elegir o crear) */
-.ci-combo{position:relative;display:flex;align-items:center;gap:8px;height:42px;padding:0 10px 0 12px;border:1.5px solid var(--ci-border-2);border-radius:11px;background:#fff;transition:border-color .15s,box-shadow .15s}
-.ci-combo.open,.ci-combo:focus-within{border-color:var(--ci-primary);box-shadow:0 0 0 4px rgba(8,119,175,.13)}
+.ci-combo{position:relative;display:flex;align-items:center;gap:8px;height:42px;padding:0 10px 0 12px;border:1.5px solid var(--ci-border-2);border-radius:11px;background:#fff;transition:border-color .15s}
+.ci-combo.open,.ci-combo:focus-within{border-color:var(--ci-primary)}
 .ci-combo__ic{flex-shrink:0;color:var(--ci-muted);display:inline-flex} .ci-combo__ic svg{width:16px;height:16px}
 .ci-combo input{flex:1;min-width:0;border:0;outline:none;background:transparent;font-size:14px;font-family:inherit;color:var(--ci-text)}
 .ci-combo__cv{flex-shrink:0;color:var(--ci-muted);display:inline-flex;transition:transform .18s} .ci-combo__cv svg{width:16px;height:16px}
