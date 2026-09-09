@@ -389,6 +389,31 @@
 .ci-chip__x:hover{background:#fdeded;color:var(--ci-pend)} .ci-chip__x svg{width:12px;height:12px}
 .ci-items__empty{font-size:12px;font-weight:600;color:var(--ci-muted)}
 .ci-items__count{font-size:11px;font-weight:700;color:var(--ci-primary)}
+.ci-selrow__sap{flex-shrink:0;font-size:10.5px;font-weight:800;color:#0b5f8d;background:#eef5fc;border:1px solid #cfe4f5;border-radius:99px;padding:2px 9px;font-variant-numeric:tabular-nums}
+
+/* ── Importar Excel de SAP ── */
+.ci-imp{margin:4px 0 12px}
+.ci-imp__drop{display:flex;align-items:center;gap:14px;padding:18px;border:2px dashed var(--ci-border-2);border-radius:16px;background:linear-gradient(180deg,#f7fbff,#fff);cursor:pointer;transition:border-color .18s,box-shadow .18s,background .18s}
+.ci-imp__drop:hover{border-color:var(--ci-primary);box-shadow:0 8px 24px rgba(8,119,175,.12)}
+.ci-imp__drop.drag{border-color:var(--ci-primary);background:var(--ci-primary-soft);box-shadow:0 0 0 4px rgba(8,119,175,.12)}
+.ci-imp__ic{flex-shrink:0;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;color:var(--ci-primary);background:linear-gradient(135deg,var(--ci-primary-soft),#fff);border:1px solid #dcebf7}
+.ci-imp__ic svg{width:26px;height:26px}
+.ci-imp__ic.ok{color:#127a4b;background:linear-gradient(135deg,#e9f7ef,#fff);border-color:#c5e9d4}
+.ci-imp__txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ci-imp__txt b{font-size:14px;font-weight:800;color:var(--ci-text)}
+.ci-imp__txt span{font-size:11.5px;font-weight:600;color:var(--ci-muted)}
+.ci-imp__drop .ci-mbtn{flex-shrink:0}
+.ci-imp__prog{display:flex;align-items:center;gap:16px;padding:18px;border:1px solid var(--ci-border);border-radius:16px;background:linear-gradient(180deg,#f7fbff,#fff)}
+.ci-imp__pring{position:relative;flex-shrink:0;width:64px;height:64px}
+.ci-imp__pring svg{width:64px;height:64px;transform:rotate(-90deg)}
+.ci-imp__pring circle{fill:none;stroke-width:6}
+.ci-imp__pring circle.bg{stroke:#e6eef6}
+.ci-imp__pring circle.fg{stroke:var(--ci-primary);stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.ci-imp__ppct{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;font-weight:800;color:var(--ci-primary);font-variant-numeric:tabular-nums}
+.ci-imp__pmeta{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ci-imp__pmeta b{font-size:14px;font-weight:800;color:var(--ci-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-imp__pmeta span{font-size:12px;font-weight:600;color:var(--ci-muted)}
+.ci-imp__done{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid #c5e9d4;border-radius:16px;background:linear-gradient(180deg,#f2fbf6,#fff)}
 
 /* Conteo (SAP vs contado, diferencia, motivo) */
 .ci-cnt-head{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 2px}

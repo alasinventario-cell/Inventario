@@ -41,13 +41,20 @@ create table if not exists inventario_items (
   codigo         text not null,
   descripcion    text,
   um             text default 'UN',
-  sap            numeric,            -- cantidad que figura en SAP
+  sap            numeric,            -- cantidad que figura en SAP (col. "Libre utilización")
   contado        numeric,            -- cantidad contada
   diff           numeric,            -- contado - sap (null si sin datos)
   motivo         text,               -- averiado, vencido, etc. (si hay diferencia)
   nota           text,
+  valor          numeric,            -- valor SAP del stock (col. "Valor libre util.")
+  centro         text,               -- centro SAP (col. "Centro")
+  almacen        text,               -- almacén SAP (col. "Almacén")
   created_at     timestamptz not null default now()
 );
+-- Si la tabla ya existía, agregar las columnas nuevas (idempotente):
+alter table inventario_items add column if not exists valor   numeric;
+alter table inventario_items add column if not exists centro  text;
+alter table inventario_items add column if not exists almacen text;
 create index if not exists idx_invitems_inv on inventario_items (inventario_id);
 
 -- ── updated_at automático en inventarios ───────────────────────────────────

@@ -34,6 +34,7 @@
     chk: '<svg fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     tag: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg>',
     download: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
+    upload: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>',
   };
 
   /* ── Seleccionador PRO (custom select animado) ───────────────────────── */
@@ -197,7 +198,7 @@
       id: r.id, codigo: 'INV-' + (1000 + r.id), fecha: String(r.fecha).slice(0, 10), hora: r.hora ? String(r.hora).slice(0, 5) : '',
       nombre: 'Inventario ' + (r.marca || r.sector || ''), deposito: r.deposito, sector: r.sector, tipo: r.marca || 'General',
       ubicacion: r.ubicacion || '', estado: r.estado || 'programado', prioridad: r.prioridad || 'NORMAL', responsable: r.responsable || '',
-      items: (its || []).map(function (it) { return { id: it.id, codigo: it.codigo, descripcion: it.descripcion || '', um: it.um || 'UN', sap: it.sap, contado: it.contado, diff: it.diff, motivo: it.motivo || '', nota: it.nota || '' }; }),
+      items: (its || []).map(function (it) { return { id: it.id, codigo: it.codigo, descripcion: it.descripcion || '', um: it.um || 'UN', sap: it.sap, contado: it.contado, diff: it.diff, motivo: it.motivo || '', nota: it.nota || '', valor: it.valor, centro: it.centro || '', almacen: it.almacen || '' }; }),
       observacion: r.observacion || '', diffs: !!r.diffs, orden: r.orden,
     };
   }
@@ -220,7 +221,7 @@
     return db.from('inventarios').insert(ins).select().single().then(function (r) {
       if (r.error) { console.error('[inv] create', r.error); return null; }
       var id = r.data.id;
-      if (obj.items && obj.items.length) return db.from('inventario_items').insert(obj.items.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN' }; })).then(function () { return id; });
+      if (obj.items && obj.items.length) return db.from('inventario_items').insert(obj.items.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN', sap: it.sap == null ? null : it.sap, valor: it.valor == null ? null : it.valor, centro: it.centro || null, almacen: it.almacen || null }; })).then(function () { return id; });
       return id;
     });
   }
@@ -228,7 +229,7 @@
   function dbSaveConteo(id, itemsArr, estado, diffs) {
     var db = DB(); if (!db) return;
     db.from('inventario_items').delete().eq('inventario_id', id).then(function () {
-      if (itemsArr.length) db.from('inventario_items').insert(itemsArr.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN', sap: it.sap == null ? null : it.sap, contado: it.contado == null ? null : it.contado, diff: it.diff == null ? null : it.diff, motivo: it.motivo || null, nota: it.nota || null }; })).then(function () {});
+      if (itemsArr.length) db.from('inventario_items').insert(itemsArr.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN', sap: it.sap == null ? null : it.sap, contado: it.contado == null ? null : it.contado, diff: it.diff == null ? null : it.diff, motivo: it.motivo || null, nota: it.nota || null, valor: it.valor == null ? null : it.valor, centro: it.centro || null, almacen: it.almacen || null }; })).then(function () {});
     });
     db.from('inventarios').update({ estado: estado, diffs: !!diffs }).eq('id', id).then(function () {});
   }
@@ -670,15 +671,22 @@
             '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
           '</div>' +
           '<div class="ci-step" id="step2" hidden>' +
-            '<div class="ci-step2-head"><h4>' + ICO.box + ' Materiales a contar</h4><span class="ci-items__count" id="mItemsCount" hidden></span></div>' +
-            '<div class="ci-field"><label>Buscar material (código, descripción o marca)</label>' +
-              '<div class="ci-mat-row">' +
-                '<div class="ci-items__search"><input id="mItem" placeholder="Ej: LLAVE · MECHA · LA010759TR…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
-                '<div class="ci-mfilt" id="mMkFilt"><button type="button" class="ci-mfilt__btn" id="mMkBtn">' + ICO.tag + '<span id="mMkLbl">Marca</span><span class="cv">' + ICO.chevronD + '</span></button></div>' +
+            '<div class="ci-step2-head"><h4>' + ICO.box + ' Materiales del inventario (SAP)</h4><span class="ci-items__count" id="mItemsCount" hidden></span></div>' +
+            '<div class="ci-imp" id="mImp">' +
+              '<input type="file" id="mFile" accept=".xlsx,.xls,.csv" hidden>' +
+              '<div class="ci-imp__drop" id="mDrop">' +
+                '<span class="ci-imp__ic">' + ICO.upload + '</span>' +
+                '<div class="ci-imp__txt"><b>Importá el Excel de SAP</b><span>Arrastrá el archivo acá o hacé clic para elegirlo · .xlsx</span></div>' +
+                '<button type="button" class="ci-mbtn primary" id="mPick">' + ICO.upload + ' Elegir archivo</button>' +
               '</div>' +
+              '<div class="ci-imp__prog" id="mProg" hidden>' +
+                '<div class="ci-imp__pring"><svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="28"/><circle class="fg" id="mProgArc" cx="32" cy="32" r="28"/></svg><span class="ci-imp__ppct" id="mProgPct">0%</span></div>' +
+                '<div class="ci-imp__pmeta"><b id="mProgName">Leyendo archivo…</b><span id="mProgSub">Procesando materiales</span></div>' +
+              '</div>' +
+              '<div class="ci-imp__done" id="mImpDone" hidden><span class="ci-imp__ic ok">' + ICO.chk + '</span><div class="ci-imp__txt"><b id="mImpFile">archivo.xlsx</b><span id="mImpStat">0 materiales</span></div><button type="button" class="ci-mbtn ghost" id="mReimp">' + ICO.upload + ' Cambiar archivo</button></div>' +
             '</div>' +
             '<div class="ci-items__list" id="mItemsList"></div>' +
-            '<div class="ci-items__empty" id="mItemsEmpty">Buscá y agregá los materiales que vas a contar.</div>' +
+            '<div class="ci-items__empty" id="mItemsEmpty" hidden>Todavía no importaste ningún material.</div>' +
           '</div>' +
         '</div>' +
         '<div class="ci-modal__f">' +
@@ -721,25 +729,24 @@
         var kids = panel.querySelectorAll(':scope > .ci-field, :scope > .ci-grid2, :scope > .ci-grid3, :scope > .ci-step2-head, :scope > .ci-items__list');
         G().fromTo(kids, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .28, stagger: .045, ease: 'power2.out', delay: .06, clearProps: 'all' });
       }
-      if (n === 2) setTimeout(function () { var f = ov.querySelector('#mItem'); if (f) f.focus(); }, 90);
+      if (n === 2) setTimeout(function () { var f = ov.querySelector('#mPick'); if (f && !items.length) f.focus(); }, 90);
     }
     ov.querySelector('#mNext').addEventListener('click', function () { goStep(2); });
     ov.querySelector('#mBack').addEventListener('click', function () { goStep(1); });
 
-    // ── Cargador de mercaderías (buscador real desde InventarioAPI) ──
+    // ── Carga de materiales por Excel de SAP ──
     var items = [];
-    var itInput = ov.querySelector('#mItem'), itList = ov.querySelector('#mItemsList'), itEmpty = ov.querySelector('#mItemsEmpty'), itCount = ov.querySelector('#mItemsCount');
-    var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1, matMarca = '';
+    var itList = ov.querySelector('#mItemsList'), itEmpty = ov.querySelector('#mItemsEmpty'), itCount = ov.querySelector('#mItemsCount');
     function renderItems() {
       itEmpty.hidden = items.length > 0;
       itCount.hidden = !items.length;
-      itCount.textContent = items.length + (items.length === 1 ? ' seleccionado' : ' seleccionados');
+      itCount.textContent = items.length + (items.length === 1 ? ' material' : ' materiales');
       itList.innerHTML = items.map(function (it, i) {
         return '<div class="ci-selrow" data-i="' + i + '" title="' + esc(it.descripcion || '') + '">' +
           '<span class="ci-selrow__n">' + (i + 1) + '</span>' +
           '<span class="ci-selrow__cod">' + esc(it.codigo) + '</span>' +
           '<span class="ci-selrow__desc">' + esc(it.descripcion || '') + '</span>' +
-          (it.marca ? '<span class="ci-selrow__mk">' + esc(it.marca) + '</span>' : '') +
+          '<span class="ci-selrow__sap">SAP ' + (it.sap == null ? '—' : it.sap) + '</span>' +
           '<span class="ci-selrow__um">' + esc(it.um || 'UN') + '</span>' +
           '<button type="button" class="ci-selrow__x" data-del="' + i + '" aria-label="Quitar">' + ICO.x + '</button>' +
         '</div>';
@@ -750,63 +757,93 @@
           else { items.splice(idx, 1); renderItems(); }
         });
       });
-      if (G() && !reduce() && itList.lastElementChild) G().fromTo(itList.lastElementChild, { opacity: 0, y: -8, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'back.out(2.2)' });
       var sv = ov.querySelector('#mSave');
       if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
-    function closeRes() { itRes.hidden = true; results = []; hl = -1; }
-    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN', marca: m.marca || '' }); renderItems(); } itInput.value = ''; closeRes(); }
-    function renderRes() {
-      var opening = itRes.hidden;   // solo animar al abrir; al tipear, actualizar sin parpadeo
-      if (!results.length) { itRes.innerHTML = '<div class="ci-res__empty">Sin resultados</div>'; itRes.hidden = false; if (opening && G() && !reduce()) G().fromTo(itRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' }); return; }
-      itRes.innerHTML = results.map(function (m, i) {
-        return '<button type="button" class="ci-res' + (i === hl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__cod">' + esc(m.codigo) + '</span><span class="ci-res__desc">' + esc(m.descripcion) + '</span>' + (m.marca ? '<span class="ci-res__mk">' + esc(m.marca) + '</span>' : '') + '<span class="ci-res__um">' + esc(m.um || 'UN') + '</span></button>';
-      }).join('');
-      itRes.hidden = false;
-      itRes.querySelectorAll('[data-i]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); addMerc(results[+b.getAttribute('data-i')]); }); });
-      if (opening && G() && !reduce()) {
-        G().fromTo(itRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .18, ease: 'power2.out' });
-        G().fromTo(itRes.querySelectorAll('.ci-res'), { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: .2, stagger: 0.015, ease: 'power2.out', clearProps: 'all' });
-      }
-    }
-    function doSearch() {
-      var term = itInput.value.trim().toLowerCase();
-      var pool = window.MERCADERIAS_DEMO || [];
-      if (matMarca) pool = pool.filter(function (m) { return m.marca === matMarca; });
-      pool = pool.filter(function (m) { return !items.some(function (x) { return x.codigo === m.codigo; }); }); // ya agregados fuera
-      results = (term ? pool.filter(function (m) { return (m.codigo + ' ' + m.descripcion + ' ' + (m.marca || '')).toLowerCase().indexOf(term) >= 0; }) : pool).slice(0, 30);
-      hl = -1; renderRes();
-    }
-    itInput.addEventListener('input', function () { clearTimeout(searchT2); searchT2 = setTimeout(doSearch, 110); });
-    itInput.addEventListener('focus', function () { doSearch(); });
-    itInput.addEventListener('click', function () { if (itRes.hidden) doSearch(); }); // reabrir al volver a clickear
-    itInput.addEventListener('keydown', function (e) {
-      if (itRes.hidden) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); hl = Math.min(hl + 1, results.length - 1); renderRes(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); hl = Math.max(hl - 1, 0); renderRes(); }
-      else if (e.key === 'Enter') { e.preventDefault(); addMerc(results[hl >= 0 ? hl : 0]); }
-      else if (e.key === 'Escape') { closeRes(); }
-    });
-    itInput.addEventListener('blur', function () { setTimeout(closeRes, 120); });
 
-    // ── Filtro de marca (opcional, acelera la búsqueda) ──
-    var mkBtn = ov.querySelector('#mMkBtn'), mkFilt = ov.querySelector('#mMkFilt');
-    function paintMkLbl() { ov.querySelector('#mMkLbl').textContent = matMarca || 'Marca'; mkBtn.classList.toggle('on', !!matMarca); }
-    function onDocMkF(e) { if (!mkFilt.contains(e.target)) closeMkF(); }
-    function onEscMkF(e) { if (e.key === 'Escape') closeMkF(); }
-    function closeMkF() { var m = mkFilt.querySelector('.ci-resp__menu'); if (m) m.remove(); mkFilt.classList.remove('open'); document.removeEventListener('mousedown', onDocMkF, true); document.removeEventListener('keydown', onEscMkF, true); }
-    function toggleMkF() {
-      if (mkFilt.classList.contains('open')) { closeMkF(); return; }
-      var opts = getMarcasReal();
-      var menu = el('<div class="ci-resp__menu"></div>');
-      menu.innerHTML = '<button type="button" class="ci-resp__opt' + (!matMarca ? ' on' : '') + '" data-m=""><span class="ci-resp__av">' + ICO.tag + '</span>Todas las marcas</button>' +
-        opts.map(function (o) { return '<button type="button" class="ci-resp__opt' + (matMarca === o.name ? ' on' : '') + '" data-m="' + esc(o.name) + '"><span class="ci-resp__av">' + esc(o.name.charAt(0)) + '</span>' + esc(o.name) + '<span class="ci-res__um" style="margin-left:auto">' + o.n + '</span></button>'; }).join('');
-      mkFilt.appendChild(menu); mkFilt.classList.add('open');
-      menu.querySelectorAll('[data-m]').forEach(function (b) { b.addEventListener('click', function () { matMarca = b.getAttribute('data-m'); paintMkLbl(); closeMkF(); doSearch(); itInput.focus(); }); });
-      if (G() && !reduce()) G().fromTo(menu, { opacity: 0, y: -6, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .2, ease: 'back.out(2)', transformOrigin: 'top right' });
-      setTimeout(function () { document.addEventListener('mousedown', onDocMkF, true); document.addEventListener('keydown', onEscMkF, true); }, 0);
+    // Mapeo de columnas del Excel de SAP → ítems del inventario.
+    function normH(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
+    function findCol(headers, keys) {
+      var hs = headers.map(normH);
+      for (var k = 0; k < keys.length; k++) { var idx = hs.indexOf(keys[k]); if (idx >= 0) return idx; }
+      for (var i = 0; i < hs.length; i++) for (var j = 0; j < keys.length; j++) { if (hs[i].indexOf(keys[j]) >= 0) return i; }
+      return -1;
     }
-    mkBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleMkF(); });
+    function toNum(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v; var n = parseFloat(String(v).replace(/\s/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
+    function mapAoa(aoa) {
+      if (!aoa || !aoa.length) return [];
+      var headers = aoa[0] || [];
+      var c = { cod: findCol(headers, ['material']), desc: findCol(headers, ['texto breve', 'descripcion', 'texto']), centro: findCol(headers, ['centro']), alm: findCol(headers, ['almacen']), sap: findCol(headers, ['libre util', 'libre']), um: findCol(headers, ['unidad medida', 'unidad']), val: findCol(headers, ['valor libre', 'valor']) };
+      var out = [];
+      for (var r = 1; r < aoa.length; r++) {
+        var row = aoa[r]; if (!row) continue;
+        var cod = c.cod >= 0 ? String(row[c.cod] == null ? '' : row[c.cod]).trim() : '';
+        if (!cod) continue;
+        out.push({
+          codigo: cod,
+          descripcion: c.desc >= 0 ? String(row[c.desc] == null ? '' : row[c.desc]).trim() : '',
+          um: c.um >= 0 ? (String(row[c.um] == null ? '' : row[c.um]).trim() || 'UN') : 'UN',
+          sap: c.sap >= 0 ? toNum(row[c.sap]) : null,
+          valor: c.val >= 0 ? toNum(row[c.val]) : null,
+          centro: c.centro >= 0 ? String(row[c.centro] == null ? '' : row[c.centro]).trim() : '',
+          almacen: c.alm >= 0 ? String(row[c.alm] == null ? '' : row[c.alm]).trim() : '',
+        });
+      }
+      return out;
+    }
+
+    // ── Loader de importación 0→100% PRO ──
+    var fileInput = ov.querySelector('#mFile'), drop = ov.querySelector('#mDrop'), prog = ov.querySelector('#mProg'), doneBox = ov.querySelector('#mImpDone');
+    var RC = 2 * Math.PI * 28;
+    function setProg(p) {
+      var arc = ov.querySelector('#mProgArc'); if (arc) { arc.style.strokeDasharray = RC; arc.style.strokeDashoffset = RC * (1 - p); }
+      var pct = ov.querySelector('#mProgPct'); if (pct) pct.textContent = Math.round(p * 100) + '%';
+    }
+    function runImport(file) {
+      if (!file || typeof XLSX === 'undefined') { if (typeof XLSX === 'undefined') flashOk('Falta la librería', 'No se pudo cargar el lector de Excel', false); return; }
+      drop.hidden = true; doneBox.hidden = true; prog.hidden = false; setProg(0);
+      ov.querySelector('#mProgName').textContent = file.name;
+      ov.querySelector('#mProgSub').textContent = 'Leyendo el archivo de SAP…';
+      var parsed = null, err = null;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          parsed = mapAoa(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }));
+        } catch (ex) { err = ex; }
+      };
+      reader.onerror = function () { err = new Error('read'); };
+      reader.readAsArrayBuffer(file);
+      function finish() {
+        var tries = 0;
+        (function waitParse() {
+          if (parsed == null && err == null && tries < 120) { tries++; return setTimeout(waitParse, 16); }
+          setProg(1);
+          if (err || !parsed || !parsed.length) {
+            prog.hidden = true; drop.hidden = false;
+            flashOk('No se pudo importar', err ? 'Archivo inválido o dañado' : 'No se encontraron materiales en el Excel', false);
+            return;
+          }
+          items = parsed;
+          ov.querySelector('#mImpFile').textContent = file.name;
+          ov.querySelector('#mImpStat').textContent = items.length + ' material' + (items.length === 1 ? '' : 'es') + ' · SAP cargado';
+          prog.hidden = true; doneBox.hidden = false;
+          if (G() && !reduce()) G().fromTo(doneBox, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .3, ease: 'power2.out' });
+          renderItems();
+          if (G() && !reduce()) G().from(itList.querySelectorAll('.ci-selrow'), { opacity: 0, y: 8, duration: .28, stagger: { amount: .5 }, ease: 'power2.out', clearProps: 'all' });
+        })();
+      }
+      if (G() && !reduce()) { var o = { v: 0 }; G().to(o, { v: 1, duration: 1.1, ease: 'power1.inOut', onUpdate: function () { setProg(o.v); }, onComplete: finish }); }
+      else { setProg(1); finish(); }
+    }
+    ov.querySelector('#mPick').addEventListener('click', function (e) { e.stopPropagation(); fileInput.click(); });
+    drop.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) runImport(fileInput.files[0]); });
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('drag'); }); });
+    ['dragleave', 'dragend'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('drag'); }); });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('drag'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (f) runImport(f); });
+    ov.querySelector('#mReimp').addEventListener('click', function () { doneBox.hidden = true; drop.hidden = false; fileInput.value = ''; items = []; renderItems(); });
 
     function close() { if (G() && !reduce()) { G().to(ov.querySelector('.ci-modal'), { opacity: 0, y: 10, scale: .97, duration: .16 }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
@@ -814,9 +851,9 @@
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
       var sector = selSector.getValue();
-      // Marca del inventario: filtro usado, o la marca más común entre los ítems, o "Varios".
-      var mc = matMarca;
-      if (!mc) { var cnt = {}; items.forEach(function (it) { if (it.marca) cnt[it.marca] = (cnt[it.marca] || 0) + 1; }); var best = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0]; mc = best || ''; }
+      // Etiqueta del inventario: almacén SAP más común entre los ítems, o el sector.
+      var cnt = {}; items.forEach(function (it) { if (it.almacen) cnt[it.almacen] = (cnt[it.almacen] || 0) + 1; });
+      var mc = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0] || '';
       var marcaLbl = mc || sector;
       var obj = {
         fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
