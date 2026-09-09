@@ -517,9 +517,9 @@
 .ci-prog__bar{flex:1;height:9px;border-radius:99px;background:#e8eef4;overflow:hidden}
 .ci-prog__bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#1478b8,var(--ci-primary-2))}
 .ci-prog__txt{flex-shrink:0;font-size:12px;font-weight:800;color:var(--ci-primary)}
-.ci-sumtable{border:1px solid var(--ci-border);border-radius:12px;overflow:hidden}
+.ci-sumtable{border:1px solid var(--ci-border);border-radius:12px;overflow:auto;max-height:min(58vh,520px)}
 .ci-st{width:100%;border-collapse:collapse;font-size:12.5px}
-.ci-st thead th{background:#f2f7fc;color:var(--ci-text-2);text-align:left;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--ci-border)}
+.ci-st thead th{position:sticky;top:0;z-index:3;background:#eef4fb;color:var(--ci-text-2);text-align:left;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:9px 10px;border-bottom:1px solid var(--ci-border);box-shadow:0 1px 0 var(--ci-border),0 6px 10px -8px rgba(15,36,64,.25)}
 .ci-st tbody td{padding:8px 10px;border-bottom:1px solid var(--ci-border);vertical-align:middle;color:var(--ci-text)}
 .ci-st tbody tr:last-child td{border-bottom:0}
 .ci-st tbody tr:hover{background:#f7fbff}
