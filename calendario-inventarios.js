@@ -32,6 +32,7 @@
     alert: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
     trash: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>',
     refresh: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>',
+    edit: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     calEmpty: '<svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l6 4M15 15l-6 4"/></svg>',
     chk: '<svg fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     tag: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg>',
@@ -986,6 +987,68 @@
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
+  /* ── Editar datos de un inventario (incluida la marca) ───────────────── */
+  function openEditData(id, onSaved) {
+    var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
+    var ov = el('<div class="ci-ov"></div>');
+    ov.innerHTML =
+      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(640px,100%);min-height:auto">' +
+        '<div class="ci-modal__h"><h3>Editar datos</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
+        '<div class="ci-modal__b">' +
+          '<div class="ci-grid3">' +
+            '<div class="ci-field"><label>Fecha *</label><input id="eFecha" type="date" value="' + esc(x.fecha) + '"></div>' +
+            '<div class="ci-field"><label>Hora</label><input id="eHora" type="time" value="' + esc(x.hora || '') + '"></div>' +
+            '<div class="ci-field"><label>Prioridad</label><div id="ePrio"></div></div>' +
+          '</div>' +
+          '<div class="ci-grid2">' +
+            '<div class="ci-field"><label>Depósito</label><div id="eDep"></div></div>' +
+            '<div class="ci-field"><label>Sector</label><div id="eSector"></div></div>' +
+          '</div>' +
+          '<div class="ci-field"><label>Marca del inventario *</label><input id="eMarca" value="' + esc(x.tipo && x.tipo !== 'General' ? x.tipo : '') + '" placeholder="Marca del inventario" autocomplete="off"></div>' +
+          '<div class="ci-grid2">' +
+            '<div class="ci-field"><label>Responsable</label><input id="eResp" value="' + esc(x.responsable || '') + '" placeholder="Nombre del responsable"></div>' +
+            '<div class="ci-field"><label>Ubicación</label><input id="eUbic" value="' + esc(x.ubicacion || '') + '" placeholder="Rack A01 – A20"></div>' +
+          '</div>' +
+          '<div class="ci-field"><label>Observación</label><textarea id="eObs" placeholder="Detalle del inventario…">' + esc(x.observacion || '') + '</textarea></div>' +
+        '</div>' +
+        '<div class="ci-modal__f"><button class="ci-mbtn ghost" id="eCancel">Cancelar</button><button class="ci-mbtn primary" id="eSave">' + ICO.chk + ' Guardar cambios</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var selPrio = mountSelect(ov.querySelector('#ePrio'), ['NORMAL', 'ALTA', 'BAJA'], x.prioridad || 'NORMAL');
+    var selDep = mountSelect(ov.querySelector('#eDep'), DEPOSITOS, x.deposito || DEPOSITOS[0]);
+    var selSec = mountSelect(ov.querySelector('#eSector'), SECTORES, x.sector || SECTORES[0]);
+    function close() { if (G() && !reduce()) { G().to(ov.querySelector('.ci-modal'), { opacity: 0, y: 10, scale: .97, duration: .16 }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
+    ov.querySelector('.ci-modal__x').addEventListener('click', close);
+    ov.querySelector('#eCancel').addEventListener('click', close);
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
+    var mi = ov.querySelector('#eMarca');
+    mi.addEventListener('input', function () { mi.classList.remove('invalid'); });
+    ov.querySelector('#eSave').addEventListener('click', function () {
+      var marca = mi.value.trim();
+      if (!marca) { mi.classList.add('invalid'); if (G() && !reduce()) G().fromTo(mi, { x: -6 }, { x: 0, duration: .5, ease: 'elastic.out(1,0.4)' }); flashOk('Falta la marca', 'La marca del inventario es obligatoria', false); mi.focus(); return; }
+      x.fecha = ov.querySelector('#eFecha').value || x.fecha;
+      x.hora = ov.querySelector('#eHora').value || '';
+      x.prioridad = selPrio.getValue();
+      x.deposito = selDep.getValue();
+      x.sector = selSec.getValue();
+      x.tipo = marca;
+      x.responsable = ov.querySelector('#eResp').value.trim();
+      x.ubicacion = ov.querySelector('#eUbic').value.trim();
+      x.observacion = ov.querySelector('#eObs').value.trim();
+      x.nombre = 'Inventario ' + (x.tipo || x.sector);
+      if (REMOTE) dbUpdate(x.id, { fecha: x.fecha, hora: x.hora || null, deposito: x.deposito, sector: x.sector, marca: x.tipo, prioridad: x.prioridad, responsable: x.responsable || null, ubicacion: x.ubicacion || null, observacion: x.observacion || null });
+      close();
+      flashOk('Datos actualizados', x.nombre);
+      paintSeg(); paintKpis(); paintCalendar(false); paintList(true);
+      if (onSaved) onSaved();
+    });
+    if (G() && !reduce()) {
+      G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
+      G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' });
+      G().from(ov.querySelectorAll('.ci-modal__b .ci-field, .ci-modal__b .ci-grid2, .ci-modal__b .ci-grid3'), { opacity: 0, y: 8, duration: .28, stagger: .04, ease: 'power2.out', delay: .1, clearProps: 'all' });
+    }
+  }
+
   /* ── Actualizar un inventario recargando el Excel de SAP ─────────────── */
   function openUpdateExcel(id) {
     var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
@@ -1200,6 +1263,10 @@
     function hasRecount() { return activeCount >= 2 || itemsArr.some(function (it) { return it.contado2 != null; }); }
     var ov = el('<div class="ci-ov"></div>');
     function drow(k, v) { return '<div class="ci-detail-row"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>'; }
+    function gridHtml() {
+      return drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
+        drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') + drow('Marca/familia', x.tipo) + drow('Prioridad', x.prioridad);
+    }
     function cntCard(it, i) {
       var lbl = activeCount === 2 ? '2do conteo' : 'Contado';
       return '<div class="ci-cnt" data-i="' + i + '">' +
@@ -1246,12 +1313,12 @@
       '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(840px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
-          '<div class="ci-stsel" id="dStSel" style="align-self:flex-start"><button type="button" class="ci-badge-st st-' + x.estado + ' ci-stsel__btn" id="dStBtn">' + estBadgeInner(x.estado) + '<span class="ci-stsel__cv">' + ICO.chevronD + '</span></button><div class="ci-stsel__menu" id="dStMenu" hidden></div></div>' +
+          '<div class="ci-detail-top">' +
+            '<div class="ci-stsel" id="dStSel"><button type="button" class="ci-badge-st st-' + x.estado + ' ci-stsel__btn" id="dStBtn">' + estBadgeInner(x.estado) + '<span class="ci-stsel__cv">' + ICO.chevronD + '</span></button><div class="ci-stsel__menu" id="dStMenu" hidden></div></div>' +
+            '<button type="button" class="ci-mbtn ghost" id="dEdit">' + ICO.edit + ' Editar datos</button>' +
+          '</div>' +
           '<div id="dResumen">' +
-            '<div class="ci-grid2" style="gap:0 18px;margin-bottom:14px">' +
-              drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
-              drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') + drow('Marca/familia', x.tipo) + drow('Prioridad', x.prioridad) +
-            '</div>' + resumenHtml +
+            '<div class="ci-grid2" id="dGrid" style="gap:0 18px;margin-bottom:14px">' + gridHtml() + '</div>' + resumenHtml +
           '</div>' +
           '<div id="dTrabajo" hidden>' +
             '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div>' +
@@ -1364,6 +1431,15 @@
       paintKpis(); paintCalendar(false); paintList(true);
     }
     ov.querySelector('#dStBtn').addEventListener('click', function (e) { e.stopPropagation(); var m = ov.querySelector('#dStMenu'); if (m.hidden) openStMenu(); else closeStMenu(); });
+    // "Editar datos" → editar los datos del inventario (incluida la marca).
+    var edb = ov.querySelector('#dEdit');
+    if (edb) edb.addEventListener('click', function () {
+      openEditData(id, function () {
+        var g = ov.querySelector('#dGrid'); if (g) g.innerHTML = gridHtml();
+        var h3 = ov.querySelector('.ci-modal__h h3'); if (h3) h3.textContent = x.nombre;
+        if (G() && !reduce() && g) G().from(g.querySelectorAll('.ci-detail-row'), { opacity: 0, y: 6, duration: .26, stagger: { amount: .2 }, ease: 'power2.out', clearProps: 'all' });
+      });
+    });
 
     // ── Buscador de materiales en la vista de conteo ──
     var cntSearch = ov.querySelector('#dCntSearch'), cntClear = ov.querySelector('#dCntClear'), cntFound = ov.querySelector('#dCntFound'), cntNoRes = ov.querySelector('#dCntNoRes');

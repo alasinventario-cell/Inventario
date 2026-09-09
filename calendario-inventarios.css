@@ -457,6 +457,10 @@
 .ci-combo__create b{font-weight:800}
 .ci-combo__empty{padding:10px;font-size:12px;font-weight:600;color:var(--ci-muted)}
 
+/* Fila superior del detalle: estado + editar datos */
+.ci-detail-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ci-detail-top #dEdit{margin-left:auto;height:33px;padding:0 14px;font-size:12.5px}
+.ci-field input.invalid,.ci-field textarea.invalid{border-color:var(--ci-pend);background:#fdf3f2}
 /* Selector de estado en el detalle */
 .ci-stsel{position:relative;display:inline-flex}
 .ci-stsel__btn{cursor:pointer;padding-right:10px}
