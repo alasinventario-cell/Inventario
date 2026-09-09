@@ -430,6 +430,23 @@
 .ci-upd-lead{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ci-text-2);line-height:1.5}
 .ci-upd-lead b{color:var(--ci-text);font-weight:800}
 
+/* Combo Marca (elegir o crear) */
+.ci-combo{position:relative;display:flex;align-items:center;gap:8px;height:42px;padding:0 10px 0 12px;border:1.5px solid var(--ci-border-2);border-radius:11px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.ci-combo.open,.ci-combo:focus-within{border-color:var(--ci-primary);box-shadow:0 0 0 4px rgba(8,119,175,.13)}
+.ci-combo__ic{flex-shrink:0;color:var(--ci-muted);display:inline-flex} .ci-combo__ic svg{width:16px;height:16px}
+.ci-combo input{flex:1;min-width:0;border:0;outline:none;background:transparent;font-size:14px;font-family:inherit;color:var(--ci-text)}
+.ci-combo__cv{flex-shrink:0;color:var(--ci-muted);display:inline-flex;transition:transform .18s} .ci-combo__cv svg{width:16px;height:16px}
+.ci-combo.open .ci-combo__cv{transform:rotate(180deg);color:var(--ci-primary)}
+.ci-combo__menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;max-height:220px;overflow:auto;background:#fff;border:1px solid var(--ci-border);border-radius:12px;box-shadow:0 16px 44px rgba(15,36,64,.20);padding:6px}
+.ci-combo__menu[hidden]{display:none}
+.ci-combo__opt{width:100%;display:flex;align-items:center;gap:9px;padding:9px 10px;border:0;border-radius:9px;background:transparent;cursor:pointer;font-size:13px;font-weight:700;color:var(--ci-text);text-align:left;transition:background .12s}
+.ci-combo__opt:hover{background:#f1f6fb} .ci-combo__opt.on{background:var(--ci-primary-soft);color:var(--ci-primary)}
+.ci-combo__opt svg{width:15px;height:15px;flex-shrink:0}
+.ci-combo__av{flex-shrink:0;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:var(--ci-primary-soft);color:var(--ci-primary);font-size:11px;font-weight:800}
+.ci-combo__create{color:var(--ci-primary);font-weight:800;border-bottom:1px solid var(--ci-border);border-radius:9px 9px 0 0;margin-bottom:2px}
+.ci-combo__create b{font-weight:800}
+.ci-combo__empty{padding:10px;font-size:12px;font-weight:600;color:var(--ci-muted)}
+
 /* Conteo (SAP vs contado, diferencia, motivo) */
 .ci-cnt-head{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 2px}
 .ci-cnt-head h4{margin:0;font-size:14px;font-weight:800;color:var(--ci-text);display:inline-flex;align-items:center;gap:7px}

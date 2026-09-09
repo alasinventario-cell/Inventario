@@ -744,6 +744,13 @@
           '</div>' +
           '<div class="ci-step" id="step2" hidden>' +
             '<div class="ci-step2-head"><h4>' + ICO.box + ' Materiales del inventario (SAP)</h4><span class="ci-items__count" id="mItemsCount" hidden></span></div>' +
+            '<div class="ci-field"><label>Marca del inventario</label>' +
+              '<div class="ci-combo" id="mMarcaCombo"><span class="ci-combo__ic">' + ICO.tag + '</span>' +
+                '<input id="mMarca" placeholder="Elegí una marca o escribí una nueva…" autocomplete="off">' +
+                '<span class="ci-combo__cv">' + ICO.chevronD + '</span>' +
+                '<div class="ci-combo__menu" id="mMarcaMenu" hidden></div>' +
+              '</div>' +
+            '</div>' +
             '<div class="ci-imp" id="mImp">' +
               '<input type="file" id="mFile" accept=".xlsx,.xls,.csv" hidden>' +
               '<div class="ci-imp__drop" id="mDrop">' +
@@ -833,6 +840,33 @@
       if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
 
+    // ── Marca: elegir existente o crear una nueva ──
+    var marcaVal = '';
+    var mkInput = ov.querySelector('#mMarca'), mkCombo = ov.querySelector('#mMarcaCombo'), mkMenu = ov.querySelector('#mMarcaMenu');
+    function distinctMarcas() {
+      var set = {}; DATA.forEach(function (d) { var t = (d.tipo || '').trim(); if (t && t.toLowerCase() !== 'general') set[t] = 1; });
+      return Object.keys(set).sort(function (a, b) { return a.localeCompare(b); });
+    }
+    function renderMk() {
+      var term = mkInput.value.trim(), tl = term.toLowerCase();
+      var all = distinctMarcas();
+      var matches = all.filter(function (m) { return m.toLowerCase().indexOf(tl) >= 0; });
+      var exact = all.some(function (m) { return m.toLowerCase() === tl; });
+      var h = '';
+      if (term && !exact) h += '<button type="button" class="ci-combo__opt ci-combo__create" data-v="' + esc(term) + '">' + ICO.plus + 'Crear «<b>' + esc(term) + '</b>»</button>';
+      h += matches.map(function (m) { return '<button type="button" class="ci-combo__opt' + (m === marcaVal ? ' on' : '') + '" data-v="' + esc(m) + '"><span class="ci-combo__av">' + esc(m.charAt(0).toUpperCase()) + '</span>' + esc(m) + '</button>'; }).join('');
+      if (!h) h = '<div class="ci-combo__empty">Escribí para crear una marca nueva.</div>';
+      mkMenu.innerHTML = h;
+      mkMenu.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); pickMk(b.getAttribute('data-v')); }); });
+    }
+    function openMk() { if (!mkMenu.hidden) return; renderMk(); mkMenu.hidden = false; mkCombo.classList.add('open'); if (G() && !reduce()) G().fromTo(mkMenu, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .18, ease: 'power2.out' }); }
+    function closeMk() { mkMenu.hidden = true; mkCombo.classList.remove('open'); }
+    function pickMk(v) { marcaVal = v; mkInput.value = v; closeMk(); }
+    mkInput.addEventListener('focus', openMk);
+    mkInput.addEventListener('input', function () { marcaVal = mkInput.value.trim(); if (mkMenu.hidden) openMk(); else renderMk(); });
+    mkInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); marcaVal = mkInput.value.trim(); closeMk(); } else if (e.key === 'Escape') { closeMk(); } });
+    mkInput.addEventListener('blur', function () { marcaVal = mkInput.value.trim(); setTimeout(closeMk, 140); });
+
     // ── Loader de importación 0→100% PRO ──
     var fileInput = ov.querySelector('#mFile'), drop = ov.querySelector('#mDrop'), prog = ov.querySelector('#mProg'), doneBox = ov.querySelector('#mImpDone');
     var RC = 2 * Math.PI * 28;
@@ -883,9 +917,9 @@
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
       var sector = selSector.getValue();
-      // Etiqueta del inventario: almacén SAP más común entre los ítems, o el sector.
-      var cnt = {}; items.forEach(function (it) { if (it.almacen) cnt[it.almacen] = (cnt[it.almacen] || 0) + 1; });
-      var mc = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0] || '';
+      // Marca del inventario: la elegida/creada; si no, el almacén SAP más común, o el sector.
+      var mc = marcaVal.trim();
+      if (!mc) { var cnt = {}; items.forEach(function (it) { if (it.almacen) cnt[it.almacen] = (cnt[it.almacen] || 0) + 1; }); mc = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0] || ''; }
       var marcaLbl = mc || sector;
       var obj = {
         fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
