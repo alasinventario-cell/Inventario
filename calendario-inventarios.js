@@ -487,16 +487,18 @@
     var items = x.items || [];
     var p = progInfo(items);
     var updBtn = '<button type="button" class="ci-mbtn ghost ci-exp-upd">' + ICO.upload + ' Actualizar Excel SAP</button>';
-    var delBtn = '<button type="button" class="ci-mbtn danger ci-exp-del" style="margin-right:auto">' + ICO.trash + ' Eliminar</button>';
+    var delBtn = '<button type="button" class="ci-mbtn danger ci-exp-del">' + ICO.trash + ' Eliminar</button>';
+    var verBtn = '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver detalles</button>';
+    var actions = '<div class="ci-exp-actions">' + delBtn + '<span class="ci-exp-actions__sp"></span>' + updBtn + verBtn + '</div>';
     if (!items.length) return '<div class="ci-exp-in">' +
+      actions +
       '<div class="ci-items__empty" style="padding:12px 0">Sin materiales cargados en este inventario. Actualizá con el Excel de SAP.</div>' +
-      '<div class="ci-exp-foot">' + delBtn + updBtn + '</div>' +
     '</div>';
     return '<div class="ci-exp-in">' +
+      actions +
       '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum">' + sumChips(p.ok, p.sob, p.fal) + '</div></div>' +
       '<div class="ci-prog"><div class="ci-prog__bar"><i style="width:' + p.pct + '%"></i></div><span class="ci-prog__txt">' + p.c + ' de ' + p.t + ' contados · ' + p.pct + '%</span></div>' +
       '<div class="ci-sumtable">' + matSumTable(items) + '</div>' +
-      '<div class="ci-exp-foot">' + delBtn + updBtn + '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver detalles</button></div>' +
     '</div>';
   }
   function paintEstados() {

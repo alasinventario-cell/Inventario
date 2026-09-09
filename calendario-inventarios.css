@@ -184,8 +184,10 @@
 .ci-exp-in{padding:14px 15px 15px}
 .ci-exp-in .ci-cnt-head{margin-top:0}
 .ci-exp-in .ci-sumtable{margin-top:10px}
-.ci-exp-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
-.ci-exp-foot .ci-mbtn{height:38px;padding:0 15px;font-size:13px}
+.ci-exp-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--ci-border)}
+.ci-exp-actions__sp{flex:1}
+.ci-exp-actions .ci-mbtn{height:36px;padding:0 14px;font-size:12.5px}
+.ci-exp-in .ci-cnt-head{margin-top:0}
 .ci-row.over{border:1.5px solid var(--ci-primary);box-shadow:0 0 0 3px rgba(8,119,175,.14)}
 .ci-row.drag{opacity:.4;border-style:dashed;border-color:var(--ci-primary)}
 .ci-row__bar{position:absolute;left:0;top:0;bottom:0;width:4px}
