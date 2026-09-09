@@ -875,27 +875,69 @@
         '<div class="ci-cnt__motivo" hidden><div class="cnt-mot"></div><input class="cnt-nota" placeholder="Nota (opcional)" value="' + esc(it.nota || '') + '"></div>' +
       '</div>';
     }
-    var conteoHtml = itemsArr.length
-      ? '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div><div class="ci-cnt-list" id="dCntList">' + itemsArr.map(cntCard).join('') + '</div>'
-      : '<div class="ci-cnt-head"><h4>Conteo</h4></div><div class="ci-items__empty" style="padding:16px 0">Este inventario no tiene materiales cargados. Editá el inventario para agregarlos.</div>';
+    function diffPill(d) { if (d == null) return '<span class="ci-dpill nd">Sin contar</span>'; if (d === 0) return '<span class="ci-dpill ok">' + ICO.chk + 'Coincide</span>'; if (d > 0) return '<span class="ci-dpill sob">+' + d + ' Sobra</span>'; return '<span class="ci-dpill fal">' + d + ' Faltante</span>'; }
+    function sumTableHtml() {
+      return '<table class="ci-st"><thead><tr><th>#</th><th>Material</th><th>SAP</th><th>Contado</th><th>Diferencia</th><th>Motivo</th></tr></thead><tbody>' +
+        itemsArr.map(function (it, i) {
+          return '<tr><td class="c">' + (i + 1) + '</td>' +
+            '<td><span class="ci-st__cod">' + esc(it.codigo) + '</span> <span class="ci-st__desc">' + esc(it.descripcion || '') + '</span></td>' +
+            '<td class="c">' + (it.sap == null ? '—' : it.sap) + '</td><td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
+            '<td>' + diffPill(it.diff) + '</td><td class="ci-st__mot">' + esc(it.motivo || '—') + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    }
+    var resumenHtml = itemsArr.length
+      ? '<div class="ci-cnt-head"><h4>' + ICO.box + ' Resumen de materiales</h4><div class="ci-cnt-sum" id="dSumR"></div></div>' +
+        '<div class="ci-prog"><div class="ci-prog__bar"><i id="dProgFill"></i></div><span class="ci-prog__txt" id="dProgTxt"></span></div>' +
+        '<div class="ci-sumtable">' + sumTableHtml() + '</div>'
+      : '<div class="ci-items__empty" style="padding:16px 0">Este inventario no tiene materiales cargados. Editá el inventario para agregarlos.</div>';
+    var contarLbl = x.estado === 'realizado' ? (ICO.play + ' Ver / editar conteo') : (ICO.play + ' Contar materiales');
     ov.innerHTML =
-      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(820px,100%)">' +
+      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(840px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
           '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + estBadgeInner(x.estado) + '</span>' +
-          '<div class="ci-grid2" style="gap:0 18px">' +
-            drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
-            drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') + drow('Marca/familia', x.tipo) + drow('Prioridad', x.prioridad) +
+          '<div id="dResumen">' +
+            '<div class="ci-grid2" style="gap:0 18px;margin-bottom:14px">' +
+              drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
+              drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') + drow('Marca/familia', x.tipo) + drow('Prioridad', x.prioridad) +
+            '</div>' + resumenHtml +
           '</div>' +
-          conteoHtml +
+          '<div id="dTrabajo" hidden>' +
+            '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div>' +
+            '<div class="ci-cnt-list" id="dCntList">' + itemsArr.map(cntCard).join('') + '</div>' +
+          '</div>' +
         '</div>' +
         '<div class="ci-modal__f">' +
-          (itemsArr.length && x.estado !== 'realizado' ? '<button class="ci-mbtn ghost" id="dContar" style="margin-right:auto">' + ICO.play + ' Contar materiales</button>' : '') +
+          '<button class="ci-mbtn ghost" id="dBack" style="margin-right:auto" hidden>' + ICO.left + ' Resumen</button>' +
           '<button class="ci-mbtn ghost" id="dClose">Cerrar</button>' +
-          (itemsArr.length ? '<button class="ci-mbtn primary" id="dGuardar">' + ICO.chk + ' Guardar conteo</button>' : '') +
+          (itemsArr.length ? '<button class="ci-mbtn primary" id="dContar">' + contarLbl + '</button>' : '') +
+          (itemsArr.length ? '<button class="ci-mbtn primary" id="dGuardar" hidden>' + ICO.chk + ' Guardar conteo</button>' : '') +
         '</div>' +
       '</div>';
     document.body.appendChild(ov);
+
+    function renderResumen() {
+      var ok = 0, sob = 0, fal = 0, cont = 0;
+      itemsArr.forEach(function (it) { if (it.diff != null) { cont++; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; } });
+      var sr = ov.querySelector('#dSumR'); if (sr) sr.innerHTML = '<span class="ok">' + ICO.chk + ok + '</span><span class="sob">+' + sob + ' sobra</span><span class="fal">' + fal + ' falta</span>';
+      var pct = itemsArr.length ? Math.round(cont / itemsArr.length * 100) : 0;
+      var pf = ov.querySelector('#dProgFill'), pt = ov.querySelector('#dProgTxt');
+      if (pf) { if (G() && !reduce()) G().to(pf, { width: pct + '%', duration: .5, ease: 'power2.out' }); else pf.style.width = pct + '%'; }
+      if (pt) pt.textContent = cont + ' de ' + itemsArr.length + ' contados · ' + pct + '%';
+      var tb = ov.querySelector('.ci-sumtable'); if (tb) tb.innerHTML = sumTableHtml();
+    }
+
+    // ── Vistas: Resumen ↔ Trabajo ──
+    function goView(v) {
+      ov.querySelector('#dResumen').hidden = v !== 'resumen';
+      ov.querySelector('#dTrabajo').hidden = v !== 'trabajo';
+      ov.querySelector('#dBack').hidden = v !== 'trabajo';
+      var g = ov.querySelector('#dGuardar'); if (g) g.hidden = v !== 'trabajo';
+      var c = ov.querySelector('#dContar'); if (c) c.hidden = v !== 'resumen';
+      if (v === 'resumen') renderResumen();
+      var panel = ov.querySelector(v === 'resumen' ? '#dResumen' : '#dTrabajo');
+      if (G() && !reduce()) G().fromTo(panel, { opacity: 0, x: v === 'trabajo' ? 20 : -20 }, { opacity: 1, x: 0, duration: .3, ease: 'power3.out', clearProps: 'all' });
+    }
 
     // ── Conteo: cálculo en vivo ──
     function updateSummary() {
@@ -935,16 +977,20 @@
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
     ov.querySelector('#dClose').addEventListener('click', close);
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
-    // "Contar materiales" → marca el inventario como Contando (en proceso), sin cerrar.
+    // "Contar materiales" → pasa a Contando (si no está Realizado) y abre la vista de trabajo.
     var cb = ov.querySelector('#dContar');
     if (cb) cb.addEventListener('click', function () {
-      x.estado = 'en_proceso';
-      if (REMOTE) dbUpdate(x.id, { estado: 'en_proceso' });
-      var bdg = ov.querySelector('.ci-badge-st'); if (bdg) { bdg.className = 'ci-badge-st st-en_proceso'; bdg.style.alignSelf = 'flex-start'; bdg.innerHTML = estBadgeInner('en_proceso'); if (G() && !reduce()) G().fromTo(bdg, { scale: .85 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); }
-      cb.hidden = true;
-      var f = ov.querySelector('.cnt-sap'); if (f) f.focus();
-      paintKpis(); paintCalendar(false); paintList(true);
+      if (x.estado !== 'realizado') {
+        x.estado = 'en_proceso';
+        if (REMOTE) dbUpdate(x.id, { estado: 'en_proceso' });
+        var bdg = ov.querySelector('.ci-badge-st'); if (bdg) { bdg.className = 'ci-badge-st st-en_proceso'; bdg.style.alignSelf = 'flex-start'; bdg.innerHTML = estBadgeInner('en_proceso'); if (G() && !reduce()) G().fromTo(bdg, { scale: .85 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); }
+        paintKpis(); paintCalendar(false); paintList(true);
+      }
+      goView('trabajo');
+      if (G() && !reduce()) G().from(ov.querySelectorAll('#dTrabajo .ci-cnt'), { opacity: 0, y: 10, duration: .3, stagger: { amount: 0.3 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
+      setTimeout(function () { var f = ov.querySelector('.cnt-sap'); if (f) f.focus(); }, 90);
     });
+    ov.querySelector('#dBack').addEventListener('click', function () { goView('resumen'); });
     var gb = ov.querySelector('#dGuardar');
     if (gb) gb.addEventListener('click', function () {
       var counted = itemsArr.filter(function (it) { return it.diff != null; }).length;
@@ -956,10 +1002,10 @@
       flashOk(counted === itemsArr.length ? 'Conteo completo' : 'Conteo guardado', counted + '/' + itemsArr.length + ' materiales contados');
       paintKpis(); paintCalendar(false); paintList(true);
     });
+    renderResumen();
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' });
-      G().from(ov.querySelectorAll('.ci-cnt'), { opacity: 0, y: 10, duration: .3, stagger: { amount: 0.3 }, ease: 'power2.out', delay: .12, clearProps: 'all' });
     }
   }
 

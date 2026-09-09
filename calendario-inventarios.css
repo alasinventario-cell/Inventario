@@ -396,6 +396,26 @@
 .ci-cnt__motivo .ci-sel__btn{height:40px;font-size:13px}
 .ci-cnt__motivo select:focus,.ci-cnt__motivo input:focus{border-color:var(--ci-primary);box-shadow:0 0 0 4px rgba(8,119,175,.13)}
 
+/* Resumen: barra de progreso + tabla read-only */
+.ci-prog{display:flex;align-items:center;gap:10px;margin:2px 0 12px}
+.ci-prog__bar{flex:1;height:9px;border-radius:99px;background:#e8eef4;overflow:hidden}
+.ci-prog__bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#1478b8,var(--ci-primary-2))}
+.ci-prog__txt{flex-shrink:0;font-size:12px;font-weight:800;color:var(--ci-primary)}
+.ci-sumtable{border:1px solid var(--ci-border);border-radius:12px;overflow:hidden}
+.ci-st{width:100%;border-collapse:collapse;font-size:12.5px}
+.ci-st thead th{background:#f2f7fc;color:var(--ci-text-2);text-align:left;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--ci-border)}
+.ci-st tbody td{padding:8px 10px;border-bottom:1px solid var(--ci-border);vertical-align:middle;color:var(--ci-text)}
+.ci-st tbody tr:last-child td{border-bottom:0}
+.ci-st tbody tr:hover{background:#f7fbff}
+.ci-st td.c{text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
+.ci-st__cod{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:800;color:var(--ci-primary);background:#eef5fc;border-radius:5px;padding:1px 6px}
+.ci-st__desc{color:var(--ci-text-2)}
+.ci-st__mot{color:var(--ci-muted)}
+.ci-dpill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.ci-dpill svg{width:12px;height:12px}
+.ci-dpill.nd{background:#eef2f6;color:var(--ci-muted)} .ci-dpill.ok{background:#e9f7ef;color:#127a4b}
+.ci-dpill.sob{background:#eef5fc;color:#0b5f8d} .ci-dpill.fal{background:#fdeded;color:#c0392b}
+
 .ci-detail-row{display:flex;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--ci-border)}
 .ci-detail-row .k{width:120px;flex-shrink:0;color:var(--ci-muted);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
 .ci-detail-row .v{color:var(--ci-text);font-weight:600}
