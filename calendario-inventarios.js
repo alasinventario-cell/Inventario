@@ -218,7 +218,7 @@
     body.appendChild(buildListPanel());
     view.appendChild(body);
     root.appendChild(view);
-    wire();
+    wire(); wirePress();
     if (REMOTE) DATA = [];
     paintSeg(); paintKpis(); paintCalendar(false); paintList(false);
     entrance();
@@ -825,6 +825,24 @@
     }
   }
 
+  /* ── Feedback GSAP de click en TODOS los botones (delegado, una sola vez) ── */
+  function wirePress() {
+    if (window.__ciPressWired) return; window.__ciPressWired = true;
+    var SEL = '.ci-btn-new,.ci-mbtn,.ci-phead__btn,.ci-phead__hoy,.ci-phead__mes,.ci-seg__btn,.ci-cell__add,.ci-estados button,.ci-resp__btn,.ci-clear,.ci-chip__x,.ci-marca-chip__x,.ci-sel__btn,.ci-depsel button,.ci-modal__x,.ci-res,.ci-sel__opt,.ci-resp__opt,.ci-cnt__f input';
+    function pick(t) { return t && t.closest ? t.closest(SEL) : null; }
+    function inScope(el) { return el && (el.closest('.ci-root') || el.closest('.ci-ov') || el.closest('.ci-tip')); }
+    document.addEventListener('pointerdown', function (e) {
+      var b = pick(e.target); if (!b || !inScope(b) || b.disabled) return;
+      if (G() && !reduce()) G().to(b, { scale: 0.95, duration: 0.09, ease: 'power2.out', overwrite: true });
+    }, true);
+    function up(e) {
+      var b = pick(e.target); if (!b || !inScope(b)) return;
+      if (G() && !reduce()) G().to(b, { scale: 1, duration: 0.24, ease: 'back.out(3)', overwrite: true, clearProps: 'transform' });
+    }
+    document.addEventListener('pointerup', up, true);
+    document.addEventListener('pointercancel', up, true);
+  }
+
   /* ── Entrada GSAP ────────────────────────────────────────────────────── */
   function entrance() {
     if (!G() || reduce()) return;
@@ -832,8 +850,10 @@
     G().from(r.querySelector('.ci-head'), { opacity: 0, y: -8, duration: .4, ease: 'power2.out', clearProps: 'all' });
     G().from(r.querySelectorAll('.ci-seg__btn'), { opacity: 0, y: -6, duration: .35, stagger: .06, ease: 'power2.out', clearProps: 'all', delay: .05 });
     G().from(r.querySelector('.ci-kpis'), { opacity: 0, y: 8, duration: .4, ease: 'power2.out', clearProps: 'all', delay: .05 });
+    G().from(r.querySelectorAll('.ci-kpi'), { opacity: 0, y: 6, duration: .3, stagger: .05, ease: 'power2.out', clearProps: 'all', delay: .12 });
     G().from(r.querySelectorAll('.ci-body .ci-panel')[0], { opacity: 0, x: -10, duration: .45, ease: 'power3.out', clearProps: 'all', delay: .08 });
     G().from(r.querySelectorAll('.ci-body .ci-panel')[1], { opacity: 0, x: 10, duration: .45, ease: 'power3.out', clearProps: 'all', delay: .12 });
+    G().from(r.querySelector('.ci-btn-new'), { opacity: 0, scale: .8, duration: .4, ease: 'back.out(2.5)', clearProps: 'all', delay: .28 });
   }
 
   window.CalendarioInv = { render: render };
