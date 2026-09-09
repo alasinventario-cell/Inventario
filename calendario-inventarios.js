@@ -36,15 +36,16 @@
   };
 
   /* ── Seleccionador PRO (custom select animado) ───────────────────────── */
-  function mountSelect(container, opts, initial) {
-    var value = initial, open = false;
+  function mountSelect(container, opts, initial, cfg) {
+    cfg = cfg || {};
+    var value = initial || '', open = false;
     container.classList.add('ci-sel');
     container.innerHTML = '<button type="button" class="ci-sel__btn"><span class="ci-sel__val"></span><span class="ci-sel__cv">' + ICO.chevronD + '</span></button><div class="ci-sel__menu" hidden></div>';
     var btn = container.querySelector('.ci-sel__btn'), valEl = container.querySelector('.ci-sel__val'), menu = container.querySelector('.ci-sel__menu');
-    function paintVal() { valEl.textContent = value; }
+    function paintVal() { if (value) { valEl.textContent = value; valEl.classList.remove('ci-sel__val--ph'); } else { valEl.textContent = cfg.placeholder || 'Elegí…'; valEl.classList.add('ci-sel__val--ph'); } }
     function renderMenu() {
       menu.innerHTML = opts.map(function (o) { return '<button type="button" class="ci-sel__opt' + (o === value ? ' on' : '') + '" data-v="' + esc(o) + '">' + esc(o) + (o === value ? ICO.chk : '') + '</button>'; }).join('');
-      menu.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); value = b.getAttribute('data-v'); paintVal(); close(); }); });
+      menu.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); value = b.getAttribute('data-v'); paintVal(); if (cfg.onChange) cfg.onChange(value); close(); }); });
     }
     function onDoc(e) { if (!container.contains(e.target)) close(); }
     function onEsc(e) { if (e.key === 'Escape') close(); }
@@ -810,7 +811,7 @@
           '<div class="ci-cnt__f"><label>Contado</label><input type="number" min="0" class="cnt-cont" value="' + (it.contado == null ? '' : it.contado) + '" placeholder="0"></div>' +
           '<div class="ci-diff"><span class="ci-diff__n">—</span><span class="ci-diff__l">Sin datos</span></div>' +
         '</div>' +
-        '<div class="ci-cnt__motivo" hidden><select class="cnt-mot"><option value="">Motivo…</option>' + MOTIVOS.map(function (m) { return '<option' + (it.motivo === m ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select><input class="cnt-nota" placeholder="Nota (opcional)" value="' + esc(it.nota || '') + '"></div>' +
+        '<div class="ci-cnt__motivo" hidden><div class="cnt-mot"></div><input class="cnt-nota" placeholder="Nota (opcional)" value="' + esc(it.nota || '') + '"></div>' +
       '</div>';
     }
     var conteoHtml = itemsArr.length
@@ -863,7 +864,7 @@
       }
       sapI.addEventListener('input', function () { recompute(true); });
       conI.addEventListener('input', function () { recompute(true); });
-      mot.querySelector('.cnt-mot').addEventListener('change', function (e) { it.motivo = e.target.value; });
+      mountSelect(mot.querySelector('.cnt-mot'), MOTIVOS, it.motivo || '', { placeholder: 'Motivo…', onChange: function (v) { it.motivo = v; } });
       mot.querySelector('.cnt-nota').addEventListener('input', function (e) { it.nota = e.target.value; });
       recompute(false);
     }
