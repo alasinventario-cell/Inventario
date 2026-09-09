@@ -194,7 +194,16 @@
 .ci-badge-st{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 11px;border-radius:99px;font-size:11px;font-weight:800;border:1px solid}
 .ci-badge-st svg{width:13px;height:13px}
 .ci-badge-st.st-programado{background:#eef5fc;color:#0b5f8d;border-color:#cfe4f5}
-.ci-badge-st.st-en_proceso{background:#fdf6e6;color:#a9740c;border-color:#f3e2b5}
+.ci-badge-st.st-en_proceso{background:#fdf6e6;color:#a9740c;border-color:#f3e2b5;animation:ciContPulse 1.6s ease-in-out infinite}
+@keyframes ciContPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.35)}50%{box-shadow:0 0 0 4px rgba(234,179,8,0)}}
+/* Puntos animados "Contando…" */
+.ci-cnt-dots{display:inline-flex;align-items:center;gap:2.5px;margin-right:1px}
+.ci-cnt-dots i{width:4px;height:4px;border-radius:50%;background:currentColor;display:inline-block;animation:ciDot 1s ease-in-out infinite}
+.ci-cnt-dots i:nth-child(2){animation-delay:.16s} .ci-cnt-dots i:nth-child(3){animation-delay:.32s}
+@keyframes ciDot{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-3px);opacity:1}}
+/* Pulso del evento en el calendario cuando está Contando */
+.ci-ev.st-en_proceso .ci-ev__bar{animation:ciBarPulse 1.3s ease-in-out infinite}
+@keyframes ciBarPulse{0%,100%{opacity:1}50%{opacity:.35}}
 .ci-badge-st.st-realizado{background:#e9f7ef;color:#127a4b;border-color:#c5e9d4}
 .ci-badge-st.st-pendiente{background:#fdeded;color:#c0392b;border-color:#f6d2d0}
 

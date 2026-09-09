@@ -69,10 +69,15 @@
   var MOTIVOS = ['Averiado', 'Vencido', 'Extraviado', 'Error de carga SAP', 'Devolución pendiente', 'Robo/Merma', 'Otro'];
   var EST = {
     programado: { label: 'Programado', short: 'Prog.', ico: ICO.circle },
-    en_proceso: { label: 'En proceso', short: 'Curso', ico: ICO.play },
+    en_proceso: { label: 'Contando', short: 'Cont.', ico: ICO.play },
     realizado: { label: 'Realizado', short: 'Hecho', ico: ICO.check },
     pendiente: { label: 'Pendiente', short: 'Pend.', ico: ICO.alert },
   };
+  // Interior del badge de estado: "Contando" con puntos animados; resto ícono + label.
+  function estBadgeInner(k) {
+    if (k === 'en_proceso') return '<span class="ci-cnt-dots" aria-hidden="true"><i></i><i></i><i></i></span>Contando';
+    return EST[k].ico + EST[k].label;
+  }
   var EST_KEYS = ['programado', 'en_proceso', 'realizado', 'pendiente'];
   var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   var DOW = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -300,7 +305,7 @@
     box.innerHTML =
       '<div class="ci-kpi"><span class="ci-kpi__n">' + total + '</span><span class="ci-kpi__l">Inventarios</span></div><span class="ci-kpi__sep"></span>' +
       '<div class="ci-kpi ci-kpi--real"><span class="ci-kpi__n">' + by.realizado + '</span><span class="ci-kpi__l">Realizados</span></div>' +
-      '<div class="ci-kpi ci-kpi--proc"><span class="ci-kpi__n">' + by.en_proceso + '</span><span class="ci-kpi__l">En proceso</span></div>' +
+      '<div class="ci-kpi ci-kpi--proc"><span class="ci-kpi__n">' + by.en_proceso + '</span><span class="ci-kpi__l">Contando</span></div>' +
       '<div class="ci-kpi ci-kpi--prog"><span class="ci-kpi__n">' + by.programado + '</span><span class="ci-kpi__l">Programados</span></div>' +
       '<div class="ci-kpi ci-kpi--pend"><span class="ci-kpi__n">' + by.pendiente + '</span><span class="ci-kpi__l">Pendientes</span></div>' +
       '<span class="ci-kpi__sep"></span><div class="ci-kpi"><span class="ci-kpi__n">' + cumpl + '%</span><span class="ci-kpi__l">Cumplimiento</span></div>';
@@ -384,7 +389,7 @@
         '<span class="ci-pill">' + ICO.user + '<span>' + esc(x.responsable || '—') + '</span></span>' +
         '<span class="ci-pill">' + ICO.box + '<span>' + esc(x.sector) + ' · ' + (x.items ? x.items.length : 0) + ' ítems</span></span>' +
       '</div></div>' +
-      '<span class="ci-badge-st st-' + x.estado + '">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
+      '<span class="ci-badge-st st-' + x.estado + '">' + estBadgeInner(x.estado) + '</span>' +
     '</div>';
   }
   function paintEstados() {
@@ -547,7 +552,7 @@
         '<div class="ci-tip__row">' + ICO.pin + '<span>' + esc(x.ubicacion) + '</span></div>' +
         '<div class="ci-tip__row">' + ICO.user + '<span>Responsable: <b>' + esc(x.responsable || '—') + '</b></span></div>' +
         '<div class="ci-tip__row">' + ICO.box + '<span><b>' + (x.items ? x.items.length : 0) + '</b> ítems a contar</span></div>' +
-        '<span class="ci-tip__st st-' + x.estado + '">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
+        '<span class="ci-tip__st st-' + x.estado + '">' + estBadgeInner(x.estado) + '</span>' +
       '</div>';
     document.body.appendChild(tipEl);
     var W = 250, left = Math.max(8, Math.min(rect.left + rect.width / 2 - W / 2, window.innerWidth - W - 8));
@@ -880,7 +885,7 @@
       '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(820px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
-          '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +
+          '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + estBadgeInner(x.estado) + '</span>' +
           '<div class="ci-grid2" style="gap:0 18px">' +
             drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
             drow('Hora', x.hora) + drow('Responsable', x.responsable || '—') + drow('Marca/familia', x.tipo) + drow('Prioridad', x.prioridad) +
