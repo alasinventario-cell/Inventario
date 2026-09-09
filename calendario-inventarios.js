@@ -848,7 +848,9 @@
     var marcaVal = '';
     var mkInput = ov.querySelector('#mMarca'), mkCombo = ov.querySelector('#mMarcaCombo'), mkMenu = ov.querySelector('#mMarcaMenu');
     function distinctMarcas() {
-      var set = {}; DATA.forEach(function (d) { var t = (d.tipo || '').trim(); if (t && t.toLowerCase() !== 'general') set[t] = 1; });
+      var set = {};
+      DATA.forEach(function (d) { var t = (d.tipo || '').trim(); if (t && t.toLowerCase() !== 'general') set[t] = 1; });
+      try { (getMarcasReal() || []).forEach(function (o) { if (o && o.name) set[o.name] = 1; }); } catch (e) {}
       return Object.keys(set).sort(function (a, b) { return a.localeCompare(b); });
     }
     function renderMk() {
@@ -1195,7 +1197,7 @@
       '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(840px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
-          '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + estBadgeInner(x.estado) + '</span>' +
+          '<div class="ci-stsel" id="dStSel" style="align-self:flex-start"><button type="button" class="ci-badge-st st-' + x.estado + ' ci-stsel__btn" id="dStBtn">' + estBadgeInner(x.estado) + '<span class="ci-stsel__cv">' + ICO.chevronD + '</span></button><div class="ci-stsel__menu" id="dStMenu" hidden></div></div>' +
           '<div id="dResumen">' +
             '<div class="ci-grid2" style="gap:0 18px;margin-bottom:14px">' +
               drow('Código', x.codigo) + drow('Depósito', x.deposito) + drow('Sector', x.sector) + drow('Fecha', x.fecha) +
@@ -1204,7 +1206,9 @@
           '</div>' +
           '<div id="dTrabajo" hidden>' +
             '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div>' +
+            '<div class="ci-cnt-search"><span class="ci-cnt-search__ic">' + ICO.search + '</span><input id="dCntSearch" placeholder="Buscar material por código o descripción…" autocomplete="off"><button type="button" class="ci-cnt-search__x" id="dCntClear" hidden aria-label="Limpiar">' + ICO.x + '</button><span class="ci-cnt-search__n" id="dCntFound"></span></div>' +
             '<div class="ci-cnt-list" id="dCntList">' + itemsArr.map(cntCard).join('') + '</div>' +
+            '<div class="ci-cnt-nores" id="dCntNoRes" hidden>Sin materiales que coincidan con la búsqueda.</div>' +
           '</div>' +
         '</div>' +
         '<div class="ci-modal__f">' +
@@ -1273,6 +1277,45 @@
     }
     ov.querySelectorAll('.ci-cnt').forEach(bindCard);
 
+    // ── Selector de estado (cambiar estado desde el detalle) ──
+    function setBadge(k) { var btn = ov.querySelector('#dStBtn'); if (btn) { btn.className = 'ci-badge-st st-' + k + ' ci-stsel__btn'; btn.innerHTML = estBadgeInner(k) + '<span class="ci-stsel__cv">' + ICO.chevronD + '</span>'; if (G() && !reduce()) G().fromTo(btn, { scale: .85 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); } }
+    function onDocSt(e) { var s = ov.querySelector('#dStSel'); if (s && !s.contains(e.target)) closeStMenu(); }
+    function closeStMenu() { var m = ov.querySelector('#dStMenu'); if (m) m.hidden = true; var s = ov.querySelector('#dStSel'); if (s) s.classList.remove('open'); document.removeEventListener('mousedown', onDocSt, true); }
+    function openStMenu() {
+      var menu = ov.querySelector('#dStMenu');
+      menu.innerHTML = EST_KEYS.map(function (k) { return '<button type="button" class="ci-stsel__opt e-' + k + (k === x.estado ? ' on' : '') + '" data-k="' + k + '"><span class="ci-stsel__dot"></span><span>' + EST[k].label + '</span>' + (k === x.estado ? ICO.chk : '') + '</button>'; }).join('');
+      menu.querySelectorAll('[data-k]').forEach(function (b) { b.addEventListener('click', function () { applyEstado(b.getAttribute('data-k')); }); });
+      menu.hidden = false; ov.querySelector('#dStSel').classList.add('open');
+      if (G() && !reduce()) G().fromTo(menu, { opacity: 0, y: -6, scale: .98 }, { opacity: 1, y: 0, scale: 1, duration: .2, ease: 'back.out(2)', transformOrigin: 'top left' });
+      setTimeout(function () { document.addEventListener('mousedown', onDocSt, true); }, 0);
+    }
+    function applyEstado(k) {
+      if (k === x.estado) { closeStMenu(); return; }
+      x.estado = k; x.diffs = itemsArr.some(function (it) { return it.diff != null && it.diff !== 0; });
+      if (REMOTE) dbUpdate(x.id, { estado: k, diffs: x.diffs });
+      setBadge(k); closeStMenu();
+      paintKpis(); paintCalendar(false); paintList(true);
+    }
+    ov.querySelector('#dStBtn').addEventListener('click', function (e) { e.stopPropagation(); var m = ov.querySelector('#dStMenu'); if (m.hidden) openStMenu(); else closeStMenu(); });
+
+    // ── Buscador de materiales en la vista de conteo ──
+    var cntSearch = ov.querySelector('#dCntSearch'), cntClear = ov.querySelector('#dCntClear'), cntFound = ov.querySelector('#dCntFound'), cntNoRes = ov.querySelector('#dCntNoRes');
+    function filterCnt() {
+      var term = cntSearch.value.trim().toLowerCase();
+      cntClear.hidden = !term;
+      var shown = 0;
+      ov.querySelectorAll('#dCntList .ci-cnt').forEach(function (card) {
+        var it = itemsArr[+card.getAttribute('data-i')] || {};
+        var hit = !term || ((it.codigo || '') + ' ' + (it.descripcion || '')).toLowerCase().indexOf(term) >= 0;
+        card.hidden = !hit; if (hit) shown++;
+      });
+      cntNoRes.hidden = shown > 0;
+      cntFound.textContent = term ? (shown + ' de ' + itemsArr.length) : '';
+    }
+    cntSearch.addEventListener('input', filterCnt);
+    cntClear.addEventListener('click', function () { cntSearch.value = ''; filterCnt(); cntSearch.focus(); });
+    cntSearch.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cntSearch.value) { e.stopPropagation(); cntSearch.value = ''; filterCnt(); } });
+
     function close() { if (G() && !reduce()) { G().to(ov, { opacity: 0, duration: .16, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
     ov.querySelector('#dClose').addEventListener('click', close);
@@ -1282,7 +1325,7 @@
       if (x.estado !== 'realizado') {
         x.estado = 'en_proceso';
         if (REMOTE) dbUpdate(x.id, { estado: 'en_proceso' });
-        var bdg = ov.querySelector('.ci-badge-st'); if (bdg) { bdg.className = 'ci-badge-st st-en_proceso'; bdg.style.alignSelf = 'flex-start'; bdg.innerHTML = estBadgeInner('en_proceso'); if (G() && !reduce()) G().fromTo(bdg, { scale: .85 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); }
+        setBadge('en_proceso');
         paintKpis(); paintCalendar(false); paintList(true);
       }
       goView('trabajo');
