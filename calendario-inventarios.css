@@ -301,7 +301,17 @@
 .ci-res__cod{flex-shrink:0;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:var(--ci-primary);background:#eef5fc;border-radius:6px;padding:2px 7px}
 .ci-res__desc{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--ci-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ci-res__um{flex-shrink:0;font-size:10.5px;font-weight:700;color:var(--ci-muted)}
+.ci-res__mk{flex-shrink:0;font-size:9.5px;font-weight:800;letter-spacing:.3px;color:var(--ci-primary);background:var(--ci-primary-soft);border-radius:6px;padding:2px 7px}
 .ci-res__empty{padding:12px;text-align:center;font-size:12.5px;font-weight:600;color:var(--ci-muted)}
+/* Fila buscador + filtro de marca */
+.ci-mat-row{display:flex;gap:8px;align-items:stretch}
+.ci-mat-row .ci-items__search{flex:1;min-width:0}
+.ci-mfilt{position:relative;flex-shrink:0}
+.ci-mfilt__btn{height:42px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border:1.5px solid var(--ci-border-2);border-radius:11px;background:#fff;font-size:13px;font-weight:700;color:var(--ci-text-2);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.ci-mfilt__btn:hover{border-color:var(--ci-primary)}
+.ci-mfilt__btn.on{border-color:var(--ci-primary);color:var(--ci-primary);background:var(--ci-primary-soft)}
+.ci-mfilt__btn svg{width:15px;height:15px} .ci-mfilt__btn .cv{transition:transform .18s} .ci-mfilt.open .ci-mfilt__btn .cv{transform:rotate(180deg)}
+.ci-mfilt .ci-resp__menu{left:auto;right:0}
 .ci-items__list{display:flex;flex-wrap:wrap;gap:7px}
 .ci-items__list:empty{display:none}
 .ci-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 6px 5px 11px;border-radius:99px;background:#fff;border:1px solid var(--ci-border-2);font-size:12.5px;font-weight:700;color:var(--ci-text)}

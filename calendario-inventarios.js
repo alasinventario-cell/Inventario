@@ -580,18 +580,15 @@
             '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
           '</div>' +
           '<div class="ci-step" id="step2" hidden>' +
-            '<div class="ci-field"><label>Marca / familia</label>' +
-              '<div class="ci-items__search" id="mMarcaSearch"><input id="mMarca" placeholder="Elegí una marca/familia (ej: GUANTE, CINTA)…" autocomplete="off"><div class="ci-items__results" id="mMarcaRes" hidden></div></div>' +
-              '<div class="ci-marca-chip" id="mMarcaChip" hidden></div>' +
-            '</div>' +
-            '<div class="ci-mat-sec" id="mMatSec" hidden>' +
-              '<div class="ci-step2-head"><h4>Material a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
-              '<div class="ci-items">' +
-                '<div class="ci-items__search"><input id="mItem" placeholder="Buscar material por código o descripción…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
-                '<div class="ci-items__list" id="mItemsList"></div>' +
-                '<div class="ci-items__empty" id="mItemsEmpty">Elegí una marca arriba para ver sus materiales.</div>' +
+            '<div class="ci-step2-head"><h4>Materiales a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
+            '<div class="ci-field"><label>Buscar material (código, descripción o marca)</label>' +
+              '<div class="ci-mat-row">' +
+                '<div class="ci-items__search"><input id="mItem" placeholder="Ej: LLAVE · MECHA · LA010759TR…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
+                '<div class="ci-mfilt" id="mMkFilt"><button type="button" class="ci-mfilt__btn" id="mMkBtn">' + ICO.tag + '<span id="mMkLbl">Marca</span><span class="cv">' + ICO.chevronD + '</span></button></div>' +
               '</div>' +
             '</div>' +
+            '<div class="ci-items__list" id="mItemsList"></div>' +
+            '<div class="ci-items__empty" id="mItemsEmpty">Buscá y agregá los materiales que vas a contar.</div>' +
           '</div>' +
         '</div>' +
         '<div class="ci-modal__f">' +
@@ -619,7 +616,7 @@
       i1.classList.toggle('on', n === 1); i1.classList.toggle('done', n > 1); i2.classList.toggle('on', n === 2);
       var panel = ov.querySelector(n === 1 ? '#step1' : '#step2');
       if (G() && !reduce()) G().fromTo(panel, { opacity: 0, x: n === 2 ? 20 : -20 }, { opacity: 1, x: 0, duration: .3, ease: 'power3.out', clearProps: 'all' });
-      if (n === 2) setTimeout(function () { var f = ov.querySelector('#mMarca'); if (f) f.focus(); }, 70);
+      if (n === 2) setTimeout(function () { var f = ov.querySelector('#mItem'); if (f) f.focus(); }, 70);
     }
     ov.querySelector('#mNext').addEventListener('click', function () { goStep(2); });
     ov.querySelector('#mBack').addEventListener('click', function () { goStep(1); });
@@ -627,7 +624,7 @@
     // ── Cargador de mercaderías (buscador real desde InventarioAPI) ──
     var items = [];
     var itInput = ov.querySelector('#mItem'), itList = ov.querySelector('#mItemsList'), itEmpty = ov.querySelector('#mItemsEmpty'), itCount = ov.querySelector('#mItemsCount');
-    var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1, marca = '';
+    var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1, matMarca = '';
     function renderItems() {
       itEmpty.hidden = items.length > 0;
       itCount.textContent = items.length ? '· ' + items.length : '';
@@ -642,11 +639,11 @@
       if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
     function closeRes() { itRes.hidden = true; results = []; hl = -1; }
-    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN' }); renderItems(); } itInput.value = ''; closeRes(); itInput.focus(); }
+    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN', marca: m.marca || '' }); renderItems(); } itInput.value = ''; closeRes(); itInput.focus(); }
     function renderRes() {
       if (!results.length) { itRes.innerHTML = '<div class="ci-res__empty">Sin resultados</div>'; itRes.hidden = false; return; }
       itRes.innerHTML = results.map(function (m, i) {
-        return '<button type="button" class="ci-res' + (i === hl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__cod">' + esc(m.codigo) + '</span><span class="ci-res__desc">' + esc(m.descripcion) + '</span><span class="ci-res__um">' + esc(m.um || 'UN') + '</span></button>';
+        return '<button type="button" class="ci-res' + (i === hl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__cod">' + esc(m.codigo) + '</span><span class="ci-res__desc">' + esc(m.descripcion) + '</span>' + (m.marca ? '<span class="ci-res__mk">' + esc(m.marca) + '</span>' : '') + '<span class="ci-res__um">' + esc(m.um || 'UN') + '</span></button>';
       }).join('');
       itRes.hidden = false;
       itRes.querySelectorAll('[data-i]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); addMerc(results[+b.getAttribute('data-i')]); }); });
@@ -655,8 +652,8 @@
     function doSearch() {
       var term = itInput.value.trim().toLowerCase();
       var pool = window.MERCADERIAS_DEMO || [];
-      if (marca) pool = pool.filter(function (m) { return familyOf(m.descripcion) === marca; });
-      results = (term ? pool.filter(function (m) { return (m.codigo + ' ' + m.descripcion).toLowerCase().indexOf(term) >= 0; }) : pool).slice(0, 30);
+      if (matMarca) pool = pool.filter(function (m) { return m.marca === matMarca; });
+      results = (term ? pool.filter(function (m) { return (m.codigo + ' ' + m.descripcion + ' ' + (m.marca || '')).toLowerCase().indexOf(term) >= 0; }) : pool).slice(0, 30);
       hl = -1; renderRes();
     }
     itInput.addEventListener('input', function () { clearTimeout(searchT2); searchT2 = setTimeout(doSearch, 160); });
@@ -670,49 +667,24 @@
     });
     itInput.addEventListener('blur', function () { setTimeout(closeRes, 120); });
 
-    // ── Picker de Marca / familia ──
-    var mkInput = ov.querySelector('#mMarca'), mkRes = ov.querySelector('#mMarcaRes'), mkT = null, mkResults = [], mkHl = -1;
-    function closeMk() { mkRes.hidden = true; mkResults = []; mkHl = -1; }
-    function clearMarca() {
-      marca = '';
-      ov.querySelector('#mMarcaSearch').hidden = false; ov.querySelector('#mMarcaChip').hidden = true;
-      ov.querySelector('#mMatSec').hidden = true;
-      mkInput.value = ''; itInput.value = ''; closeRes(); closeMk();
-      itEmpty.textContent = 'Elegí una marca arriba para ver sus materiales.';
-      setTimeout(function () { mkInput.focus(); }, 40);
+    // ── Filtro de marca (opcional, acelera la búsqueda) ──
+    var mkBtn = ov.querySelector('#mMkBtn'), mkFilt = ov.querySelector('#mMkFilt');
+    function paintMkLbl() { ov.querySelector('#mMkLbl').textContent = matMarca || 'Marca'; mkBtn.classList.toggle('on', !!matMarca); }
+    function onDocMkF(e) { if (!mkFilt.contains(e.target)) closeMkF(); }
+    function onEscMkF(e) { if (e.key === 'Escape') closeMkF(); }
+    function closeMkF() { var m = mkFilt.querySelector('.ci-resp__menu'); if (m) m.remove(); mkFilt.classList.remove('open'); document.removeEventListener('mousedown', onDocMkF, true); document.removeEventListener('keydown', onEscMkF, true); }
+    function toggleMkF() {
+      if (mkFilt.classList.contains('open')) { closeMkF(); return; }
+      var opts = getMarcasReal();
+      var menu = el('<div class="ci-resp__menu"></div>');
+      menu.innerHTML = '<button type="button" class="ci-resp__opt' + (!matMarca ? ' on' : '') + '" data-m=""><span class="ci-resp__av">' + ICO.tag + '</span>Todas las marcas</button>' +
+        opts.map(function (o) { return '<button type="button" class="ci-resp__opt' + (matMarca === o.name ? ' on' : '') + '" data-m="' + esc(o.name) + '"><span class="ci-resp__av">' + esc(o.name.charAt(0)) + '</span>' + esc(o.name) + '<span class="ci-res__um" style="margin-left:auto">' + o.n + '</span></button>'; }).join('');
+      mkFilt.appendChild(menu); mkFilt.classList.add('open');
+      menu.querySelectorAll('[data-m]').forEach(function (b) { b.addEventListener('click', function () { matMarca = b.getAttribute('data-m'); paintMkLbl(); closeMkF(); doSearch(); itInput.focus(); }); });
+      if (G() && !reduce()) G().fromTo(menu, { opacity: 0, y: -6, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .2, ease: 'back.out(2)', transformOrigin: 'top right' });
+      setTimeout(function () { document.addEventListener('mousedown', onDocMkF, true); document.addEventListener('keydown', onEscMkF, true); }, 0);
     }
-    function setMarca(name) {
-      marca = name || '';
-      if (!marca) { clearMarca(); return; }
-      var info = getMarcas().find(function (m) { return m.name === marca; }) || { n: 0 };
-      var search = ov.querySelector('#mMarcaSearch'), chip = ov.querySelector('#mMarcaChip');
-      search.hidden = true; chip.hidden = false;
-      chip.innerHTML = '<span class="ci-marca-chip__ic">' + ICO.tag + '</span><span class="ci-marca-chip__body"><span class="ci-marca-chip__name">' + esc(marca) + '</span><span class="ci-marca-chip__n">' + info.n + ' materiales en esta familia</span></span><button type="button" class="ci-marca-chip__x" id="mMarcaClear">' + ICO.x + ' Cambiar</button>';
-      chip.querySelector('#mMarcaClear').addEventListener('click', clearMarca);
-      var matSec = ov.querySelector('#mMatSec'); matSec.hidden = false;
-      itEmpty.textContent = 'Buscá materiales de ' + marca + ' para contar.';
-      closeMk();
-      if (G() && !reduce()) { G().fromTo(chip, { opacity: 0, y: -6, scale: .98 }, { opacity: 1, y: 0, scale: 1, duration: .24, ease: 'back.out(2)' }); G().fromTo(matSec, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .28, ease: 'power2.out', delay: .04 }); }
-      doSearch(); setTimeout(function () { itInput.focus(); }, 40);
-    }
-    function renderMk() {
-      if (!mkResults.length) { mkRes.innerHTML = '<div class="ci-res__empty">Sin marcas</div>'; mkRes.hidden = false; return; }
-      mkRes.innerHTML = mkResults.map(function (m, i) { return '<button type="button" class="ci-res' + (i === mkHl ? ' hl' : '') + '" data-i="' + i + '"><span class="ci-res__desc" style="font-weight:700">' + esc(m.name) + '</span><span class="ci-res__um">' + m.n + '</span></button>'; }).join('');
-      mkRes.hidden = false;
-      mkRes.querySelectorAll('[data-i]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); setMarca(mkResults[+b.getAttribute('data-i')].name); }); });
-      if (G() && !reduce()) G().fromTo(mkRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' });
-    }
-    function doMk() { var term = mkInput.value.trim().toUpperCase(); var all = getMarcas(); mkResults = (term ? all.filter(function (m) { return m.name.indexOf(term) >= 0; }) : all).slice(0, 50); mkHl = -1; renderMk(); }
-    mkInput.addEventListener('input', function () { marca = ''; clearTimeout(mkT); mkT = setTimeout(doMk, 130); });
-    mkInput.addEventListener('focus', doMk);
-    mkInput.addEventListener('keydown', function (e) {
-      if (mkRes.hidden) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); mkHl = Math.min(mkHl + 1, mkResults.length - 1); renderMk(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); mkHl = Math.max(mkHl - 1, 0); renderMk(); }
-      else if (e.key === 'Enter') { e.preventDefault(); var s = mkResults[mkHl >= 0 ? mkHl : 0]; if (s) setMarca(s.name); }
-      else if (e.key === 'Escape') { closeMk(); }
-    });
-    mkInput.addEventListener('blur', function () { setTimeout(closeMk, 120); });
+    mkBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleMkF(); });
 
     function close() { if (G() && !reduce()) { G().to(ov.querySelector('.ci-modal'), { opacity: 0, y: 10, scale: .97, duration: .16 }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
@@ -720,16 +692,20 @@
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
       var sector = selSector.getValue();
+      // Marca del inventario: filtro usado, o la marca más común entre los ítems, o "Varios".
+      var mc = matMarca;
+      if (!mc) { var cnt = {}; items.forEach(function (it) { if (it.marca) cnt[it.marca] = (cnt[it.marca] || 0) + 1; }); var best = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0]; mc = best || ''; }
+      var marcaLbl = mc || sector;
       var obj = {
         fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
-        deposito: DEPOSITOS[depSel], sector: sector, tipo: marca || 'General',
+        deposito: DEPOSITOS[depSel], sector: sector, tipo: mc || 'General',
         ubicacion: ov.querySelector('#mUbic').value.trim(), estado: 'programado', prioridad: selPrio.getValue(),
         responsable: ov.querySelector('#mResp').value.trim(), items: items.slice(), observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
       };
       S.depIdx = depSel;
       if (REMOTE) { dbCreate(obj).then(function () { close(); refresh(true); }); }
       else {
-        obj.id = seq; obj.codigo = 'INV-' + pad(1000 + seq++); obj.nombre = 'Inventario ' + (marca || sector);
+        obj.id = seq; obj.codigo = 'INV-' + pad(1000 + seq++); obj.nombre = 'Inventario ' + marcaLbl;
         DATA.push(obj); close(); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
       }
     });
@@ -748,6 +724,14 @@
     var c = {}; (window.MERCADERIAS_DEMO || []).forEach(function (m) { var f = familyOf(m.descripcion); if (f) c[f] = (c[f] || 0) + 1; });
     _marcas = Object.keys(c).map(function (k) { return { name: k, n: c[k] }; }).sort(function (a, b) { return b.n - a.n; });
     return _marcas;
+  }
+  // Marcas REALES detectadas en el catálogo (campo marca), con cantidad.
+  var _marcasReal = null;
+  function getMarcasReal() {
+    if (_marcasReal) return _marcasReal;
+    var c = {}; (window.MERCADERIAS_DEMO || []).forEach(function (m) { if (m.marca) c[m.marca] = (c[m.marca] || 0) + 1; });
+    _marcasReal = Object.keys(c).map(function (k) { return { name: k, n: c[k] }; }).sort(function (a, b) { return b.n - a.n; });
+    return _marcasReal;
   }
 
   /* ── Detalle + Conteo ────────────────────────────────────────────────── */
