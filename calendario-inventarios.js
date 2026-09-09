@@ -122,7 +122,7 @@
 
   /* ── Estado de la vista ──────────────────────────────────────────────── */
   var S = { root: null, depIdx: 0, cur: (function () { var d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })(),
-    sel: null, fEstado: 'all', fResp: '', fSearch: '', respOpen: false, drag: null, over: null, searchT: null };
+    sel: null, fEstado: 'all', fResp: '', fMarca: '', respOpen: false, drag: null, over: null };
   var tipEl = null;
 
   function deposito() { return DEPOSITOS[S.depIdx]; }
@@ -140,8 +140,7 @@
     if (S.sel) rows = rows.filter(function (x) { return x.fecha === S.sel; });
     if (S.fEstado !== 'all') rows = rows.filter(function (x) { return x.estado === S.fEstado; });
     if (S.fResp) rows = rows.filter(function (x) { return x.responsable === S.fResp; });
-    var term = norm(S.fSearch).trim();
-    if (term) rows = rows.filter(function (x) { return norm(x.nombre + ' ' + x.responsable + ' ' + x.sector + ' ' + x.ubicacion + ' ' + x.codigo).indexOf(term) >= 0; });
+    if (S.fMarca) rows = rows.filter(function (x) { return (x.tipo || '') === S.fMarca; });
     return rows.sort(function (a, b) {
       var oa = a.orden == null ? 1e9 : a.orden, ob = b.orden == null ? 1e9 : b.orden;
       if (oa !== ob) return oa - ob;
@@ -150,6 +149,10 @@
   }
   function respList() {
     var set = {}; depMonthRows().forEach(function (x) { if (x.responsable) set[x.responsable] = 1; });
+    return Object.keys(set).sort();
+  }
+  function marcaFilterList() {
+    var set = {}; depMonthRows().forEach(function (x) { if (x.tipo) set[x.tipo] = 1; });
     return Object.keys(set).sort();
   }
 
@@ -263,9 +266,9 @@
         '<button class="ci-phead__mes" id="ciVerMes" hidden>' + ICO.cal + ' Ver el mes</button>' +
       '</div>' +
       '<div class="ci-filters">' +
-        '<div class="ci-srch">' + ICO.search + '<input id="ciSearch" type="text" placeholder="Buscar inventario, responsable o sector…" autocomplete="off"></div>' +
         '<div class="ci-estados" id="ciEstados"></div>' +
         '<div class="ci-resp" id="ciResp"><button class="ci-resp__btn" id="ciRespBtn">' + ICO.user + '<span id="ciRespLbl">Responsable</span>' + '<span class="cv">' + ICO.chevronD + '</span></button></div>' +
+        '<div class="ci-resp" id="ciMarcaF"><button class="ci-resp__btn" id="ciMarcaBtn">' + ICO.tag + '<span id="ciMarcaLbl">Marca</span>' + '<span class="cv">' + ICO.chevronD + '</span></button></div>' +
         '<button class="ci-clear" id="ciClear" hidden>' + ICO.x + ' Limpiar</button>' +
       '</div>' +
       '<div class="ci-list" id="ciList"></div>';
@@ -345,13 +348,13 @@
     if (sub) sub.textContent = rows.length + ' inventario' + (rows.length === 1 ? '' : 's') + ' · ' + deposito();
     if (verMes) verMes.hidden = !S.sel;
     // filtros
-    paintEstados(); paintRespBtn();
-    var clr = S.root.querySelector('#ciClear'); if (clr) clr.hidden = !(S.fEstado !== 'all' || S.fResp || S.fSearch.trim());
+    paintEstados(); paintRespBtn(); paintMarcaBtn();
+    var clr = S.root.querySelector('#ciClear'); if (clr) clr.hidden = !(S.fEstado !== 'all' || S.fResp || S.fMarca);
     var list = S.root.querySelector('#ciList'); if (!list) return;
     if (!rows.length) {
       list.innerHTML =
         '<div class="ci-empty"><span class="ci-empty__ic">' + ICO.calEmpty + '</span>' +
-        '<div><h4>Sin inventarios</h4><p>' + (S.fEstado !== 'all' || S.fResp || S.fSearch.trim() ? 'Probá con otros filtros.' : ('No hay inventarios ' + (S.sel ? 'este día' : 'este mes') + ' en ' + deposito() + '.')) + '</p></div>' +
+        '<div><h4>Sin inventarios</h4><p>' + (S.fEstado !== 'all' || S.fResp || S.fMarca ? 'Probá con otros filtros.' : ('No hay inventarios ' + (S.sel ? 'este día' : 'este mes') + ' en ' + deposito() + '.')) + '</p></div>' +
         '<button class="ci-mbtn primary" id="ciEmptyNew">' + ICO.plus + ' Nuevo inventario</button></div>';
       var b = list.querySelector('#ciEmptyNew'); if (b) b.addEventListener('click', function () { openModal(S.sel || todayISO()); });
       if (animate && G() && !reduce()) G().from(list.querySelector('.ci-empty').children, { opacity: 0, y: 12, scale: .96, duration: .4, stagger: .07, ease: 'back.out(1.6)', clearProps: 'all' });
@@ -391,6 +394,11 @@
     if (lbl) lbl.textContent = S.fResp || 'Responsable';
     if (btn) btn.classList.toggle('on', !!S.fResp);
   }
+  function paintMarcaBtn() {
+    var lbl = S.root.querySelector('#ciMarcaLbl'), btn = S.root.querySelector('#ciMarcaBtn');
+    if (lbl) lbl.textContent = S.fMarca || 'Marca';
+    if (btn) btn.classList.toggle('on', !!S.fMarca);
+  }
 
   /* ── Interacciones ───────────────────────────────────────────────────── */
   function setDep(i) {
@@ -423,12 +431,11 @@
     root.querySelector('#ciNext').addEventListener('click', function () { goMonth(1); });
     root.querySelector('#ciHoy').addEventListener('click', goToday);
     root.querySelector('#ciVerMes').addEventListener('click', function () { S.sel = null; paintCalendar(false); paintList(true); });
-    var srch = root.querySelector('#ciSearch');
-    srch.addEventListener('input', function () { S.fSearch = srch.value; clearTimeout(S.searchT); S.searchT = setTimeout(function () { paintList(true); }, 120); });
-    root.querySelector('#ciClear').addEventListener('click', function () { S.fEstado = 'all'; S.fResp = ''; S.fSearch = ''; srch.value = ''; paintList(true); });
-    // responsable dropdown
-    var rwrap = root.querySelector('#ciResp'), rbtn = root.querySelector('#ciRespBtn');
-    rbtn.addEventListener('click', function (e) { e.stopPropagation(); toggleResp(); });
+    root.querySelector('#ciClear').addEventListener('click', function () { S.fEstado = 'all'; S.fResp = ''; S.fMarca = ''; paintList(true); });
+    // dropdown responsable
+    root.querySelector('#ciRespBtn').addEventListener('click', function (e) { e.stopPropagation(); toggleResp(); });
+    // dropdown marca
+    root.querySelector('#ciMarcaBtn').addEventListener('click', function (e) { e.stopPropagation(); toggleMarcaF(); });
   }
   function toggleResp() {
     var rwrap = S.root.querySelector('#ciResp');
@@ -449,6 +456,26 @@
     var w = S.root && S.root.querySelector('#ciResp'); if (!w) return;
     var m = w.querySelector('.ci-resp__menu'); if (m) m.remove(); w.classList.remove('open');
     document.removeEventListener('mousedown', onDocResp, true); document.removeEventListener('keydown', onEscResp, true);
+  }
+  function toggleMarcaF() {
+    var wrap = S.root.querySelector('#ciMarcaF');
+    if (wrap.classList.contains('open')) { closeMarcaF(); return; }
+    var opts = marcaFilterList();
+    var menu = el('<div class="ci-resp__menu"></div>');
+    menu.innerHTML =
+      '<button class="ci-resp__opt' + (!S.fMarca ? ' on' : '') + '" data-m=""><span class="ci-resp__av">' + ICO.tag + '</span>Todas</button>' +
+      (opts.length ? opts.map(function (r) { return '<button class="ci-resp__opt' + (S.fMarca === r ? ' on' : '') + '" data-m="' + esc(r) + '"><span class="ci-resp__av">' + esc(r.charAt(0).toUpperCase()) + '</span>' + esc(r) + '</button>'; }).join('') : '<div class="ci-res__empty">Sin marcas este mes</div>');
+    wrap.appendChild(menu); wrap.classList.add('open');
+    menu.querySelectorAll('[data-m]').forEach(function (b) { b.addEventListener('click', function () { S.fMarca = b.getAttribute('data-m'); closeMarcaF(); paintList(true); }); });
+    if (G() && !reduce()) G().fromTo(menu, { opacity: 0, y: -6, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .2, ease: 'back.out(2)', transformOrigin: 'top right' });
+    setTimeout(function () { document.addEventListener('mousedown', onDocMarcaF, true); document.addEventListener('keydown', onEscMarcaF, true); }, 0);
+  }
+  function onDocMarcaF(e) { var w = S.root && S.root.querySelector('#ciMarcaF'); if (w && !w.contains(e.target)) closeMarcaF(); }
+  function onEscMarcaF(e) { if (e.key === 'Escape') closeMarcaF(); }
+  function closeMarcaF() {
+    var w = S.root && S.root.querySelector('#ciMarcaF'); if (!w) return;
+    var m = w.querySelector('.ci-resp__menu'); if (m) m.remove(); w.classList.remove('open');
+    document.removeEventListener('mousedown', onDocMarcaF, true); document.removeEventListener('keydown', onEscMarcaF, true);
   }
 
   function wireCalendar() {
