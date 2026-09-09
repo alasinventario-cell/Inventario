@@ -434,7 +434,7 @@
   }
   function paintEstados() {
     var box = S.root.querySelector('#ciEstados'); if (!box) return;
-    var opts = [{ k: 'all', l: 'Todos', t: 'Todos' }].concat(EST_KEYS.map(function (k) { return { k: k, l: EST[k].short, t: EST[k].label }; }));
+    var opts = [{ k: 'all', l: 'Todos', t: 'Todos' }].concat(EST_KEYS.map(function (k) { return { k: k, l: EST[k].label, t: EST[k].label }; }));
     box.innerHTML = opts.map(function (o) { return '<button class="' + (S.fEstado === o.k ? 'on e-' + o.k : '') + '" data-est="' + o.k + '" title="' + o.t + '">' + o.l + '</button>'; }).join('');
     box.querySelectorAll('[data-est]').forEach(function (b) { b.addEventListener('click', function () { S.fEstado = b.getAttribute('data-est'); paintList(true); }); });
   }
