@@ -170,8 +170,8 @@
 .ci-row{position:relative;display:flex;align-items:center;gap:10px;border:1px solid var(--ci-border);border-radius:16px;
   background:#fff;padding:10px 12px 10px 10px;cursor:pointer;overflow:hidden;transition:border-color .16s,box-shadow .16s,transform .16s,border-radius .2s}
 .ci-row:hover{border-color:rgba(8,119,175,.4);box-shadow:0 8px 22px rgba(8,119,175,.12);transform:translateY(-1px)}
-.ci-rowwrap.open .ci-row{border-color:rgba(8,119,175,.4);border-bottom-color:transparent;border-bottom-left-radius:0;border-bottom-right-radius:0;transform:none;box-shadow:none}
-.ci-rowwrap.open .ci-row:hover{transform:none;box-shadow:none}
+.ci-rowwrap.open .ci-row{position:sticky;top:0;z-index:6;border-color:rgba(8,119,175,.4);border-bottom-color:transparent;border-bottom-left-radius:0;border-bottom-right-radius:0;transform:none;box-shadow:0 6px 16px rgba(8,119,175,.12)}
+.ci-rowwrap.open .ci-row:hover{transform:none;box-shadow:0 6px 16px rgba(8,119,175,.12)}
 .ci-row__chev{flex-shrink:0;color:var(--ci-muted);display:inline-flex;transition:transform .28s ease,color .16s;margin-left:2px}
 .ci-row__chev svg{width:18px;height:18px}
 .ci-row:hover .ci-row__chev{color:var(--ci-primary)}
