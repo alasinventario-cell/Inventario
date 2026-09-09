@@ -440,6 +440,9 @@ button.kpi:hover .kpi__go { opacity:1; transform:translateX(0); }
    Se encadena la altura con flex + :has() solo cuando hay una vista de lista, para
    no tocar el scroll normal del dashboard/menu/resumen. */
 .stage__body:has(.view--list) { display:flex; flex-direction:column; overflow:hidden; }
+/* Calendario de inventarios: llenar la altura para scroll interno de paneles/listas. */
+.stage__body:has(.ci-root) { display:flex; flex-direction:column; overflow:hidden; }
+#viewRoot:has(.ci-root) { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
 #viewRoot:has(.view--list) { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
 .view--list { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
 .view--list #listHost { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }

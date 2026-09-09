@@ -550,18 +550,119 @@
 .ci-detail-row .v{color:var(--ci-text);font-weight:600}
 
 /* ── Responsive ── */
-@media (max-width:1100px){
+/* Barra de pestañas móvil (oculta en desktop) */
+.ci-mtabs{display:none}
+
+/* ── Tablet: apilar los dos paneles ── */
+@media (max-width:1100px) and (min-width:721px){
   .ci-body{grid-template-columns:1fr;overflow-y:auto}
   .ci-panel{min-height:auto}
   .ci-cal{min-height:420px}
 }
-@media (max-width:640px){
-  .ci-root{padding:10px}
-  .ci-head{flex-wrap:wrap}
+
+/* ══════════════════════════════════════════════════════════════
+   VISTA MÓVIL PRO (≤720px): un panel a la vez (Lista ↔ Calendario),
+   pensada para hacer los conteos cómodamente en el teléfono.
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width:720px){
+  .ci-root{padding:10px 10px 12px;gap:10px;background:linear-gradient(180deg,var(--ci-primary-soft) 0%,transparent 24%)}
+
+  /* Cabecera compacta */
+  .ci-head{flex-wrap:wrap;gap:10px}
   .ci-head__spacer{display:none}
-  .ci-seg{order:3;width:100%}
-  .ci-btn-new{margin-left:auto}
-  .ci-grid2,.ci-grid3,.ci-depsel{grid-template-columns:1fr}
+  .ci-head__ttl{font-size:17px}
+  .ci-head__sub{display:none}
+  .ci-head__ic,.ci-head__logo{height:36px}
+  .ci-head__ic{width:36px} .ci-head__ic svg{width:19px;height:19px}
+  .ci-head__brand{flex:1;min-width:0}
+  .ci-btn-exp,.ci-btn-new{height:40px;font-size:13px;padding:0 13px}
+  .ci-btn-exp{order:4} .ci-btn-new{order:5;flex:1;justify-content:center}
+  .ci-seg{order:6;width:100%;max-width:none;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ci-seg__btn{flex:1 0 auto;min-width:33%;padding:8px 12px}
+  .ci-seg__n{font-size:17px}
+
+  /* Pestañas Lista / Calendario */
+  .ci-mtabs{display:flex;gap:6px;padding:5px;flex-shrink:0;background:var(--ci-surface);border:1px solid var(--ci-border);border-radius:14px;box-shadow:0 1px 8px rgba(15,36,64,.06)}
+  .ci-mtab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;border:0;border-radius:10px;background:transparent;color:var(--ci-text-2);font-weight:800;font-size:13.5px;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s}
+  .ci-mtab svg{width:17px;height:17px}
+  .ci-mtab.on{background:linear-gradient(135deg,#1478b8,var(--ci-primary-2));color:#fff;box-shadow:0 5px 14px rgba(8,119,175,.30)}
+
+  /* Un panel a la vez, a pantalla completa */
+  .ci-body{display:flex;flex-direction:column;gap:0;overflow:hidden}
+  .ci-panel{flex:1;min-height:0;border-radius:16px}
+  .ci-root.m-list .ci-panel--cal{display:none}
+  .ci-root.m-cal  .ci-panel--list{display:none}
+
+  /* Calendario: celdas más chicas pero tocables */
+  .ci-cal{padding:8px}
+  .ci-dow{gap:3px;padding:5px 0} .ci-dow span{font-size:10px}
+  .ci-grid{gap:4px}
+  .ci-cell{border-radius:9px;padding:4px;min-height:56px}
+  .ci-cell__d{font-size:12px}
+  .ci-ev{font-size:9.5px;padding:1px 4px}
+  .ci-phead{padding:10px 12px}
+  .ci-phead__ttl{font-size:15px}
+
+  /* Filtros de la lista: fila deslizable */
+  .ci-filters{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:9px 10px;gap:7px}
+  .ci-filters>*{flex-shrink:0}
+  .ci-estados button{height:38px;padding:0 12px}
+  .ci-resp__btn{height:38px}
+
+  /* Lista: tarjetas cómodas */
+  .ci-list{padding:9px;gap:9px}
+  .ci-row{padding:11px 12px}
+  .ci-row__date{width:44px;height:44px}
+  .ci-row__meta{gap:5px}
+  .ci-pill{max-width:150px}
+  .ci-badge-st{height:32px;padding:0 12px;font-size:11.5px}
+  .ci-exp-actions{gap:6px}
+  .ci-exp-actions .ci-mbtn{flex:1 1 auto;justify-content:center;padding:0 10px}
+  .ci-exp-actions__sp{display:none}
+
+  /* Acordeón: tabla con scroll propio (encabezado fijo ya funciona) */
+  .ci-sumtable{max-height:52vh}
+
+  /* ── Modales a pantalla completa (hoja) ── */
+  .ci-ov{padding:0;place-items:stretch}
+  .ci-modal{width:100%;max-width:100%;min-height:100%;max-height:100%;height:100%;border-radius:0}
+  /* El diálogo de confirmación (eliminar) sigue siendo una tarjeta centrada */
+  .ci-ov--confirm{padding:20px;place-items:center}
+  .ci-confirm{width:100%;max-width:400px}
+  .ci-modal__h{padding:14px 16px}
+  .ci-modal__h h3{font-size:17px}
+  .ci-modal__b{padding:14px 16px;gap:14px}
+  .ci-modal__f{padding:12px 14px;flex-wrap:wrap;gap:8px}
+  .ci-modal__f .ci-mbtn{flex:1 1 auto;justify-content:center;margin-right:0!important}
+  .ci-modal__f #dBack,.ci-modal__f #mBack{flex-basis:100%;order:-1}
+
+  /* Grids del wizard/edición → 1 columna */
+  .ci-grid2,.ci-grid3{grid-template-columns:1fr}
+
+  /* Importar Excel: apilar el dropzone */
+  .ci-imp__drop{flex-direction:column;text-align:center;gap:10px}
+  .ci-imp__drop .ci-mbtn{width:100%;justify-content:center}
+  .ci-imp__prog{flex-direction:column;text-align:center}
+
+  /* Conteo: inputs grandes (16px evita el zoom de iOS) */
+  .ci-cnt{padding:12px}
+  .ci-cnt__grid{grid-template-columns:1fr 1fr;gap:10px}
+  .ci-cnt__f input{height:46px;font-size:16px}
+  .ci-diff{grid-column:1/-1;flex-direction:row;justify-content:center;gap:8px;padding:8px;border-radius:10px;background:#f6f8fb}
+  .ci-cnt-search{height:46px}
+  .ci-cnt-search input{font-size:16px}
+
+  /* Detalle: datos en 1 columna, tabla del resumen deslizable */
+  #dResumen .ci-grid2{grid-template-columns:1fr}
+  .ci-detail-top{gap:8px}
+  .ci-detail-top #dEdit{margin-left:auto}
+
+  /* Combo de marca y selects a lo ancho */
+  .ci-combo{height:46px} .ci-combo input{font-size:16px}
+  .ci-field input,.ci-field textarea,.ci-sel__btn{font-size:16px}
+
+  /* Flash y tooltips: el tooltip del calendario no aplica en móvil (no hay hover) */
+  .ci-tip{display:none!important}
 }
 
 /* ── Animación entrada ── */

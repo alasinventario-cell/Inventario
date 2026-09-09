@@ -325,8 +325,9 @@
   function render(root) {
     S.root = root;
     root.innerHTML = '';
-    var view = el('<div class="ci-root"></div>');
+    var view = el('<div class="ci-root m-list"></div>');
     view.appendChild(buildHeader());
+    view.appendChild(buildMTabs());
     var body = el('<div class="ci-body"></div>');
     body.appendChild(buildCalPanel());
     body.appendChild(buildListPanel());
@@ -354,8 +355,27 @@
   function buildKpis() {
     return el('<div class="ci-kpis" id="ciKpis"></div>');
   }
+  // Barra de pestañas SOLO móvil: alterna entre Lista (conteo) y Calendario.
+  function buildMTabs() {
+    var t = el('<div class="ci-mtabs" role="tablist"></div>');
+    t.innerHTML =
+      '<button class="ci-mtab on" data-mv="list" type="button">' + ICO.list + '<span>Lista</span></button>' +
+      '<button class="ci-mtab" data-mv="cal" type="button">' + ICO.cal + '<span>Calendario</span></button>';
+    t.querySelectorAll('[data-mv]').forEach(function (b) { b.addEventListener('click', function () { setMView(b.getAttribute('data-mv')); }); });
+    return t;
+  }
+  function isMobile() { try { return window.matchMedia('(max-width:720px)').matches; } catch (e) { return false; } }
+  function setMView(v) {
+    if (!S.root) return;
+    var root = S.root.querySelector('.ci-root'); if (!root) return;
+    root.classList.toggle('m-cal', v === 'cal');
+    root.classList.toggle('m-list', v !== 'cal');
+    root.querySelectorAll('.ci-mtab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-mv') === (v === 'cal' ? 'cal' : 'list')); });
+    var panel = root.querySelector(v === 'cal' ? '.ci-panel--cal' : '.ci-panel--list');
+    if (panel && G() && !reduce()) G().fromTo(panel, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .28, ease: 'power2.out', clearProps: 'all' });
+  }
   function buildCalPanel() {
-    var p = el('<div class="ci-panel"></div>');
+    var p = el('<div class="ci-panel ci-panel--cal"></div>');
     p.innerHTML =
       '<div class="ci-phead">' +
         '<button class="ci-phead__btn" id="ciPrev" aria-label="Mes anterior">' + ICO.left + '</button>' +
@@ -370,7 +390,7 @@
     return p;
   }
   function buildListPanel() {
-    var p = el('<div class="ci-panel"></div>');
+    var p = el('<div class="ci-panel ci-panel--list"></div>');
     p.innerHTML =
       '<div class="ci-phead">' +
         '<span class="ci-phead__ico">' + ICO.list + '</span>' +
@@ -562,6 +582,8 @@
     S.sel = (S.sel === isoS ? null : isoS);
     paintCalendar(false); paintList(true);
     if (S.sel) { var c = S.root.querySelector('.ci-cell[data-iso="' + S.sel + '"]'); if (c && G() && !reduce()) G().fromTo(c, { scale: .94 }, { scale: 1, duration: .38, ease: 'back.out(2.4)' }); }
+    // En móvil, al elegir un día pasamos a la Lista para ver/hacer los conteos de esa fecha.
+    if (S.sel && isMobile()) setMView('list');
   }
 
   function wire() {
