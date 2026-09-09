@@ -99,7 +99,7 @@
     if (fal > 0) h += '<span class="fal">' + fal + ' Faltante</span>';
     return h || '<span class="nd">Sin contar aún</span>';
   }
-  var EST_KEYS = ['programado', 'en_proceso', 'realizado', 'pendiente'];
+  var EST_KEYS = ['programado', 'en_proceso', 'realizado'];
   var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   var DOW = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -137,7 +137,7 @@
   var DATA = [
     mk(0, '09:00', 'Inventario cíclico Picking', 0, 'Picking', 'programado', 'ALTA', 'Carlos Gómez', 128, false),
     mk(0, '14:00', 'Conteo Reserva', 0, 'Reserva', 'en_proceso', 'NORMAL', 'Elias Cabrera', 340, false),
-    mk(0, '16:30', 'Control Expedición', 0, 'Expedición', 'pendiente', 'NORMAL', 'David Espinola', 56, false),
+    mk(0, '16:30', 'Control Expedición', 0, 'Expedición', 'programado', 'NORMAL', 'David Espinola', 56, false),
     mk(2, '08:30', 'Inventario general Recepción', 0, 'Recepción', 'programado', 'NORMAL', 'Jonathan Peralta', 210, false),
     mk(-1, '17:00', 'Conteo rotativo Devoluciones', 0, 'Devoluciones', 'realizado', 'BAJA', 'Lisandro López', 74, true),
     mk(4, '10:30', 'Inventario Picking sector B', 0, 'Picking', 'programado', 'ALTA', 'Carlos Gómez', 156, false),
@@ -145,7 +145,7 @@
     mk(1, '15:00', 'Control materia prima', 1, 'Recepción', 'en_proceso', 'ALTA', 'Jonathan Peralta', 88, false),
     mk(-2, '11:00', 'Inventario insumos', 1, 'Picking', 'realizado', 'NORMAL', 'Elias Cabrera', 132, false),
     mk(3, '13:00', 'Conteo Luque Picking', 2, 'Picking', 'programado', 'NORMAL', 'Lisandro López', 98, false),
-    mk(0, '10:00', 'Control Luque Reserva', 2, 'Reserva', 'pendiente', 'ALTA', 'Carlos Gómez', 64, false),
+    mk(0, '10:00', 'Control Luque Reserva', 2, 'Reserva', 'programado', 'ALTA', 'Carlos Gómez', 64, false),
   ];
 
   /* ── Estado de la vista ──────────────────────────────────────────────── */
@@ -332,7 +332,6 @@
       '<div class="ci-kpi ci-kpi--real"><span class="ci-kpi__n">' + by.realizado + '</span><span class="ci-kpi__l">Realizados</span></div>' +
       '<div class="ci-kpi ci-kpi--proc"><span class="ci-kpi__n">' + by.en_proceso + '</span><span class="ci-kpi__l">Contando</span></div>' +
       '<div class="ci-kpi ci-kpi--prog"><span class="ci-kpi__n">' + by.programado + '</span><span class="ci-kpi__l">Programados</span></div>' +
-      '<div class="ci-kpi ci-kpi--pend"><span class="ci-kpi__n">' + by.pendiente + '</span><span class="ci-kpi__l">Pendientes</span></div>' +
       '<span class="ci-kpi__sep"></span><div class="ci-kpi"><span class="ci-kpi__n">' + cumpl + '%</span><span class="ci-kpi__l">Cumplimiento</span></div>';
   }
 
@@ -874,7 +873,7 @@
     rows.forEach(function (r) { (r.items || []).forEach(function (it) { if (it.diff != null && it.diff !== 0) { incid++; if (it.diff > 0) sob++; else fal++; } }); });
     var cumpl = rows.length ? Math.round(by.realizado / rows.length * 100) : 0;
     var byDate = {}, order = [];
-    rows.forEach(function (r) { if (!byDate[r.fecha]) { byDate[r.fecha] = { inv: 0, real: 0, pend: 0, inc: 0, dep: {} }; order.push(r.fecha); } var d = byDate[r.fecha]; d.inv++; if (r.estado === 'realizado') d.real++; if (r.estado === 'pendiente') d.pend++; (r.items || []).forEach(function (it) { if (it.diff != null && it.diff !== 0) d.inc++; }); });
+    rows.forEach(function (r) { if (!byDate[r.fecha]) { byDate[r.fecha] = { inv: 0, real: 0, pend: 0, inc: 0, dep: {} }; order.push(r.fecha); } var d = byDate[r.fecha]; d.inv++; if (r.estado === 'realizado') d.real++; else d.pend++; (r.items || []).forEach(function (it) { if (it.diff != null && it.diff !== 0) d.inc++; }); });
     var HB = 'background:#0B5F8D;color:#ffffff;font-weight:bold;padding:6px 9px;border:1px solid #0a5680;';
     var TD = 'padding:5px 9px;border:1px solid #e4ecf3;';
     var kpiC = 'padding:10px 14px;border:1px solid #cfe0ee;text-align:center;background:#f7fbff;';
@@ -888,7 +887,6 @@
       + '<td style="' + kpiC + 'color:#127a4b"><span style="font-size:18px;font-weight:bold">' + by.realizado + '</span><br>Realizados</td>'
       + '<td style="' + kpiC + 'color:#a9740c"><span style="font-size:18px;font-weight:bold">' + by.en_proceso + '</span><br>En proceso</td>'
       + '<td style="' + kpiC + 'color:#0b5f8d"><span style="font-size:18px;font-weight:bold">' + by.programado + '</span><br>Programados</td>'
-      + '<td style="' + kpiC + 'color:#c0392b"><span style="font-size:18px;font-weight:bold">' + by.pendiente + '</span><br>Pendientes</td>'
       + '<td style="' + kpiC + '"><span style="font-size:18px;font-weight:bold">' + cumpl + '%</span><br>Cumplimiento</td>'
       + '<td style="' + kpiC + 'color:#c0392b"><span style="font-size:18px;font-weight:bold">' + incid + '</span><br>Incidencias</td>'
       + '</tr></table>';
