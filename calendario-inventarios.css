@@ -59,6 +59,9 @@
   box-shadow:0 6px 16px rgba(8,119,175,.30); transition:transform .12s var(--ci-ease),filter .15s}
 .ci-btn-new:hover{filter:brightness(1.05)} .ci-btn-new:active{transform:scale(.97)}
 .ci-btn-new svg{width:18px;height:18px}
+.ci-btn-exp{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;height:42px;padding:0 15px;border:1.5px solid var(--ci-border-2);border-radius:12px;background:#fff;color:var(--ci-primary);font-weight:700;font-size:13.5px;cursor:pointer;transition:border-color .15s,background .15s,transform .12s}
+.ci-btn-exp:hover{border-color:var(--ci-primary);background:var(--ci-primary-soft)} .ci-btn-exp:active{transform:scale(.97)}
+.ci-btn-exp svg{width:17px;height:17px}
 
 /* KPIs franja */
 .ci-kpis{flex-shrink:0; display:flex; gap:18px; align-items:center; padding:8px 14px; background:var(--ci-surface);
