@@ -328,8 +328,9 @@
       var shown = evs.slice(0, 3);
       var cell = el('<div class="ci-cell' + (inMonth ? '' : ' out') + (wknd && inMonth ? ' wknd' : '') + (isoS === tISO ? ' today' : '') + (isoS === S.sel ? ' sel' : '') + '" data-iso="' + isoS + '"></div>');
       var evHtml = shown.map(function (x) {
-        return '<div class="ci-ev st-' + x.estado + '" draggable="true" data-id="' + x.id + '" title="' + esc(x.nombre) + '">' +
-          '<span class="ci-ev__bar"></span><span class="ci-ev__h">' + esc(x.hora) + '</span><span class="ci-ev__t">' + esc(x.nombre) + '</span></div>';
+        var lbl = (x.tipo && x.tipo !== 'General') ? x.tipo : (x.sector || x.nombre);
+        return '<div class="ci-ev st-' + x.estado + '" draggable="true" data-id="' + x.id + '" title="' + esc(x.nombre + (x.sector ? ' · ' + x.sector : '')) + '">' +
+          '<span class="ci-ev__bar"></span><span class="ci-ev__h">' + esc(x.hora) + '</span><span class="ci-ev__t">' + esc(lbl) + '</span></div>';
       }).join('');
       cell.innerHTML =
         '<div class="ci-cell__top"><span class="ci-cell__d">' + d.getDate() + '</span>' +
