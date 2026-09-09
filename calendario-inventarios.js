@@ -496,7 +496,7 @@
       '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum">' + sumChips(p.ok, p.sob, p.fal) + '</div></div>' +
       '<div class="ci-prog"><div class="ci-prog__bar"><i style="width:' + p.pct + '%"></i></div><span class="ci-prog__txt">' + p.c + ' de ' + p.t + ' contados · ' + p.pct + '%</span></div>' +
       '<div class="ci-sumtable">' + matSumTable(items) + '</div>' +
-      '<div class="ci-exp-foot">' + delBtn + updBtn + '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
+      '<div class="ci-exp-foot">' + delBtn + updBtn + '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver detalles</button></div>' +
     '</div>';
   }
   function paintEstados() {
@@ -623,7 +623,10 @@
     var exp = wrap.querySelector('.ci-row-exp'); if (!exp) return;
     wrap.classList.remove('open');
     if (G() && !reduce()) {
-      G().to(exp, { height: 0, opacity: 0, duration: .28, ease: 'power2.inOut', onComplete: function () { exp.hidden = true; exp.style.height = ''; exp.style.opacity = ''; exp.innerHTML = ''; } });
+      var inner = exp.querySelector('.ci-exp-in');
+      var tl = G().timeline({ onComplete: function () { exp.hidden = true; exp.style.height = ''; exp.style.opacity = ''; exp.innerHTML = ''; } });
+      if (inner) tl.to(inner.children, { opacity: 0, y: -6, duration: .16, stagger: { amount: .08, from: 'end' }, ease: 'power2.in' }, 0);
+      tl.to(exp, { height: 0, duration: .34, ease: 'expo.inOut' }, .05);
     } else { exp.hidden = true; exp.innerHTML = ''; }
   }
   function expandRow(wrap) {
@@ -633,9 +636,9 @@
     exp.innerHTML = expInnerHtml(x);
     exp.hidden = false;
     wrap.classList.add('open');
-    // "Ver conteo" → abre el modal directo en la vista de trabajo.
+    // "Ver detalles" → abre el modal en la vista de Resumen.
     var ver = exp.querySelector('.ci-exp-ver');
-    if (ver) ver.addEventListener('click', function (e) { e.stopPropagation(); openDetail(id, 'trabajo'); });
+    if (ver) ver.addEventListener('click', function (e) { e.stopPropagation(); openDetail(id); });
     // "Actualizar Excel SAP" → recarga el Excel y refresca las cantidades.
     var upd = exp.querySelector('.ci-exp-upd');
     if (upd) upd.addEventListener('click', function (e) { e.stopPropagation(); openUpdateExcel(id); });
@@ -645,8 +648,9 @@
     if (G() && !reduce()) {
       G().set(exp, { height: 'auto', opacity: 1 });
       var h = exp.offsetHeight;
-      G().fromTo(exp, { height: 0, opacity: 0 }, { height: h, opacity: 1, duration: .36, ease: 'power3.out', onComplete: function () { exp.style.height = 'auto'; } });
-      G().from(exp.querySelectorAll('.ci-exp-in > *'), { opacity: 0, y: 8, duration: .3, stagger: { amount: .22 }, ease: 'power2.out', delay: .08, clearProps: 'all' });
+      var tl = G().timeline();
+      tl.fromTo(exp, { height: 0 }, { height: h, duration: .44, ease: 'expo.out', onComplete: function () { exp.style.height = 'auto'; } }, 0);
+      tl.from(exp.querySelectorAll('.ci-exp-in > *'), { opacity: 0, y: 10, duration: .34, stagger: { amount: .26 }, ease: 'power3.out', clearProps: 'all' }, .1);
     }
   }
   function toggleRow(wrap) {

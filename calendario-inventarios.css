@@ -165,20 +165,23 @@
 .ci-clear svg{width:13px;height:13px}
 
 .ci-list{flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
-.ci-rowwrap{border-radius:16px}
-.ci-rowwrap.open{box-shadow:0 12px 30px rgba(8,119,175,.14);border-radius:16px}
+.ci-rowwrap{border-radius:16px;transition:box-shadow .28s ease}
+.ci-rowwrap.open{box-shadow:0 18px 44px -12px rgba(8,119,175,.34);border-radius:16px}
 .ci-row{position:relative;display:flex;align-items:center;gap:10px;border:1px solid var(--ci-border);border-radius:16px;
-  background:#fff;padding:10px 12px 10px 10px;cursor:pointer;overflow:hidden;transition:border-color .16s,box-shadow .16s,transform .16s,border-radius .2s}
+  background:#fff;padding:10px 12px 10px 10px;cursor:pointer;overflow:hidden;transition:border-color .16s,box-shadow .16s,transform .16s,border-radius .2s,background .2s}
 .ci-row:hover{border-color:rgba(8,119,175,.4);box-shadow:0 8px 22px rgba(8,119,175,.12);transform:translateY(-1px)}
-.ci-rowwrap.open .ci-row{position:sticky;top:0;z-index:6;border-color:rgba(8,119,175,.4);border-bottom-color:transparent;border-bottom-left-radius:0;border-bottom-right-radius:0;transform:none;box-shadow:0 6px 16px rgba(8,119,175,.12)}
-.ci-rowwrap.open .ci-row:hover{transform:none;box-shadow:0 6px 16px rgba(8,119,175,.12)}
-.ci-row__chev{flex-shrink:0;color:var(--ci-muted);display:inline-flex;transition:transform .28s ease,color .16s;margin-left:2px}
+/* Cabecera fijada de la tarjeta abierta */
+.ci-rowwrap.open .ci-row{position:sticky;top:0;z-index:6;border-color:transparent;border-bottom-color:transparent;border-bottom-left-radius:0;border-bottom-right-radius:0;transform:none;
+  background:linear-gradient(180deg,#ffffff,#f4faff);box-shadow:0 10px 20px -10px rgba(8,119,175,.4),inset 0 0 0 1px rgba(8,119,175,.45)}
+.ci-rowwrap.open .ci-row::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(8,119,175,.28),transparent)}
+.ci-rowwrap.open .ci-row:hover{transform:none;box-shadow:0 10px 20px -10px rgba(8,119,175,.4),inset 0 0 0 1px rgba(8,119,175,.45)}
+.ci-row__chev{flex-shrink:0;width:26px;height:26px;border-radius:8px;color:var(--ci-muted);display:inline-flex;align-items:center;justify-content:center;transition:transform .34s cubic-bezier(.34,1.56,.64,1),color .16s,background .16s;margin-left:2px}
 .ci-row__chev svg{width:18px;height:18px}
-.ci-row:hover .ci-row__chev{color:var(--ci-primary)}
-.ci-rowwrap.open .ci-row__chev{transform:rotate(180deg);color:var(--ci-primary)}
+.ci-row:hover .ci-row__chev{color:var(--ci-primary);background:var(--ci-primary-soft)}
+.ci-rowwrap.open .ci-row__chev{transform:rotate(180deg);color:#fff;background:linear-gradient(135deg,#1478b8,var(--ci-primary-2))}
 /* Región desplegable (acordeón) */
-.ci-row-exp{overflow:hidden;border:1px solid rgba(8,119,175,.4);border-top:none;border-bottom-left-radius:16px;border-bottom-right-radius:16px;background:linear-gradient(180deg,#f7fbff,#fff)}
-.ci-exp-in{padding:12px 14px 14px}
+.ci-row-exp{overflow:hidden;border:1px solid rgba(8,119,175,.45);border-top:none;border-bottom-left-radius:16px;border-bottom-right-radius:16px;background:linear-gradient(180deg,#f7fbff,#fff)}
+.ci-exp-in{padding:14px 15px 15px}
 .ci-exp-in .ci-cnt-head{margin-top:0}
 .ci-exp-in .ci-sumtable{margin-top:10px}
 .ci-exp-foot{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}
