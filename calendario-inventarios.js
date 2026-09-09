@@ -471,7 +471,11 @@
     var mo = S.root.querySelector('#ciMonth'); if (mo && G() && !reduce()) G().fromTo(mo, { opacity: 0, x: 8 }, { opacity: 1, x: 0, duration: .3, ease: 'power2.out' });
   }
   function goToday() { var d = new Date(); S.cur = { y: d.getFullYear(), m: d.getMonth() }; S.sel = null; refresh(true); }
-  function selectDay(isoS) { S.sel = (S.sel === isoS ? null : isoS); paintCalendar(false); paintList(true); }
+  function selectDay(isoS) {
+    S.sel = (S.sel === isoS ? null : isoS);
+    paintCalendar(false); paintList(true);
+    if (S.sel) { var c = S.root.querySelector('.ci-cell[data-iso="' + S.sel + '"]'); if (c && G() && !reduce()) G().fromTo(c, { scale: .94 }, { scale: 1, duration: .38, ease: 'back.out(2.4)' }); }
+  }
 
   function wire() {
     var root = S.root;
@@ -532,7 +536,9 @@
     var grid = S.root.querySelector('#ciGrid');
     grid.querySelectorAll('.ci-cell').forEach(function (cell) {
       var isoS = cell.getAttribute('data-iso');
-      // El calendario es de solo lectura: SOLO tooltip (hover) + arrastrar a otra fecha.
+      // Click en la fecha → filtra la lista a ese día (toggle). El tooltip sigue en hover
+      // y el arrastrar-para-reprogramar se mantiene.
+      cell.addEventListener('click', function () { hideTip(); selectDay(isoS); });
       cell.addEventListener('dragover', function (e) { if (S.drag != null) { e.preventDefault(); cell.classList.add('over'); } });
       cell.addEventListener('dragleave', function () { cell.classList.remove('over'); });
       cell.addEventListener('drop', function (e) { e.preventDefault(); cell.classList.remove('over'); var id = +e.dataTransfer.getData('text/plain'); if (id) reschedule(id, isoS); S.drag = null; });
