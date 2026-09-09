@@ -168,7 +168,11 @@
     if (S.fEstado !== 'all') rows = rows.filter(function (x) { return x.estado === S.fEstado; });
     if (S.fResp) rows = rows.filter(function (x) { return x.responsable === S.fResp; });
     if (S.fMarca) rows = rows.filter(function (x) { return (x.tipo || '') === S.fMarca; });
+    // Orden por estado: lo que se está contando arriba, lo realizado siempre al fondo.
+    var RANK = { en_proceso: 0, programado: 1, pendiente: 2, realizado: 3 };
     return rows.sort(function (a, b) {
+      var ra = RANK[a.estado] == null ? 2 : RANK[a.estado], rb = RANK[b.estado] == null ? 2 : RANK[b.estado];
+      if (ra !== rb) return ra - rb;
       var oa = a.orden == null ? 1e9 : a.orden, ob = b.orden == null ? 1e9 : b.orden;
       if (oa !== ob) return oa - ob;
       return a.fecha === b.fecha ? (a.hora || '99').localeCompare(b.hora || '99') : a.fecha.localeCompare(b.fecha);
