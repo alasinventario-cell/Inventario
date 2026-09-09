@@ -736,7 +736,13 @@
       };
       S.depIdx = depSel;
       var okSub = marcaLbl + ' · ' + DEPOSITOS[depSel] + ' · ' + items.length + ' material' + (items.length === 1 ? '' : 'es');
-      if (REMOTE) { dbCreate(obj).then(function () { close(); flashOk('Inventario programado', okSub); refresh(true); }); }
+      if (REMOTE) {
+        var btn = ov.querySelector('#mSave'); if (btn) { btn.disabled = true; }
+        dbCreate(obj).then(function (id) {
+          if (!id) { if (btn) btn.disabled = false; flashOk('No se pudo guardar', 'Falta crear las tablas en Supabase (correr el SQL)', false); return; }
+          close(); flashOk('Inventario programado', okSub); refresh(true);
+        }).catch(function () { if (btn) btn.disabled = false; flashOk('Error al guardar', 'Revisá la conexión con Supabase', false); });
+      }
       else {
         obj.id = seq; obj.codigo = 'INV-' + pad(1000 + seq++); obj.nombre = 'Inventario ' + marcaLbl;
         DATA.push(obj); close(); flashOk('Inventario programado', okSub); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
@@ -750,9 +756,11 @@
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   // Flash de éxito centrado con check azul PRO (rápido y fluido).
-  function flashOk(msg, sub) {
-    var ov = el('<div class="ci-flash"><div class="ci-flash__card">' +
-      '<div class="ci-flash__badge"><svg viewBox="0 0 52 52"><circle class="ci-flash__ring" cx="26" cy="26" r="24"/><path class="ci-flash__tick" d="M15 27l7 7 15-16"/></svg></div>' +
+  function flashOk(msg, sub, ok) {
+    if (ok === undefined) ok = true;
+    var path = ok ? 'M15 27l7 7 15-16' : 'M18 18l16 16M34 18L18 34';
+    var ov = el('<div class="ci-flash' + (ok ? '' : ' ci-flash--err') + '"><div class="ci-flash__card">' +
+      '<div class="ci-flash__badge"><svg viewBox="0 0 52 52"><circle class="ci-flash__ring" cx="26" cy="26" r="24"/><path class="ci-flash__tick" d="' + path + '"/></svg></div>' +
       '<div class="ci-flash__txt">' + esc(msg || 'Inventario programado') + '</div>' +
       (sub ? '<div class="ci-flash__sub">' + esc(sub) + '</div>' : '') +
       '</div></div>');
@@ -766,7 +774,7 @@
     tl.fromTo(card, { scale: .6, y: 12 }, { scale: 1, y: 0, duration: .34, ease: 'back.out(2.4)' }, 0);
     tl.to(tick, { strokeDashoffset: 0, duration: .3, ease: 'power2.out' }, .13);
     tl.to(card, { scale: 1.05, duration: .12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, .42);
-    tl.to(ov, { opacity: 0, duration: .22, ease: 'power2.in' }, '+=0.55');
+    tl.to(ov, { opacity: 0, duration: .22, ease: 'power2.in' }, '+=' + (ok ? 0.55 : 1.4));
   }
   // "Marca / familia": el Excel no tiene columna Marca → agrupamos por la 1ª palabra de la descripción.
   function familyOf(d) { return String(d || '').trim().split(/\s+/)[0].toUpperCase(); }
