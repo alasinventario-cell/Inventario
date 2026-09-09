@@ -396,9 +396,15 @@
   function setDep(i) {
     if (i === S.depIdx) return; S.depIdx = i; S.sel = null; S.fResp = '';
     paintSeg(); paintKpis(); paintList(true);
-    var grid = S.root.querySelector('#ciGrid'), listPanel = S.root.querySelector('#ciList');
+    var grid = S.root.querySelector('#ciGrid');
     if (G() && !reduce()) {
       if (grid) G().fromTo(grid, { opacity: .5 }, { opacity: 1, duration: .25, ease: 'power2.out' });
+      var act = S.root.querySelector('.ci-seg__btn.on');
+      if (act) {
+        G().fromTo(act, { scale: .92 }, { scale: 1, duration: .38, ease: 'back.out(3)', clearProps: 'transform' });
+        var ic = act.querySelector('.ci-seg__ic svg'); if (ic) G().fromTo(ic, { scale: .4, rotate: -12 }, { scale: 1, rotate: 0, duration: .45, ease: 'back.out(4)' });
+        var n = act.querySelector('.ci-seg__n'); if (n) G().fromTo(n, { scale: 1.45, opacity: .3 }, { scale: 1, opacity: 1, duration: .42, ease: 'back.out(2)' });
+      }
     }
     paintCalendar(true);
   }
