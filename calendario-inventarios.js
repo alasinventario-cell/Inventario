@@ -816,7 +816,7 @@
       ? '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div><div class="ci-cnt-list" id="dCntList">' + itemsArr.map(cntCard).join('') + '</div>'
       : '<div class="ci-cnt-head"><h4>Conteo</h4></div><div class="ci-items__empty" style="padding:16px 0">Este inventario no tiene materiales cargados. Editá el inventario para agregarlos.</div>';
     ov.innerHTML =
-      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(600px,100%)">' +
+      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(820px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
           '<span class="ci-badge-st st-' + x.estado + '" style="align-self:flex-start">' + EST[x.estado].ico + EST[x.estado].label + '</span>' +

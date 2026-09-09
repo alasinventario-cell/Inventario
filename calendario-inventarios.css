@@ -260,7 +260,7 @@
 .ci-steps__i.done .ci-steps__l{color:var(--ci-primary)}
 .ci-modal__x{width:34px;height:34px;border:0;border-radius:10px;background:#f1f5f9;color:var(--ci-text-2);cursor:pointer;display:grid;place-items:center}
 .ci-modal__x:hover{background:#e6edf3} .ci-modal__x svg{width:18px;height:18px}
-.ci-modal__b{flex:1;min-height:0;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:16px}
+.ci-modal__b{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:22px 26px;display:flex;flex-direction:column;gap:16px}
 .ci-modal__f{flex-shrink:0;display:flex;align-items:center;gap:10px;justify-content:flex-end;padding:16px 26px;border-top:1px solid var(--ci-border);background:#fafcfe}
 .ci-step{display:flex;flex-direction:column;gap:16px}
 .ci-field{display:flex;flex-direction:column;gap:6px}
