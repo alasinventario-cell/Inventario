@@ -570,10 +570,9 @@
           '<button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
         '<div class="ci-modal__b">' +
           '<div class="ci-step" id="step1">' +
-            '<div class="ci-grid2"><div class="ci-field"><label>Fecha *</label><input id="mFecha" type="date" value="' + fechaDef + '"></div>' +
-            '<div class="ci-field"><label>Hora</label><input id="mHora" type="time" value="' + nowHM() + '"></div></div>' +
-            '<div class="ci-field"><label>Depósito</label><div class="ci-depsel" id="mDep">' +
-              DEPOSITOS.map(function (d, i) { return '<button type="button" data-i="' + i + '" class="' + (i === S.depIdx ? 'on' : '') + '">' + DEP_ICO[i] + esc(d) + '</button>'; }).join('') + '</div></div>' +
+            '<div class="ci-grid3"><div class="ci-field"><label>Fecha *</label><input id="mFecha" type="date" value="' + fechaDef + '"></div>' +
+            '<div class="ci-field"><label>Hora</label><input id="mHora" type="time" value="' + nowHM() + '"></div>' +
+            '<div class="ci-field"><label>Depósito</label><div class="ci-dep-badge">' + DEP_ICO[S.depIdx] + '<span>' + esc(DEPOSITOS[S.depIdx]) + '</span></div></div></div>' +
             '<div class="ci-grid2"><div class="ci-field"><label>Sector</label><div id="mSector"></div></div>' +
             '<div class="ci-field"><label>Prioridad</label><div id="mPrio"></div></div></div>' +
             '<div class="ci-grid2"><div class="ci-field"><label>Responsable</label><input id="mResp" placeholder="Nombre del responsable"></div>' +
@@ -624,14 +623,6 @@
     }
     ov.querySelector('#mNext').addEventListener('click', function () { goStep(2); });
     ov.querySelector('#mBack').addEventListener('click', function () { goStep(1); });
-    ov.querySelectorAll('#mDep [data-i]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        depSel = +b.getAttribute('data-i');
-        ov.querySelectorAll('#mDep [data-i]').forEach(function (z) { z.classList.remove('on'); });
-        b.classList.add('on');
-        if (G() && !reduce()) { G().fromTo(b, { scale: .9 }, { scale: 1, duration: .3, ease: 'back.out(3)' }); var s = b.querySelector('svg'); if (s) G().fromTo(s, { scale: .5, y: -3 }, { scale: 1, y: 0, duration: .34, ease: 'back.out(4)' }); }
-      });
-    });
 
     // ── Cargador de mercaderías (buscador real desde InventarioAPI) ──
     var items = [];
@@ -745,7 +736,7 @@
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 });
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' });
-      G().from(ov.querySelectorAll('#step1 > .ci-field, #step1 > .ci-grid2'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
+      G().from(ov.querySelectorAll('#step1 > .ci-field, #step1 > .ci-grid2, #step1 > .ci-grid3'), { opacity: 0, y: 10, duration: .3, stagger: .04, ease: 'power2.out', delay: .12, clearProps: 'all' });
     }
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }

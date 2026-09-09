@@ -244,6 +244,13 @@
 .ci-field textarea{height:auto;min-height:74px;padding:10px 12px;resize:vertical}
 .ci-field input:focus,.ci-field select:focus,.ci-field textarea:focus{border-color:var(--ci-primary);box-shadow:0 0 0 4px rgba(8,119,175,.13)}
 .ci-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ci-grid3{display:grid;grid-template-columns:1fr 1fr 1.35fr;gap:14px}
+/* Depósito actual (recuadro fijo, no seleccionable) */
+.ci-dep-badge{display:flex;align-items:center;gap:9px;height:42px;padding:0 14px;border-radius:11px;
+  background:linear-gradient(135deg,#1478b8,var(--ci-primary-2));color:#fff;font-weight:800;font-size:13.5px;
+  box-shadow:0 6px 16px rgba(8,119,175,.28);overflow:hidden}
+.ci-dep-badge svg{width:19px;height:19px;color:#fff;flex-shrink:0}
+.ci-dep-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Seleccionador PRO */
 .ci-sel{position:relative}
 .ci-sel__btn{width:100%;height:42px;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid var(--ci-border-2);border-radius:11px;padding:0 12px;background:#fff;font-size:14px;font-family:inherit;font-weight:600;color:var(--ci-text);cursor:pointer;transition:border-color .15s,box-shadow .15s}
@@ -346,7 +353,7 @@
   .ci-head__spacer{display:none}
   .ci-seg{order:3;width:100%}
   .ci-btn-new{margin-left:auto}
-  .ci-grid2,.ci-depsel{grid-template-columns:1fr}
+  .ci-grid2,.ci-grid3,.ci-depsel{grid-template-columns:1fr}
 }
 
 /* ── Animación entrada ── */
