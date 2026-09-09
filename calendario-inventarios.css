@@ -371,7 +371,8 @@
 
 /* Conteo (SAP vs contado, diferencia, motivo) */
 .ci-cnt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 2px}
-.ci-cnt-head h4{margin:0;font-size:14px;font-weight:800;color:var(--ci-text)}
+.ci-cnt-head h4{margin:0;font-size:14px;font-weight:800;color:var(--ci-text);display:inline-flex;align-items:center;gap:7px}
+.ci-cnt-head h4 svg{width:16px;height:16px;color:var(--ci-primary)}
 .ci-cnt-sum{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800}
 .ci-cnt-sum span{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px}
 .ci-cnt-sum .ok{background:#e9f7ef;color:#127a4b} .ci-cnt-sum .sob{background:#eef5fc;color:#0b5f8d} .ci-cnt-sum .fal{background:#fdeded;color:#c0392b}

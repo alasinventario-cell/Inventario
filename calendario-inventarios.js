@@ -886,11 +886,11 @@
         }).join('') + '</tbody></table>';
     }
     var resumenHtml = itemsArr.length
-      ? '<div class="ci-cnt-head"><h4>' + ICO.box + ' Resumen de materiales</h4><div class="ci-cnt-sum" id="dSumR"></div></div>' +
+      ? '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum" id="dSumR"></div></div>' +
         '<div class="ci-prog"><div class="ci-prog__bar"><i id="dProgFill"></i></div><span class="ci-prog__txt" id="dProgTxt"></span></div>' +
         '<div class="ci-sumtable">' + sumTableHtml() + '</div>'
       : '<div class="ci-items__empty" style="padding:16px 0">Este inventario no tiene materiales cargados. Editá el inventario para agregarlos.</div>';
-    var contarLbl = x.estado === 'realizado' ? (ICO.play + ' Ver / editar conteo') : (ICO.play + ' Contar materiales');
+    var contarLbl = ICO.list + ' Ver conteo';
     ov.innerHTML =
       '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(840px,100%)">' +
         '<div class="ci-modal__h"><h3>' + esc(x.nombre) + '</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
@@ -1006,6 +1006,8 @@
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' });
+      G().from(ov.querySelectorAll('#dResumen .ci-detail-row'), { opacity: 0, y: 6, duration: .26, stagger: { amount: 0.22 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
+      G().from(ov.querySelectorAll('.ci-sumtable tbody tr'), { opacity: 0, y: 8, duration: .3, stagger: { amount: 0.35 }, ease: 'power2.out', delay: .22, clearProps: 'all' });
     }
   }
 
