@@ -580,7 +580,7 @@
             '<div class="ci-field"><label>Observación</label><textarea id="mObs" placeholder="Detalle del inventario…"></textarea></div>' +
           '</div>' +
           '<div class="ci-step" id="step2" hidden>' +
-            '<div class="ci-step2-head"><h4>Materiales a contar</h4><span class="ci-items__count" id="mItemsCount"></span></div>' +
+            '<div class="ci-step2-head"><h4>' + ICO.box + ' Materiales a contar</h4><span class="ci-items__count" id="mItemsCount" hidden></span></div>' +
             '<div class="ci-field"><label>Buscar material (código, descripción o marca)</label>' +
               '<div class="ci-mat-row">' +
                 '<div class="ci-items__search"><input id="mItem" placeholder="Ej: LLAVE · MECHA · LA010759TR…" autocomplete="off"><div class="ci-items__results" id="mItemRes" hidden></div></div>' +
@@ -613,7 +613,18 @@
       ov.querySelector('#mNext').hidden = n === 2;
       var sv = ov.querySelector('#mSave'); sv.hidden = n === 1; sv.disabled = items.length === 0;
       var i1 = ov.querySelector('#st1'), i2 = ov.querySelector('#st2');
-      i1.classList.toggle('on', n === 1); i1.classList.toggle('done', n > 1); i2.classList.toggle('on', n === 2);
+      i1.classList.toggle('on', n === 1); i2.classList.toggle('on', n === 2);
+      var n1 = i1.querySelector('.ci-steps__n');
+      if (n > 1) {
+        i1.classList.add('done');
+        if (n1.getAttribute('data-done') !== '1') {
+          n1.setAttribute('data-done', '1'); n1.innerHTML = ICO.chk;
+          if (G() && !reduce()) { var sv = n1.querySelector('svg'); if (sv) G().fromTo(sv, { scale: 0, rotate: -120 }, { scale: 1, rotate: 0, duration: .45, ease: 'back.out(3.5)' }); G().fromTo(i1, { scale: .9 }, { scale: 1, duration: .3, ease: 'back.out(3)' }); }
+        }
+      } else {
+        i1.classList.remove('done');
+        if (n1.getAttribute('data-done') === '1') { n1.setAttribute('data-done', ''); n1.textContent = '1'; }
+      }
       var panel = ov.querySelector(n === 1 ? '#step1' : '#step2');
       if (G() && !reduce()) {
         G().fromTo(panel, { opacity: 0, x: n === 2 ? 22 : -22 }, { opacity: 1, x: 0, duration: .32, ease: 'power3.out', clearProps: 'all' });
@@ -631,19 +642,30 @@
     var itRes = ov.querySelector('#mItemRes'), searchT2 = null, results = [], hl = -1, matMarca = '';
     function renderItems() {
       itEmpty.hidden = items.length > 0;
-      itCount.textContent = items.length ? '· ' + items.length : '';
+      itCount.hidden = !items.length;
+      itCount.textContent = items.length + (items.length === 1 ? ' seleccionado' : ' seleccionados');
       itList.innerHTML = items.map(function (it, i) {
-        return '<span class="ci-chip" title="' + esc(it.descripcion || '') + '"><span class="ci-chip__n">' + (i + 1) + '</span>' + esc(it.codigo) + '<button type="button" class="ci-chip__x" data-del="' + i + '" aria-label="Quitar">' + ICO.x + '</button></span>';
+        return '<div class="ci-selrow" data-i="' + i + '" title="' + esc(it.descripcion || '') + '">' +
+          '<span class="ci-selrow__n">' + (i + 1) + '</span>' +
+          '<span class="ci-selrow__cod">' + esc(it.codigo) + '</span>' +
+          '<span class="ci-selrow__desc">' + esc(it.descripcion || '') + '</span>' +
+          (it.marca ? '<span class="ci-selrow__mk">' + esc(it.marca) + '</span>' : '') +
+          '<span class="ci-selrow__um">' + esc(it.um || 'UN') + '</span>' +
+          '<button type="button" class="ci-selrow__x" data-del="' + i + '" aria-label="Quitar">' + ICO.x + '</button>' +
+        '</div>';
       }).join('');
       itList.querySelectorAll('[data-del]').forEach(function (b) {
-        b.addEventListener('click', function () { items.splice(+b.getAttribute('data-del'), 1); renderItems(); });
+        b.addEventListener('click', function (e) { e.stopPropagation(); var row = b.closest('.ci-selrow'); var idx = +b.getAttribute('data-del');
+          if (row && G() && !reduce()) { G().to(row, { opacity: 0, x: 16, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, duration: .22, ease: 'power2.in', onComplete: function () { items.splice(idx, 1); renderItems(); } }); }
+          else { items.splice(idx, 1); renderItems(); }
+        });
       });
-      if (G() && !reduce() && itList.lastElementChild) G().fromTo(itList.lastElementChild, { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .3, ease: 'back.out(3)' });
+      if (G() && !reduce() && itList.lastElementChild) G().fromTo(itList.lastElementChild, { opacity: 0, y: -8, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'back.out(2.2)' });
       var sv = ov.querySelector('#mSave');
       if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
     function closeRes() { itRes.hidden = true; results = []; hl = -1; }
-    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN', marca: m.marca || '' }); renderItems(); } itInput.value = ''; closeRes(); itInput.focus(); }
+    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN', marca: m.marca || '' }); renderItems(); } doSearch(); itInput.focus(); }
     function renderRes() {
       var opening = itRes.hidden;   // solo animar al abrir; al tipear, actualizar sin parpadeo
       if (!results.length) { itRes.innerHTML = '<div class="ci-res__empty">Sin resultados</div>'; itRes.hidden = false; if (opening && G() && !reduce()) G().fromTo(itRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' }); return; }
@@ -661,11 +683,12 @@
       var term = itInput.value.trim().toLowerCase();
       var pool = window.MERCADERIAS_DEMO || [];
       if (matMarca) pool = pool.filter(function (m) { return m.marca === matMarca; });
+      pool = pool.filter(function (m) { return !items.some(function (x) { return x.codigo === m.codigo; }); }); // ya agregados fuera
       results = (term ? pool.filter(function (m) { return (m.codigo + ' ' + m.descripcion + ' ' + (m.marca || '')).toLowerCase().indexOf(term) >= 0; }) : pool).slice(0, 30);
       hl = -1; renderRes();
     }
     itInput.addEventListener('input', function () { clearTimeout(searchT2); searchT2 = setTimeout(doSearch, 110); });
-    itInput.addEventListener('focus', function () { if (itInput.value.trim() || !items.length) doSearch(); });
+    itInput.addEventListener('focus', function () { doSearch(); });
     itInput.addEventListener('keydown', function (e) {
       if (itRes.hidden) return;
       if (e.key === 'ArrowDown') { e.preventDefault(); hl = Math.min(hl + 1, results.length - 1); renderRes(); }
