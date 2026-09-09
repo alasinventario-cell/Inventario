@@ -26,10 +26,12 @@ create table if not exists inventarios (
   observacion  text,
   orden        int,                  -- orden manual en la lista
   diffs        boolean not null default false,
+  conteo_nro   int not null default 1, -- 1 = primer conteo, 2 = recuento
   usuario      text,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
+alter table inventarios add column if not exists conteo_nro int not null default 1;
 create index if not exists idx_inv_fecha    on inventarios (fecha);
 create index if not exists idx_inv_deposito on inventarios (deposito);
 create index if not exists idx_inv_estado   on inventarios (estado);
@@ -42,8 +44,9 @@ create table if not exists inventario_items (
   descripcion    text,
   um             text default 'UN',
   sap            numeric,            -- cantidad que figura en SAP (col. "Libre utilización")
-  contado        numeric,            -- cantidad contada
-  diff           numeric,            -- contado - sap (null si sin datos)
+  contado        numeric,            -- 1er conteo
+  contado2       numeric,            -- 2do conteo (recuento) — definitivo si existe
+  diff           numeric,            -- diferencia definitiva vs SAP (null si sin datos)
   motivo         text,               -- averiado, vencido, etc. (si hay diferencia)
   nota           text,
   valor          numeric,            -- valor SAP del stock (col. "Valor libre util.")
@@ -52,9 +55,10 @@ create table if not exists inventario_items (
   created_at     timestamptz not null default now()
 );
 -- Si la tabla ya existía, agregar las columnas nuevas (idempotente):
-alter table inventario_items add column if not exists valor   numeric;
-alter table inventario_items add column if not exists centro  text;
-alter table inventario_items add column if not exists almacen text;
+alter table inventario_items add column if not exists valor    numeric;
+alter table inventario_items add column if not exists centro   text;
+alter table inventario_items add column if not exists almacen  text;
+alter table inventario_items add column if not exists contado2 numeric;
 create index if not exists idx_invitems_inv on inventario_items (inventario_id);
 
 -- ── updated_at automático en inventarios ───────────────────────────────────

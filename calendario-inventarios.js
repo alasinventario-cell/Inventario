@@ -31,6 +31,7 @@
     check: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
     alert: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
     trash: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>',
+    refresh: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>',
     calEmpty: '<svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l6 4M15 15l-6 4"/></svg>',
     chk: '<svg fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     tag: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg>',
@@ -83,11 +84,25 @@
   // Helpers de resumen de materiales (reutilizados en la lista inline y en el modal de conteo)
   function diffPill(d) { if (d == null) return '<span class="ci-dpill nd">Sin contar</span>'; if (d === 0) return '<span class="ci-dpill ok">' + ICO.chk + 'Coincide</span>'; if (d > 0) return '<span class="ci-dpill sob">+' + d + ' Sobra</span>'; return '<span class="ci-dpill fal">' + d + ' Faltante</span>'; }
   function matSumTable(items) {
-    return '<table class="ci-st"><thead><tr><th>#</th><th>Material</th><th>SAP</th><th>Contado</th><th>Diferencia</th><th>Motivo</th></tr></thead><tbody>' +
+    var rec = items.some(function (it) { return it.contado2 != null; });
+    var head = rec
+      ? '<tr><th>#</th><th>Material</th><th>SAP</th><th>1er conteo</th><th>2do conteo</th><th>Diferencia</th><th>Recuento</th></tr>'
+      : '<tr><th>#</th><th>Material</th><th>SAP</th><th>Contado</th><th>Diferencia</th><th>Motivo</th></tr>';
+    return '<table class="ci-st"><thead>' + head + '</thead><tbody>' +
       items.map(function (it, i) {
-        return '<tr><td class="c">' + (i + 1) + '</td>' +
+        var base = '<td class="c">' + (i + 1) + '</td>' +
           '<td><span class="ci-st__cod">' + esc(it.codigo) + '</span> <span class="ci-st__desc">' + esc(it.descripcion || '') + '</span></td>' +
-          '<td class="c">' + (it.sap == null ? '—' : it.sap) + '</td><td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
+          '<td class="c">' + (it.sap == null ? '—' : it.sap) + '</td>';
+        if (rec) {
+          var mismatch = it.contado != null && it.contado2 != null && it.contado !== it.contado2;
+          var recCell = (it.contado == null || it.contado2 == null) ? '<span class="ci-st__rec nd">—</span>'
+            : (mismatch ? '<span class="ci-st__rec ne">≠ Revisar</span>' : '<span class="ci-st__rec ok">' + ICO.chk + '</span>');
+          return '<tr' + (mismatch ? ' class="rec-ne"' : '') + '>' + base +
+            '<td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
+            '<td class="c"><b>' + (it.contado2 == null ? '—' : it.contado2) + '</b></td>' +
+            '<td>' + diffPill(it.diff) + '</td><td>' + recCell + '</td></tr>';
+        }
+        return '<tr>' + base + '<td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
           '<td>' + diffPill(it.diff) + '</td><td class="ci-st__mot">' + esc(it.motivo || '—') + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
@@ -257,8 +272,8 @@
     return {
       id: r.id, codigo: 'INV-' + (1000 + r.id), fecha: String(r.fecha).slice(0, 10), hora: r.hora ? String(r.hora).slice(0, 5) : '',
       nombre: 'Inventario ' + (r.marca || r.sector || ''), deposito: r.deposito, sector: r.sector, tipo: r.marca || 'General',
-      ubicacion: r.ubicacion || '', estado: r.estado || 'programado', prioridad: r.prioridad || 'NORMAL', responsable: r.responsable || '',
-      items: (its || []).map(function (it) { return { id: it.id, codigo: it.codigo, descripcion: it.descripcion || '', um: it.um || 'UN', sap: it.sap, contado: it.contado, diff: it.diff, motivo: it.motivo || '', nota: it.nota || '', valor: it.valor, centro: it.centro || '', almacen: it.almacen || '' }; }),
+      ubicacion: r.ubicacion || '', estado: r.estado || 'programado', prioridad: r.prioridad || 'NORMAL', responsable: r.responsable || '', conteo_nro: r.conteo_nro || 1,
+      items: (its || []).map(function (it) { return { id: it.id, codigo: it.codigo, descripcion: it.descripcion || '', um: it.um || 'UN', sap: it.sap, contado: it.contado, contado2: it.contado2, diff: it.diff, motivo: it.motivo || '', nota: it.nota || '', valor: it.valor, centro: it.centro || '', almacen: it.almacen || '' }; }),
       observacion: r.observacion || '', diffs: !!r.diffs, orden: r.orden,
     };
   }
@@ -287,12 +302,14 @@
   }
   function dbUpdate(id, patch) { var db = DB(); if (!db) return; db.from('inventarios').update(patch).eq('id', id).then(function (r) { if (r && r.error) console.error('[inv] update', r.error); }); }
   function dbDelete(id) { var db = DB(); if (!db) return Promise.resolve(false); return db.from('inventarios').delete().eq('id', id).then(function (r) { if (r && r.error) { console.error('[inv] delete', r.error); return false; } return true; }); }
-  function dbSaveConteo(id, itemsArr, estado, diffs) {
+  function dbSaveConteo(id, itemsArr, estado, diffs, conteoNro) {
     var db = DB(); if (!db) return;
     db.from('inventario_items').delete().eq('inventario_id', id).then(function () {
-      if (itemsArr.length) db.from('inventario_items').insert(itemsArr.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN', sap: it.sap == null ? null : it.sap, contado: it.contado == null ? null : it.contado, diff: it.diff == null ? null : it.diff, motivo: it.motivo || null, nota: it.nota || null, valor: it.valor == null ? null : it.valor, centro: it.centro || null, almacen: it.almacen || null }; })).then(function () {});
+      if (itemsArr.length) db.from('inventario_items').insert(itemsArr.map(function (it) { return { inventario_id: id, codigo: it.codigo, descripcion: it.descripcion || null, um: it.um || 'UN', sap: it.sap == null ? null : it.sap, contado: it.contado == null ? null : it.contado, contado2: it.contado2 == null ? null : it.contado2, diff: it.diff == null ? null : it.diff, motivo: it.motivo || null, nota: it.nota || null, valor: it.valor == null ? null : it.valor, centro: it.centro || null, almacen: it.almacen || null }; })).then(function () {});
     });
-    db.from('inventarios').update({ estado: estado, diffs: !!diffs }).eq('id', id).then(function () {});
+    var patch = { estado: estado, diffs: !!diffs };
+    if (conteoNro != null) patch.conteo_nro = conteoNro;
+    db.from('inventarios').update(patch).eq('id', id).then(function () {});
   }
   function refresh(animate) {
     if (!REMOTE) { paintSeg(); paintKpis(); paintCalendar(animate); paintList(animate); return; }
@@ -309,7 +326,6 @@
     root.innerHTML = '';
     var view = el('<div class="ci-root"></div>');
     view.appendChild(buildHeader());
-    view.appendChild(buildKpis());
     var body = el('<div class="ci-body"></div>');
     body.appendChild(buildCalPanel());
     body.appendChild(buildListPanel());
@@ -464,6 +480,7 @@
     var pf = progInfo(x.items || []);
     if (pf.fal > 0 || pf.sob > 0) flags += '<span class="ci-flag diff">Con diferencias</span>';
     else if (pf.t > 0 && pf.c === pf.t) flags += '<span class="ci-flag ok">' + ICO.chk + 'Sin diferencias</span>';
+    if ((x.conteo_nro || 1) >= 2) flags += '<span class="ci-flag rec">2do conteo</span>';
     if (x.prioridad === 'ALTA') flags += '<span class="ci-flag alta">Alta prioridad</span>';
     return '<div class="ci-rowwrap" data-id="' + x.id + '">' +
       '<div class="ci-row st-' + x.estado + '" data-id="' + x.id + '" data-rowid="' + x.id + '" draggable="true">' +
@@ -1168,14 +1185,18 @@
     var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
     var itemsArr = (x.items || []).map(function (i) { return typeof i === 'string' ? { codigo: i, descripcion: '', um: 'UN' } : i; });
     x.items = itemsArr; // normaliza
+    var activeCount = x.conteo_nro || 1;           // 1 = primer conteo, 2 = recuento
+    function itVal(it) { return activeCount === 2 ? it.contado2 : it.contado; }
+    function hasRecount() { return activeCount >= 2 || itemsArr.some(function (it) { return it.contado2 != null; }); }
     var ov = el('<div class="ci-ov"></div>');
     function drow(k, v) { return '<div class="ci-detail-row"><span class="k">' + k + '</span><span class="v">' + esc(v) + '</span></div>'; }
     function cntCard(it, i) {
+      var lbl = activeCount === 2 ? '2do conteo' : 'Contado';
       return '<div class="ci-cnt" data-i="' + i + '">' +
         '<div class="ci-cnt__mat"><span class="ci-cnt__cod">' + esc(it.codigo) + '</span><span class="ci-cnt__desc">' + esc(it.descripcion || '') + '</span></div>' +
         '<div class="ci-cnt__grid">' +
           '<div class="ci-cnt__f"><label>Figura en SAP</label><input type="number" min="0" class="cnt-sap" value="' + (it.sap == null ? '' : it.sap) + '" placeholder="0"></div>' +
-          '<div class="ci-cnt__f"><label>Contado</label><input type="number" min="0" class="cnt-cont" value="' + (it.contado == null ? '' : it.contado) + '" placeholder="0"></div>' +
+          '<div class="ci-cnt__f"><label>' + lbl + '</label><input type="number" min="0" class="cnt-cont" value="' + (itVal(it) == null ? '' : itVal(it)) + '" placeholder="0"></div>' +
           '<div class="ci-diff"><span class="ci-diff__n">—</span><span class="ci-diff__l">Sin datos</span></div>' +
         '</div>' +
         '<div class="ci-cnt__motivo" hidden><div class="cnt-mot"></div><input class="cnt-nota" placeholder="Nota (opcional)" value="' + esc(it.nota || '') + '"></div>' +
@@ -1183,11 +1204,25 @@
     }
     function diffPill(d) { if (d == null) return '<span class="ci-dpill nd">Sin contar</span>'; if (d === 0) return '<span class="ci-dpill ok">' + ICO.chk + 'Coincide</span>'; if (d > 0) return '<span class="ci-dpill sob">+' + d + ' Sobra</span>'; return '<span class="ci-dpill fal">' + d + ' Faltante</span>'; }
     function sumTableHtml() {
-      return '<table class="ci-st"><thead><tr><th>#</th><th>Material</th><th>SAP</th><th>Contado</th><th>Diferencia</th><th>Motivo</th></tr></thead><tbody>' +
+      var rec = hasRecount();
+      var head = rec
+        ? '<tr><th>#</th><th>Material</th><th>SAP</th><th>1er conteo</th><th>2do conteo</th><th>Diferencia</th><th>Recuento</th></tr>'
+        : '<tr><th>#</th><th>Material</th><th>SAP</th><th>Contado</th><th>Diferencia</th><th>Motivo</th></tr>';
+      return '<table class="ci-st"><thead>' + head + '</thead><tbody>' +
         itemsArr.map(function (it, i) {
-          return '<tr><td class="c">' + (i + 1) + '</td>' +
+          var base = '<td class="c">' + (i + 1) + '</td>' +
             '<td><span class="ci-st__cod">' + esc(it.codigo) + '</span> <span class="ci-st__desc">' + esc(it.descripcion || '') + '</span></td>' +
-            '<td class="c">' + (it.sap == null ? '—' : it.sap) + '</td><td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
+            '<td class="c">' + (it.sap == null ? '—' : it.sap) + '</td>';
+          if (rec) {
+            var mismatch = it.contado != null && it.contado2 != null && it.contado !== it.contado2;
+            var recCell = (it.contado == null || it.contado2 == null) ? '<span class="ci-st__rec nd">—</span>'
+              : (mismatch ? '<span class="ci-st__rec ne">≠ Revisar</span>' : '<span class="ci-st__rec ok">' + ICO.chk + '</span>');
+            return '<tr' + (mismatch ? ' class="rec-ne"' : '') + '>' + base +
+              '<td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
+              '<td class="c"><b>' + (it.contado2 == null ? '—' : it.contado2) + '</b></td>' +
+              '<td>' + diffPill(it.diff) + '</td><td>' + recCell + '</td></tr>';
+          }
+          return '<tr>' + base + '<td class="c">' + (it.contado == null ? '—' : it.contado) + '</td>' +
             '<td>' + diffPill(it.diff) + '</td><td class="ci-st__mot">' + esc(it.motivo || '—') + '</td></tr>';
         }).join('') + '</tbody></table>';
     }
@@ -1218,6 +1253,7 @@
         '<div class="ci-modal__f">' +
           '<button class="ci-mbtn ghost" id="dBack" style="margin-right:auto" hidden>' + ICO.left + ' Resumen</button>' +
           '<button class="ci-mbtn ghost" id="dClose">Cerrar</button>' +
+          (itemsArr.length ? '<button class="ci-mbtn recount" id="dRecount" hidden>' + ICO.refresh + ' Hacer 2do conteo</button>' : '') +
           (itemsArr.length ? '<button class="ci-mbtn primary" id="dContar">' + contarLbl + '</button>' : '') +
           (itemsArr.length ? '<button class="ci-mbtn primary" id="dGuardar" hidden>' + ICO.chk + ' Guardar conteo</button>' : '') +
         '</div>' +
@@ -1242,6 +1278,8 @@
       ov.querySelector('#dBack').hidden = v !== 'trabajo';
       var g = ov.querySelector('#dGuardar'); if (g) g.hidden = v !== 'trabajo';
       var c = ov.querySelector('#dContar'); if (c) c.hidden = v !== 'resumen';
+      var rc = ov.querySelector('#dRecount'); if (rc) rc.hidden = !(v === 'resumen' && x.estado === 'realizado' && activeCount === 1);
+      var hd = ov.querySelector('#dTrabajo .ci-cnt-head h4'); if (hd) hd.textContent = activeCount === 2 ? '2do conteo (recuento)' : 'Conteo';
       if (v === 'resumen') renderResumen();
       var panel = ov.querySelector(v === 'resumen' ? '#dResumen' : '#dTrabajo');
       if (G() && !reduce()) G().fromTo(panel, { opacity: 0, x: v === 'trabajo' ? 20 : -20 }, { opacity: 1, x: 0, duration: .3, ease: 'power3.out', clearProps: 'all' });
@@ -1267,11 +1305,13 @@
       }
       function recompute(anim) {
         var s = parseFloat(sapI.value), c = parseFloat(conI.value);
-        it.sap = isNaN(s) ? null : s; it.contado = isNaN(c) ? null : c;
+        it.sap = isNaN(s) ? null : s;
+        var cv = isNaN(c) ? null : c;
+        if (activeCount === 2) it.contado2 = cv; else it.contado = cv;   // 2do conteo = definitivo
         card.classList.remove('d-ok', 'd-sob', 'd-fal'); dEl.classList.remove('ok', 'sob', 'fal');
-        if (it.sap == null || it.contado == null) { it.diff = null; nEl.textContent = '—'; lEl.textContent = 'Sin datos'; mot.hidden = true; }
+        if (it.sap == null || cv == null) { it.diff = null; nEl.textContent = '—'; lEl.textContent = 'Sin datos'; mot.hidden = true; }
         else {
-          var d = it.contado - it.sap; it.diff = d;
+          var d = cv - it.sap; it.diff = d;
           if (d === 0) { dEl.classList.add('ok'); card.classList.add('d-ok'); nEl.textContent = '0'; lEl.textContent = 'Coincide'; mot.hidden = true; }
           else if (d > 0) { dEl.classList.add('sob'); card.classList.add('d-sob'); nEl.textContent = '+' + d; lEl.textContent = 'Sobra'; mot.hidden = false; mountMot(); }
           else { dEl.classList.add('fal'); card.classList.add('d-fal'); nEl.textContent = String(d); lEl.textContent = 'Faltante'; mot.hidden = false; mountMot(); }
@@ -1356,14 +1396,33 @@
     var gb = ov.querySelector('#dGuardar');
     if (gb) gb.addEventListener('click', function () {
       var counted = itemsArr.filter(function (it) { return it.diff != null; }).length;
+      var complete = counted === itemsArr.length && itemsArr.length;
       // Todo contado → Realizado; algo contado → Contando; nada → queda como está.
-      if (counted === itemsArr.length && itemsArr.length) x.estado = 'realizado';
-      else if (counted > 0) x.estado = 'en_proceso';
-      if (REMOTE) dbSaveConteo(x.id, itemsArr, x.estado, x.diffs);
-      close();
-      flashOk(counted === itemsArr.length ? 'Conteo completo' : 'Conteo guardado', counted + '/' + itemsArr.length + ' materiales contados');
+      if (complete) x.estado = 'realizado'; else if (counted > 0) x.estado = 'en_proceso';
+      if (REMOTE) dbSaveConteo(x.id, itemsArr, x.estado, x.diffs, x.conteo_nro);
       paintKpis(); paintCalendar(false); paintList(true);
+      if (complete && activeCount === 1) {
+        // Primer conteo terminado → ofrecer el 2do conteo sin cerrar el modal.
+        setBadge('realizado'); goView('resumen');
+        flashOk('Conteo completo', 'Ya podés hacer un 2do conteo (recuento)');
+      } else {
+        close();
+        flashOk(complete ? (activeCount === 2 ? 'Recuento completo' : 'Conteo completo') : 'Conteo guardado', counted + '/' + itemsArr.length + ' materiales contados');
+      }
     });
+    // ── Hacer 2do conteo (recuento a ciegas) ──
+    function startRecount() {
+      activeCount = 2; x.conteo_nro = 2; x.estado = 'en_proceso';
+      itemsArr.forEach(function (it) { it.contado2 = null; it.diff = null; it.motivo = ''; it.nota = ''; });
+      if (REMOTE) dbSaveConteo(x.id, itemsArr, 'en_proceso', false, 2);
+      setBadge('en_proceso');
+      trabajoBuilt = false; var l = ov.querySelector('#dCntList'); if (l) l.innerHTML = '';
+      paintKpis(); paintCalendar(false); paintList(true);
+      goTrabajo(true);
+      flashOk('2do conteo iniciado', 'Recuento a ciegas · volvé a contar');
+    }
+    var rcb = ov.querySelector('#dRecount');
+    if (rcb) { rcb.addEventListener('click', startRecount); rcb.hidden = !(x.estado === 'realizado' && activeCount === 1); }
     renderResumen();
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
@@ -1402,8 +1461,6 @@
     var r = S.root;
     G().from(r.querySelector('.ci-head'), { opacity: 0, y: -8, duration: .4, ease: 'power2.out', clearProps: 'all' });
     G().from(r.querySelectorAll('.ci-seg__btn'), { opacity: 0, y: -6, duration: .35, stagger: .06, ease: 'power2.out', clearProps: 'all', delay: .05 });
-    G().from(r.querySelector('.ci-kpis'), { opacity: 0, y: 8, duration: .4, ease: 'power2.out', clearProps: 'all', delay: .05 });
-    G().from(r.querySelectorAll('.ci-kpi'), { opacity: 0, y: 6, duration: .3, stagger: .05, ease: 'power2.out', clearProps: 'all', delay: .12 });
     G().from(r.querySelectorAll('.ci-body .ci-panel')[0], { opacity: 0, x: -10, duration: .45, ease: 'power3.out', clearProps: 'all', delay: .08 });
     G().from(r.querySelectorAll('.ci-body .ci-panel')[1], { opacity: 0, x: 10, duration: .45, ease: 'power3.out', clearProps: 'all', delay: .12 });
     G().from(r.querySelector('.ci-btn-new'), { opacity: 0, scale: .8, duration: .4, ease: 'back.out(2.5)', clearProps: 'all', delay: .28 });

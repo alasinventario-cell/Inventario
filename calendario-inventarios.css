@@ -212,6 +212,7 @@
 .ci-flag.sob{background:#eef5fc;color:#0b5f8d}
 .ci-flag.ok{background:#e9f7ef;color:#127a4b}
 .ci-flag.alta{background:#fdf6e6;color:#a9740c}
+.ci-flag.rec{background:#eef5fc;color:#0b5f8d}
 .ci-row__meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
 .ci-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--ci-text-2);background:#eef2f6;border-radius:99px;padding:2px 7px;max-width:170px}
 .ci-pill svg{width:12px;height:12px;flex-shrink:0} .ci-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -349,6 +350,8 @@
 .ci-mbtn{height:42px;padding:0 20px;border:0;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:transform .1s,filter .15s}
 .ci-mbtn.ghost{background:#f1f5f9;color:var(--ci-text-2)} .ci-mbtn.ghost:hover{background:#e6edf3}
 .ci-mbtn.primary{background:linear-gradient(135deg,#1478b8,var(--ci-primary-2));color:#fff;box-shadow:0 6px 16px rgba(8,119,175,.3)}
+.ci-mbtn.recount{background:#fdf6e6;color:#a9740c;box-shadow:inset 0 0 0 1px #eed697}
+.ci-mbtn.recount:hover{background:#fbeecb}
 .ci-mbtn.danger{background:#fdeded;color:#c0392b;box-shadow:inset 0 0 0 1px #f3cbc7}
 .ci-mbtn.danger:hover{background:#fbe0dd}
 .ci-confirm .ci-mbtn.danger,.ci-imp .ci-mbtn.danger{background:linear-gradient(135deg,#e0503f,#c0392b);color:#fff;box-shadow:0 6px 16px rgba(192,57,43,.32)}
@@ -524,6 +527,13 @@
 .ci-st__cod{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:800;color:var(--ci-primary);background:#eef5fc;border-radius:5px;padding:1px 6px}
 .ci-st__desc{color:var(--ci-text-2)}
 .ci-st__mot{color:var(--ci-muted)}
+.ci-st tbody tr.rec-ne{background:#fff8e8}
+.ci-st tbody tr.rec-ne:hover{background:#fdf1cf}
+.ci-st__rec{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px}
+.ci-st__rec svg{width:13px;height:13px}
+.ci-st__rec.ok{background:#e9f7ef;color:#127a4b}
+.ci-st__rec.ne{background:#fdf6e6;color:#a9740c}
+.ci-st__rec.nd{background:transparent;color:var(--ci-muted);font-weight:700}
 .ci-dpill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;white-space:nowrap}
 .ci-dpill svg{width:12px;height:12px}
 .ci-dpill.nd{background:#eef2f6;color:var(--ci-muted)} .ci-dpill.ok{background:#e9f7ef;color:#127a4b}
