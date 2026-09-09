@@ -1207,7 +1207,7 @@
           '<div id="dTrabajo" hidden>' +
             '<div class="ci-cnt-head"><h4>Conteo</h4><div class="ci-cnt-sum" id="dSum"></div></div>' +
             '<div class="ci-cnt-search"><span class="ci-cnt-search__ic">' + ICO.search + '</span><input id="dCntSearch" placeholder="Buscar material por código o descripción…" autocomplete="off"><button type="button" class="ci-cnt-search__x" id="dCntClear" hidden aria-label="Limpiar">' + ICO.x + '</button><span class="ci-cnt-search__n" id="dCntFound"></span></div>' +
-            '<div class="ci-cnt-list" id="dCntList">' + itemsArr.map(cntCard).join('') + '</div>' +
+            '<div class="ci-cnt-list" id="dCntList"></div>' +
             '<div class="ci-cnt-nores" id="dCntNoRes" hidden>Sin materiales que coincidan con la búsqueda.</div>' +
           '</div>' +
         '</div>' +
@@ -1255,6 +1255,12 @@
       var i = +card.getAttribute('data-i'), it = itemsArr[i];
       var sapI = card.querySelector('.cnt-sap'), conI = card.querySelector('.cnt-cont'), mot = card.querySelector('.ci-cnt__motivo');
       var dEl = card.querySelector('.ci-diff'), nEl = dEl.querySelector('.ci-diff__n'), lEl = dEl.querySelector('.ci-diff__l');
+      var motMounted = false;
+      function mountMot() { // el dropdown de motivo se crea sólo cuando hace falta (perf con muchos ítems)
+        if (motMounted) return; motMounted = true;
+        mountSelect(mot.querySelector('.cnt-mot'), MOTIVOS, it.motivo || '', { placeholder: 'Motivo…', onChange: function (v) { it.motivo = v; } });
+        mot.querySelector('.cnt-nota').addEventListener('input', function (e) { it.nota = e.target.value; });
+      }
       function recompute(anim) {
         var s = parseFloat(sapI.value), c = parseFloat(conI.value);
         it.sap = isNaN(s) ? null : s; it.contado = isNaN(c) ? null : c;
@@ -1263,19 +1269,26 @@
         else {
           var d = it.contado - it.sap; it.diff = d;
           if (d === 0) { dEl.classList.add('ok'); card.classList.add('d-ok'); nEl.textContent = '0'; lEl.textContent = 'Coincide'; mot.hidden = true; }
-          else if (d > 0) { dEl.classList.add('sob'); card.classList.add('d-sob'); nEl.textContent = '+' + d; lEl.textContent = 'Sobra'; mot.hidden = false; }
-          else { dEl.classList.add('fal'); card.classList.add('d-fal'); nEl.textContent = String(d); lEl.textContent = 'Faltante'; mot.hidden = false; }
+          else if (d > 0) { dEl.classList.add('sob'); card.classList.add('d-sob'); nEl.textContent = '+' + d; lEl.textContent = 'Sobra'; mot.hidden = false; mountMot(); }
+          else { dEl.classList.add('fal'); card.classList.add('d-fal'); nEl.textContent = String(d); lEl.textContent = 'Faltante'; mot.hidden = false; mountMot(); }
           if (anim && G() && !reduce()) G().fromTo(dEl, { scale: .8 }, { scale: 1, duration: .3, ease: 'back.out(3)' });
         }
         updateSummary();
       }
       sapI.addEventListener('input', function () { recompute(true); });
       conI.addEventListener('input', function () { recompute(true); });
-      mountSelect(mot.querySelector('.cnt-mot'), MOTIVOS, it.motivo || '', { placeholder: 'Motivo…', onChange: function (v) { it.motivo = v; } });
-      mot.querySelector('.cnt-nota').addEventListener('input', function (e) { it.nota = e.target.value; });
+      if (it.motivo) mountMot();
       recompute(false);
     }
-    ov.querySelectorAll('.ci-cnt').forEach(bindCard);
+    // Las tarjetas de conteo se construyen recién al entrar a la vista de conteo (lazy),
+    // para que abrir "Ver detalles" (Resumen) sea instantáneo aunque haya 120+ materiales.
+    var trabajoBuilt = false;
+    function buildTrabajo() {
+      if (trabajoBuilt) return; trabajoBuilt = true;
+      var list = ov.querySelector('#dCntList');
+      list.innerHTML = itemsArr.map(cntCard).join('');
+      list.querySelectorAll('.ci-cnt').forEach(bindCard);
+    }
 
     // ── Selector de estado (cambiar estado desde el detalle) ──
     function setBadge(k) { var btn = ov.querySelector('#dStBtn'); if (btn) { btn.className = 'ci-badge-st st-' + k + ' ci-stsel__btn'; btn.innerHTML = estBadgeInner(k) + '<span class="ci-stsel__cv">' + ICO.chevronD + '</span>'; if (G() && !reduce()) G().fromTo(btn, { scale: .85 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); } }
@@ -1328,8 +1341,9 @@
         setBadge('en_proceso');
         paintKpis(); paintCalendar(false); paintList(true);
       }
+      buildTrabajo();
       goView('trabajo');
-      if (animItems && G() && !reduce()) G().from(ov.querySelectorAll('#dTrabajo .ci-cnt'), { opacity: 0, y: 10, duration: .3, stagger: { amount: 0.3 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
+      if (animItems && G() && !reduce()) { var first = Array.prototype.slice.call(ov.querySelectorAll('#dTrabajo .ci-cnt'), 0, 16); G().from(first, { opacity: 0, y: 10, duration: .3, stagger: { amount: 0.28 }, ease: 'power2.out', delay: .06, clearProps: 'all' }); }
       setTimeout(function () { var f = ov.querySelector('.cnt-sap'); if (f) f.focus(); }, 90);
     }
     var cb = ov.querySelector('#dContar');
@@ -1352,7 +1366,8 @@
       G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 18, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .3, ease: 'power3.out' });
       if (start !== 'trabajo') {
         G().from(ov.querySelectorAll('#dResumen .ci-detail-row'), { opacity: 0, y: 6, duration: .26, stagger: { amount: 0.22 }, ease: 'power2.out', delay: .1, clearProps: 'all' });
-        G().from(ov.querySelectorAll('.ci-sumtable tbody tr'), { opacity: 0, y: 8, duration: .3, stagger: { amount: 0.35 }, ease: 'power2.out', delay: .22, clearProps: 'all' });
+        // Tabla de materiales: fade del contenedor (no fila por fila) para que sea fluido con 120+ ítems.
+        var st = ov.querySelector('.ci-sumtable'); if (st) G().from(st, { opacity: 0, y: 10, duration: .3, ease: 'power2.out', delay: .2, clearProps: 'all' });
       }
     }
     // Salto directo a la vista de conteo (desde "Ver conteo" del acordeón de la lista).
