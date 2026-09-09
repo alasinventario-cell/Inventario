@@ -893,7 +893,7 @@
           conteoHtml +
         '</div>' +
         '<div class="ci-modal__f">' +
-          '<button class="ci-mbtn ghost" id="dEstado" style="margin-right:auto">Avanzar estado</button>' +
+          (itemsArr.length && x.estado !== 'realizado' ? '<button class="ci-mbtn ghost" id="dContar" style="margin-right:auto">' + ICO.play + ' Contar materiales</button>' : '') +
           '<button class="ci-mbtn ghost" id="dClose">Cerrar</button>' +
           (itemsArr.length ? '<button class="ci-mbtn primary" id="dGuardar">' + ICO.chk + ' Guardar conteo</button>' : '') +
         '</div>' +
@@ -938,19 +938,26 @@
     ov.querySelector('.ci-modal__x').addEventListener('click', close);
     ov.querySelector('#dClose').addEventListener('click', close);
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
-    ov.querySelector('#dEstado').addEventListener('click', function () {
-      var order = ['programado', 'en_proceso', 'realizado']; var i = order.indexOf(x.estado);
-      x.estado = i < 0 ? 'programado' : order[(i + 1) % order.length];
-      if (REMOTE) dbUpdate(x.id, { estado: x.estado });
-      close(); paintKpis(); paintCalendar(false); paintList(true);
+    // "Contar materiales" → marca el inventario como Contando (en proceso), sin cerrar.
+    var cb = ov.querySelector('#dContar');
+    if (cb) cb.addEventListener('click', function () {
+      x.estado = 'en_proceso';
+      if (REMOTE) dbUpdate(x.id, { estado: 'en_proceso' });
+      var bdg = ov.querySelector('.ci-badge-st'); if (bdg) { bdg.className = 'ci-badge-st st-en_proceso'; bdg.style.alignSelf = 'flex-start'; bdg.innerHTML = estBadgeInner('en_proceso'); if (G() && !reduce()) G().fromTo(bdg, { scale: .85 }, { scale: 1, duration: .35, ease: 'back.out(3)' }); }
+      cb.hidden = true;
+      var f = ov.querySelector('.cnt-sap'); if (f) f.focus();
+      paintKpis(); paintCalendar(false); paintList(true);
     });
     var gb = ov.querySelector('#dGuardar');
     if (gb) gb.addEventListener('click', function () {
       var counted = itemsArr.filter(function (it) { return it.diff != null; }).length;
-      if (counted && x.estado === 'programado') x.estado = 'en_proceso';
+      // Todo contado → Realizado; algo contado → Contando; nada → queda como está.
       if (counted === itemsArr.length && itemsArr.length) x.estado = 'realizado';
+      else if (counted > 0) x.estado = 'en_proceso';
       if (REMOTE) dbSaveConteo(x.id, itemsArr, x.estado, x.diffs);
-      close(); paintKpis(); paintCalendar(false); paintList(true);
+      close();
+      flashOk(counted === itemsArr.length ? 'Conteo completo' : 'Conteo guardado', counted + '/' + itemsArr.length + ' materiales contados');
+      paintKpis(); paintCalendar(false); paintList(true);
     });
     if (G() && !reduce()) {
       G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
