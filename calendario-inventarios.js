@@ -30,6 +30,7 @@
     play: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg>',
     check: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
     alert: '<svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>',
+    trash: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>',
     calEmpty: '<svg fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 15l6 4M15 15l-6 4"/></svg>',
     chk: '<svg fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     tag: '<svg fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg>',
@@ -285,6 +286,7 @@
     });
   }
   function dbUpdate(id, patch) { var db = DB(); if (!db) return; db.from('inventarios').update(patch).eq('id', id).then(function (r) { if (r && r.error) console.error('[inv] update', r.error); }); }
+  function dbDelete(id) { var db = DB(); if (!db) return Promise.resolve(false); return db.from('inventarios').delete().eq('id', id).then(function (r) { if (r && r.error) { console.error('[inv] delete', r.error); return false; } return true; }); }
   function dbSaveConteo(id, itemsArr, estado, diffs) {
     var db = DB(); if (!db) return;
     db.from('inventario_items').delete().eq('inventario_id', id).then(function () {
@@ -484,16 +486,17 @@
   function expInnerHtml(x) {
     var items = x.items || [];
     var p = progInfo(items);
-    var updBtn = '<button type="button" class="ci-mbtn ghost ci-exp-upd" style="margin-right:auto">' + ICO.upload + ' Actualizar Excel SAP</button>';
+    var updBtn = '<button type="button" class="ci-mbtn ghost ci-exp-upd">' + ICO.upload + ' Actualizar Excel SAP</button>';
+    var delBtn = '<button type="button" class="ci-mbtn danger ci-exp-del" style="margin-right:auto">' + ICO.trash + ' Eliminar</button>';
     if (!items.length) return '<div class="ci-exp-in">' +
       '<div class="ci-items__empty" style="padding:12px 0">Sin materiales cargados en este inventario. Actualizá con el Excel de SAP.</div>' +
-      '<div class="ci-exp-foot">' + updBtn + '</div>' +
+      '<div class="ci-exp-foot">' + delBtn + updBtn + '</div>' +
     '</div>';
     return '<div class="ci-exp-in">' +
       '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum">' + sumChips(p.ok, p.sob, p.fal) + '</div></div>' +
       '<div class="ci-prog"><div class="ci-prog__bar"><i style="width:' + p.pct + '%"></i></div><span class="ci-prog__txt">' + p.c + ' de ' + p.t + ' contados · ' + p.pct + '%</span></div>' +
       '<div class="ci-sumtable">' + matSumTable(items) + '</div>' +
-      '<div class="ci-exp-foot">' + updBtn + '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
+      '<div class="ci-exp-foot">' + delBtn + updBtn + '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
     '</div>';
   }
   function paintEstados() {
@@ -636,6 +639,9 @@
     // "Actualizar Excel SAP" → recarga el Excel y refresca las cantidades.
     var upd = exp.querySelector('.ci-exp-upd');
     if (upd) upd.addEventListener('click', function (e) { e.stopPropagation(); openUpdateExcel(id); });
+    // "Eliminar" → confirmación PRO.
+    var del = exp.querySelector('.ci-exp-del');
+    if (del) del.addEventListener('click', function (e) { e.stopPropagation(); openConfirmDelete(id); });
     if (G() && !reduce()) {
       G().set(exp, { height: 'auto', opacity: 1 });
       var h = exp.offsetHeight;
@@ -973,6 +979,50 @@
     ['dragleave', 'dragend'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('drag'); }); });
     drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('drag'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (f) runUpdate(f); });
     if (G() && !reduce()) { G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 }); G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' }); }
+  }
+
+  /* ── Confirmación PRO para eliminar un inventario ────────────────────── */
+  function openConfirmDelete(id) {
+    var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
+    var ov = el('<div class="ci-ov ci-ov--confirm"></div>');
+    ov.innerHTML =
+      '<div class="ci-confirm" role="alertdialog" aria-modal="true">' +
+        '<div class="ci-confirm__ic">' + ICO.trash + '</div>' +
+        '<h3 class="ci-confirm__ttl">¿Eliminar este inventario?</h3>' +
+        '<p class="ci-confirm__txt">Vas a eliminar <b>' + esc(x.nombre) + '</b> del ' + esc(x.fecha) + ' · ' + esc(x.deposito || '') + '.<br>Se borran también sus <b>' + (x.items ? x.items.length : 0) + '</b> materiales y su conteo. Esta acción no se puede deshacer.</p>' +
+        '<div class="ci-confirm__f">' +
+          '<button class="ci-mbtn ghost" id="cfCancel">Cancelar</button>' +
+          '<button class="ci-mbtn danger" id="cfOk">' + ICO.trash + ' Sí, eliminar</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var card = ov.querySelector('.ci-confirm');
+    function close(cb) {
+      if (G() && !reduce()) { G().to(card, { opacity: 0, y: 10, scale: .96, duration: .16, ease: 'power2.in' }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); if (cb) cb(); } }); }
+      else { ov.remove(); if (cb) cb(); }
+    }
+    ov.querySelector('#cfCancel').addEventListener('click', function () { close(); });
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
+    document.addEventListener('keydown', function esc2(e) { if (e.key === 'Escape') { document.removeEventListener('keydown', esc2); close(); } });
+    ov.querySelector('#cfOk').addEventListener('click', function () {
+      var btn = ov.querySelector('#cfOk'); btn.disabled = true;
+      function done() {
+        var wrap = S.root.querySelector('.ci-rowwrap[data-id="' + id + '"]');
+        var i = DATA.findIndex(function (t) { return t.id === id; }); if (i >= 0) DATA.splice(i, 1);
+        close(function () {
+          if (wrap && G() && !reduce()) { G().to(wrap, { opacity: 0, x: 24, height: 0, marginBottom: 0, duration: .28, ease: 'power2.in', onComplete: function () { paintSeg(); paintKpis(); paintCalendar(false); paintList(true); } }); }
+          else { paintSeg(); paintKpis(); paintCalendar(false); paintList(true); }
+          flashOk('Inventario eliminado', x.nombre);
+        });
+      }
+      if (REMOTE) dbDelete(id).then(function (ok) { if (!ok) { btn.disabled = false; flashOk('No se pudo eliminar', 'Revisá la conexión con Supabase', false); return; } done(); });
+      else done();
+    });
+    if (G() && !reduce()) {
+      G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .16 });
+      G().fromTo(card, { opacity: 0, y: 18, scale: .92 }, { opacity: 1, y: 0, scale: 1, duration: .34, ease: 'back.out(1.8)' });
+      var ic = ov.querySelector('.ci-confirm__ic'); if (ic) G().fromTo(ic, { scale: 0, rotate: -30 }, { scale: 1, rotate: 0, duration: .5, ease: 'back.out(3)', delay: .08 });
+    }
   }
 
   // Flash de éxito centrado con check azul PRO (rápido y fluido).
