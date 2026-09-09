@@ -888,9 +888,18 @@
     }
     function openMk() { if (!mkMenu.hidden) return; if (!renderMk()) return; mkMenu.hidden = false; mkCombo.classList.add('open'); if (G() && !reduce()) G().fromTo(mkMenu, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .18, ease: 'power2.out' }); }
     function closeMk() { mkMenu.hidden = true; mkCombo.classList.remove('open'); }
-    function pickMk(v) { marcaVal = v; mkInput.value = v; closeMk(); }
+    function pickMk(v) { marcaVal = v; mkInput.value = v; mkCombo.classList.remove('invalid'); closeMk(); }
+    // Validación: la marca es obligatoria antes de importar / programar.
+    function requireMarca() {
+      if (marcaVal.trim()) { mkCombo.classList.remove('invalid'); return true; }
+      mkCombo.classList.add('invalid');
+      if (G() && !reduce()) G().fromTo(mkCombo, { x: -7 }, { x: 0, duration: .5, ease: 'elastic.out(1,0.4)' });
+      flashOk('Falta la marca', 'Elegí o creá la marca del inventario antes de importar', false);
+      try { mkInput.focus(); } catch (e) {}
+      return false;
+    }
     mkInput.addEventListener('focus', openMk);
-    mkInput.addEventListener('input', function () { marcaVal = mkInput.value.trim(); if (mkMenu.hidden) openMk(); else if (!renderMk()) { /* cerrado */ } });
+    mkInput.addEventListener('input', function () { marcaVal = mkInput.value.trim(); if (marcaVal) mkCombo.classList.remove('invalid'); if (mkMenu.hidden) openMk(); else if (!renderMk()) { /* cerrado */ } });
     mkInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); marcaVal = mkInput.value.trim(); closeMk(); } else if (e.key === 'Escape') { closeMk(); } });
     mkInput.addEventListener('blur', function () { marcaVal = mkInput.value.trim(); setTimeout(closeMk, 140); });
 
@@ -902,7 +911,9 @@
       var pct = ov.querySelector('#mProgPct'); if (pct) pct.textContent = Math.round(p * 100) + '%';
     }
     function runImport(file) {
-      if (!file || typeof XLSX === 'undefined') { if (typeof XLSX === 'undefined') flashOk('Falta la librería', 'No se pudo cargar el lector de Excel', false); return; }
+      if (!file) return;
+      if (!requireMarca()) return;  // la marca es obligatoria antes de importar
+      if (typeof XLSX === 'undefined') { flashOk('Falta la librería', 'No se pudo cargar el lector de Excel', false); return; }
       drop.hidden = true; doneBox.hidden = true; prog.hidden = false; setProg(0);
       ov.querySelector('#mProgName').textContent = file.name;
       ov.querySelector('#mProgSub').textContent = 'Leyendo el archivo de SAP…';
@@ -930,8 +941,8 @@
       if (G() && !reduce()) { var o = { v: 0 }; G().to(o, { v: 1, duration: 1.1, ease: 'power1.inOut', onUpdate: function () { setProg(o.v); }, onComplete: finish }); }
       else { setProg(1); finish(); }
     }
-    ov.querySelector('#mPick').addEventListener('click', function (e) { e.stopPropagation(); fileInput.click(); });
-    drop.addEventListener('click', function () { fileInput.click(); });
+    ov.querySelector('#mPick').addEventListener('click', function (e) { e.stopPropagation(); if (!requireMarca()) return; fileInput.click(); });
+    drop.addEventListener('click', function () { if (!requireMarca()) return; fileInput.click(); });
     fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) runImport(fileInput.files[0]); });
     ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('drag'); }); });
     ['dragleave', 'dragend'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('drag'); }); });
@@ -943,10 +954,9 @@
     ov.querySelector('#mCancel').addEventListener('click', close);
     ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
     ov.querySelector('#mSave').addEventListener('click', function () {
+      if (!requireMarca()) return;          // la marca es obligatoria
       var sector = selSector.getValue();
-      // Marca del inventario: la elegida/creada; si no, el almacén SAP más común, o el sector.
       var mc = marcaVal.trim();
-      if (!mc) { var cnt = {}; items.forEach(function (it) { if (it.almacen) cnt[it.almacen] = (cnt[it.almacen] || 0) + 1; }); mc = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0] || ''; }
       var marcaLbl = mc || sector;
       var obj = {
         fecha: ov.querySelector('#mFecha').value || todayISO(), hora: ov.querySelector('#mHora').value || '09:00',
