@@ -858,20 +858,22 @@
     function renderMk() {
       var term = mkInput.value.trim(), tl = term.toLowerCase();
       var all = distinctMarcas();
-      var matches = all.filter(function (m) { return m.toLowerCase().indexOf(tl) >= 0; });
+      // Excluye el valor exacto ya escrito (para no mostrar una opción "duplicada" de lo tipeado).
+      var matches = all.filter(function (m) { return m.toLowerCase().indexOf(tl) >= 0 && m.toLowerCase() !== tl; });
       var exact = all.some(function (m) { return m.toLowerCase() === tl; });
       var h = '';
       if (term && !exact) h += '<button type="button" class="ci-combo__opt ci-combo__create" data-v="' + esc(term) + '">' + ICO.plus + 'Crear «<b>' + esc(term) + '</b>»</button>';
       h += matches.map(function (m) { return '<button type="button" class="ci-combo__opt' + (m === marcaVal ? ' on' : '') + '" data-v="' + esc(m) + '"><span class="ci-combo__av">' + esc(m.charAt(0).toUpperCase()) + '</span>' + esc(m) + '</button>'; }).join('');
-      if (!h) h = '<div class="ci-combo__empty">Escribí para crear una marca nueva.</div>';
+      if (!h) { closeMk(); return false; } // nada nuevo que ofrecer → no mostrar el menú
       mkMenu.innerHTML = h;
       mkMenu.querySelectorAll('[data-v]').forEach(function (b) { b.addEventListener('mousedown', function (e) { e.preventDefault(); pickMk(b.getAttribute('data-v')); }); });
+      return true;
     }
-    function openMk() { if (!mkMenu.hidden) return; renderMk(); mkMenu.hidden = false; mkCombo.classList.add('open'); if (G() && !reduce()) G().fromTo(mkMenu, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .18, ease: 'power2.out' }); }
+    function openMk() { if (!mkMenu.hidden) return; if (!renderMk()) return; mkMenu.hidden = false; mkCombo.classList.add('open'); if (G() && !reduce()) G().fromTo(mkMenu, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .18, ease: 'power2.out' }); }
     function closeMk() { mkMenu.hidden = true; mkCombo.classList.remove('open'); }
     function pickMk(v) { marcaVal = v; mkInput.value = v; closeMk(); }
     mkInput.addEventListener('focus', openMk);
-    mkInput.addEventListener('input', function () { marcaVal = mkInput.value.trim(); if (mkMenu.hidden) openMk(); else renderMk(); });
+    mkInput.addEventListener('input', function () { marcaVal = mkInput.value.trim(); if (mkMenu.hidden) openMk(); else if (!renderMk()) { /* cerrado */ } });
     mkInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); marcaVal = mkInput.value.trim(); closeMk(); } else if (e.key === 'Escape') { closeMk(); } });
     mkInput.addEventListener('blur', function () { marcaVal = mkInput.value.trim(); setTimeout(closeMk, 140); });
 
