@@ -94,7 +94,7 @@
   // Chips de conteo: sólo aparecen cuando hay resultados; verde = "Coincide".
   function sumChips(ok, sob, fal) {
     var h = '';
-    if (ok > 0) h += '<span class="ok">' + ICO.chk + ok + ' Coincide</span>';
+    if (ok > 0) h += '<span class="ok">' + ICO.chk + 'Coincide</span>';
     if (sob > 0) h += '<span class="sob">+' + sob + ' Sobra</span>';
     if (fal > 0) h += '<span class="fal">' + fal + ' Faltante</span>';
     return h || '<span class="nd">Sin contar aún</span>';
