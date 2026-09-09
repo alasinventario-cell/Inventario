@@ -21,6 +21,10 @@
   font-family:'Inter',system-ui,sans-serif; color:var(--ci-text); overflow:hidden;
 }
 .ci-root *{box-sizing:border-box}
+/* GPU hints para animaciones más fluidas */
+.ci-modal,.ci-ov,.ci-tip,.ci-cell,.ci-row,.ci-ev,.ci-res,.ci-cnt{will-change:transform,opacity}
+.ci-list,.ci-cnt-list,.ci-items__results,.ci-resp__menu,.ci-sel__menu{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ .ci-root *,.ci-ov *,.ci-tip{animation:none!important;transition-duration:.01ms!important} }
 
 /* ── Header ── */
 .ci-head{flex-shrink:0; display:flex; align-items:center; gap:14px}
