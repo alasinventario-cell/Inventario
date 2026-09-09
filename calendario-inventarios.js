@@ -734,10 +734,11 @@
         responsable: ov.querySelector('#mResp').value.trim(), items: items.slice(), observacion: ov.querySelector('#mObs').value.trim(), diffs: false, orden: null,
       };
       S.depIdx = depSel;
-      if (REMOTE) { dbCreate(obj).then(function () { close(); refresh(true); }); }
+      var okSub = marcaLbl + ' · ' + DEPOSITOS[depSel] + ' · ' + items.length + ' material' + (items.length === 1 ? '' : 'es');
+      if (REMOTE) { dbCreate(obj).then(function () { close(); flashOk('Inventario programado', okSub); refresh(true); }); }
       else {
         obj.id = seq; obj.codigo = 'INV-' + pad(1000 + seq++); obj.nombre = 'Inventario ' + marcaLbl;
-        DATA.push(obj); close(); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
+        DATA.push(obj); close(); flashOk('Inventario programado', okSub); paintSeg(); paintKpis(); paintCalendar(true); paintList(true);
       }
     });
     if (G() && !reduce()) {
@@ -747,6 +748,25 @@
     }
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  // Flash de éxito centrado con check azul PRO (rápido y fluido).
+  function flashOk(msg, sub) {
+    var ov = el('<div class="ci-flash"><div class="ci-flash__card">' +
+      '<div class="ci-flash__badge"><svg viewBox="0 0 52 52"><circle class="ci-flash__ring" cx="26" cy="26" r="24"/><path class="ci-flash__tick" d="M15 27l7 7 15-16"/></svg></div>' +
+      '<div class="ci-flash__txt">' + esc(msg || 'Inventario programado') + '</div>' +
+      (sub ? '<div class="ci-flash__sub">' + esc(sub) + '</div>' : '') +
+      '</div></div>');
+    document.body.appendChild(ov);
+    if (!G() || reduce()) { setTimeout(function () { ov.remove(); }, 900); return; }
+    var card = ov.querySelector('.ci-flash__card'), tick = ov.querySelector('.ci-flash__tick');
+    var L = tick.getTotalLength ? tick.getTotalLength() : 40;
+    G().set(tick, { strokeDasharray: L, strokeDashoffset: L });
+    var tl = G().timeline({ onComplete: function () { ov.remove(); } });
+    tl.fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .12, ease: 'power2.out' });
+    tl.fromTo(card, { scale: .6, y: 12 }, { scale: 1, y: 0, duration: .34, ease: 'back.out(2.4)' }, 0);
+    tl.to(tick, { strokeDashoffset: 0, duration: .3, ease: 'power2.out' }, .13);
+    tl.to(card, { scale: 1.05, duration: .12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, .42);
+    tl.to(ov, { opacity: 0, duration: .22, ease: 'power2.in' }, '+=0.55');
+  }
   // "Marca / familia": el Excel no tiene columna Marca → agrupamos por la 1ª palabra de la descripción.
   function familyOf(d) { return String(d || '').trim().split(/\s+/)[0].toUpperCase(); }
   var _marcas = null;

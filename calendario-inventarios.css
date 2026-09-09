@@ -216,6 +216,16 @@
 .ci-tip__st.st-programado{background:#eef5fc;color:#0b5f8d} .ci-tip__st.st-en_proceso{background:#fdf6e6;color:#a9740c}
 .ci-tip__st.st-realizado{background:#e9f7ef;color:#127a4b} .ci-tip__st.st-pendiente{background:#fdeded;color:#c0392b}
 
+/* ── Flash de éxito (check azul PRO) ── */
+.ci-flash{position:fixed;inset:0;z-index:2147483100;display:grid;place-items:center;pointer-events:none;background:rgba(15,36,64,.14);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.ci-flash__card{display:flex;flex-direction:column;align-items:center;gap:14px;padding:32px 48px;background:#fff;border-radius:24px;box-shadow:0 24px 64px rgba(8,72,106,.34)}
+.ci-flash__badge{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%, #eaf3fb, #fff)}
+.ci-flash__badge svg{width:84px;height:84px}
+.ci-flash__ring{fill:none;stroke:var(--ci-primary);stroke-width:3;opacity:.22}
+.ci-flash__tick{fill:none;stroke:var(--ci-primary);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 6px rgba(8,119,175,.35))}
+.ci-flash__txt{font-family:'Sora','Inter',sans-serif;font-weight:800;font-size:19px;color:var(--ci-primary)}
+.ci-flash__sub{font-size:12.5px;font-weight:600;color:var(--ci-muted);margin-top:-6px}
+
 /* ── Modal ── */
 .ci-ov{position:fixed;inset:0;z-index:2147482000;display:grid;place-items:center;padding:20px;
   background:rgba(15,36,64,.34);backdrop-filter:blur(2px)}
