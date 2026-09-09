@@ -385,12 +385,14 @@
 .ci-items__count{font-size:11px;font-weight:700;color:var(--ci-primary)}
 
 /* Conteo (SAP vs contado, diferencia, motivo) */
-.ci-cnt-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 2px}
+.ci-cnt-head{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 2px}
 .ci-cnt-head h4{margin:0;font-size:14px;font-weight:800;color:var(--ci-text);display:inline-flex;align-items:center;gap:7px}
 .ci-cnt-head h4 svg{width:16px;height:16px;color:var(--ci-primary)}
-.ci-cnt-sum{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800}
-.ci-cnt-sum span{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px}
+.ci-cnt-sum{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800}
+.ci-cnt-sum span{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;line-height:1}
+.ci-cnt-sum span svg{width:12px;height:12px}
 .ci-cnt-sum .ok{background:#e9f7ef;color:#127a4b} .ci-cnt-sum .sob{background:#eef5fc;color:#0b5f8d} .ci-cnt-sum .fal{background:#fdeded;color:#c0392b}
+.ci-cnt-sum .nd{background:#eef2f6;color:var(--ci-muted);font-weight:700}
 .ci-cnt-list{display:flex;flex-direction:column;gap:9px}
 .ci-cnt{border:1px solid var(--ci-border);border-radius:13px;background:#fff;padding:10px 12px;display:flex;flex-direction:column;gap:9px;transition:border-color .15s,box-shadow .15s}
 .ci-cnt.d-ok{border-left:4px solid var(--ci-real)} .ci-cnt.d-sob{border-left:4px solid var(--ci-prog)} .ci-cnt.d-fal{border-left:4px solid var(--ci-pend)}

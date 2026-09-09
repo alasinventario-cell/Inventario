@@ -90,6 +90,14 @@
       }).join('') + '</tbody></table>';
   }
   function progInfo(items) { var c = 0, ok = 0, sob = 0, fal = 0; items.forEach(function (it) { if (it.diff != null) { c++; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; } }); var t = items.length; return { c: c, ok: ok, sob: sob, fal: fal, t: t, pct: t ? Math.round(c / t * 100) : 0 }; }
+  // Chips de conteo: sólo aparecen cuando hay resultados; verde = "Coincide".
+  function sumChips(ok, sob, fal) {
+    var h = '';
+    if (ok > 0) h += '<span class="ok">' + ICO.chk + ok + ' Coincide</span>';
+    if (sob > 0) h += '<span class="sob">+' + sob + ' Sobra</span>';
+    if (fal > 0) h += '<span class="fal">' + fal + ' Faltante</span>';
+    return h || '<span class="nd">Sin contar aún</span>';
+  }
   var EST_KEYS = ['programado', 'en_proceso', 'realizado', 'pendiente'];
   var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   var DOW = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -412,7 +420,7 @@
     var p = progInfo(items);
     if (!items.length) return '<div class="ci-exp-in"><div class="ci-items__empty" style="padding:12px 0">Sin materiales cargados en este inventario.</div></div>';
     return '<div class="ci-exp-in">' +
-      '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum"><span class="ok">' + ICO.chk + p.ok + '</span><span class="sob">+' + p.sob + ' sobra</span><span class="fal">' + p.fal + ' falta</span></div></div>' +
+      '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum">' + sumChips(p.ok, p.sob, p.fal) + '</div></div>' +
       '<div class="ci-prog"><div class="ci-prog__bar"><i style="width:' + p.pct + '%"></i></div><span class="ci-prog__txt">' + p.c + ' de ' + p.t + ' contados · ' + p.pct + '%</span></div>' +
       '<div class="ci-sumtable">' + matSumTable(items) + '</div>' +
       '<div class="ci-exp-foot"><button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
@@ -982,7 +990,7 @@
     function renderResumen() {
       var ok = 0, sob = 0, fal = 0, cont = 0;
       itemsArr.forEach(function (it) { if (it.diff != null) { cont++; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; } });
-      var sr = ov.querySelector('#dSumR'); if (sr) sr.innerHTML = '<span class="ok">' + ICO.chk + ok + '</span><span class="sob">+' + sob + ' sobra</span><span class="fal">' + fal + ' falta</span>';
+      var sr = ov.querySelector('#dSumR'); if (sr) sr.innerHTML = sumChips(ok, sob, fal);
       var pct = itemsArr.length ? Math.round(cont / itemsArr.length * 100) : 0;
       var pf = ov.querySelector('#dProgFill'), pt = ov.querySelector('#dProgTxt');
       if (pf) { if (G() && !reduce()) G().to(pf, { width: pct + '%', duration: .5, ease: 'power2.out' }); else pf.style.width = pct + '%'; }
@@ -1008,7 +1016,7 @@
       itemsArr.forEach(function (it) { if (it.diff == null) return; if (it.diff === 0) ok++; else if (it.diff > 0) sob++; else fal++; });
       x.diffs = (sob + fal) > 0;
       var sum = ov.querySelector('#dSum');
-      if (sum) sum.innerHTML = '<span class="ok">' + ICO.chk + ok + '</span><span class="sob">+' + sob + ' sobra</span><span class="fal">' + fal + ' falta</span>';
+      if (sum) sum.innerHTML = sumChips(ok, sob, fal);
     }
     function bindCard(card) {
       var i = +card.getAttribute('data-i'), it = itemsArr[i];
