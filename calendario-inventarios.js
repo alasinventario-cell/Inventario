@@ -665,7 +665,7 @@
       if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
     function closeRes() { itRes.hidden = true; results = []; hl = -1; }
-    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN', marca: m.marca || '' }); renderItems(); } doSearch(); itInput.focus(); }
+    function addMerc(m) { if (!m) return; if (!items.some(function (x) { return x.codigo === m.codigo; })) { items.push({ codigo: m.codigo, descripcion: m.descripcion, um: m.um || 'UN', marca: m.marca || '' }); renderItems(); } itInput.value = ''; closeRes(); }
     function renderRes() {
       var opening = itRes.hidden;   // solo animar al abrir; al tipear, actualizar sin parpadeo
       if (!results.length) { itRes.innerHTML = '<div class="ci-res__empty">Sin resultados</div>'; itRes.hidden = false; if (opening && G() && !reduce()) G().fromTo(itRes, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: .16, ease: 'power2.out' }); return; }
@@ -689,6 +689,7 @@
     }
     itInput.addEventListener('input', function () { clearTimeout(searchT2); searchT2 = setTimeout(doSearch, 110); });
     itInput.addEventListener('focus', function () { doSearch(); });
+    itInput.addEventListener('click', function () { if (itRes.hidden) doSearch(); }); // reabrir al volver a clickear
     itInput.addEventListener('keydown', function (e) {
       if (itRes.hidden) return;
       if (e.key === 'ArrowDown') { e.preventDefault(); hl = Math.min(hl + 1, results.length - 1); renderRes(); }
