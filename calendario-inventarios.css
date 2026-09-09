@@ -414,6 +414,8 @@
 .ci-imp__pmeta b{font-size:14px;font-weight:800;color:var(--ci-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ci-imp__pmeta span{font-size:12px;font-weight:600;color:var(--ci-muted)}
 .ci-imp__done{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid #c5e9d4;border-radius:16px;background:linear-gradient(180deg,#f2fbf6,#fff)}
+.ci-upd-lead{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ci-text-2);line-height:1.5}
+.ci-upd-lead b{color:var(--ci-text);font-weight:800}
 
 /* Conteo (SAP vs contado, diferencia, motivo) */
 .ci-cnt-head{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 2px}

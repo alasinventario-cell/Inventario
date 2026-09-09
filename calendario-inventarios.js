@@ -100,6 +100,65 @@
     if (fal > 0) h += '<span class="fal">' + fal + ' Faltante</span>';
     return h || '<span class="nd">Sin contar aún</span>';
   }
+
+  /* ── Lectura del Excel de SAP (compartida por crear + actualizar) ─────── */
+  function sapNormH(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
+  function sapFindCol(headers, keys) {
+    var hs = headers.map(sapNormH);
+    for (var k = 0; k < keys.length; k++) { var idx = hs.indexOf(keys[k]); if (idx >= 0) return idx; }
+    for (var i = 0; i < hs.length; i++) for (var j = 0; j < keys.length; j++) { if (hs[i].indexOf(keys[j]) >= 0) return i; }
+    return -1;
+  }
+  function sapToNum(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v; var n = parseFloat(String(v).replace(/\s/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
+  function sapMapAoa(aoa) {
+    if (!aoa || !aoa.length) return [];
+    var headers = aoa[0] || [];
+    var c = { cod: sapFindCol(headers, ['material']), desc: sapFindCol(headers, ['texto breve', 'descripcion', 'texto']), centro: sapFindCol(headers, ['centro']), alm: sapFindCol(headers, ['almacen']), sap: sapFindCol(headers, ['libre util', 'libre']), um: sapFindCol(headers, ['unidad medida', 'unidad']), val: sapFindCol(headers, ['valor libre', 'valor']) };
+    var out = [];
+    for (var r = 1; r < aoa.length; r++) {
+      var row = aoa[r]; if (!row) continue;
+      var cod = c.cod >= 0 ? String(row[c.cod] == null ? '' : row[c.cod]).trim() : '';
+      if (!cod) continue;
+      out.push({
+        codigo: cod,
+        descripcion: c.desc >= 0 ? String(row[c.desc] == null ? '' : row[c.desc]).trim() : '',
+        um: c.um >= 0 ? (String(row[c.um] == null ? '' : row[c.um]).trim() || 'UN') : 'UN',
+        sap: c.sap >= 0 ? sapToNum(row[c.sap]) : null,
+        valor: c.val >= 0 ? sapToNum(row[c.val]) : null,
+        centro: c.centro >= 0 ? String(row[c.centro] == null ? '' : row[c.centro]).trim() : '',
+        almacen: c.alm >= 0 ? String(row[c.alm] == null ? '' : row[c.alm]).trim() : '',
+      });
+    }
+    return out;
+  }
+  function readSapExcel(file) {
+    return new Promise(function (res, rej) {
+      if (typeof XLSX === 'undefined') return rej(new Error('xlsx'));
+      var reader = new FileReader();
+      reader.onload = function (e) { try { var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' }); var ws = wb.Sheets[wb.SheetNames[0]]; res(sapMapAoa(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }))); } catch (ex) { rej(ex); } };
+      reader.onerror = function () { rej(new Error('read')); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+  // Fusiona la carga SAP nueva sobre los ítems existentes (actualiza cantidades,
+  // agrega nuevos, conserva lo ya contado recalculando la diferencia).
+  function mergeSapItems(existing, incoming) {
+    var byCod = {}; existing.forEach(function (it) { byCod[it.codigo] = it; });
+    var upd = 0, add = 0;
+    incoming.forEach(function (nw) {
+      var ex = byCod[nw.codigo];
+      if (ex) {
+        ex.sap = nw.sap; ex.valor = nw.valor; ex.centro = nw.centro; ex.almacen = nw.almacen;
+        if (!ex.descripcion) ex.descripcion = nw.descripcion; if (!ex.um) ex.um = nw.um;
+        if (ex.contado != null && ex.sap != null) ex.diff = ex.contado - ex.sap; else if (ex.contado == null) ex.diff = null;
+        upd++;
+      } else {
+        existing.push({ codigo: nw.codigo, descripcion: nw.descripcion, um: nw.um, sap: nw.sap, valor: nw.valor, centro: nw.centro, almacen: nw.almacen, contado: null, diff: null, motivo: '', nota: '' });
+        add++;
+      }
+    });
+    return { upd: upd, add: add };
+  }
   var EST_KEYS = ['programado', 'en_proceso', 'realizado'];
   var MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   var DOW = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
@@ -425,12 +484,16 @@
   function expInnerHtml(x) {
     var items = x.items || [];
     var p = progInfo(items);
-    if (!items.length) return '<div class="ci-exp-in"><div class="ci-items__empty" style="padding:12px 0">Sin materiales cargados en este inventario.</div></div>';
+    var updBtn = '<button type="button" class="ci-mbtn ghost ci-exp-upd" style="margin-right:auto">' + ICO.upload + ' Actualizar Excel SAP</button>';
+    if (!items.length) return '<div class="ci-exp-in">' +
+      '<div class="ci-items__empty" style="padding:12px 0">Sin materiales cargados en este inventario. Actualizá con el Excel de SAP.</div>' +
+      '<div class="ci-exp-foot">' + updBtn + '</div>' +
+    '</div>';
     return '<div class="ci-exp-in">' +
       '<div class="ci-cnt-head"><h4>Resumen de materiales</h4><div class="ci-cnt-sum">' + sumChips(p.ok, p.sob, p.fal) + '</div></div>' +
       '<div class="ci-prog"><div class="ci-prog__bar"><i style="width:' + p.pct + '%"></i></div><span class="ci-prog__txt">' + p.c + ' de ' + p.t + ' contados · ' + p.pct + '%</span></div>' +
       '<div class="ci-sumtable">' + matSumTable(items) + '</div>' +
-      '<div class="ci-exp-foot"><button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
+      '<div class="ci-exp-foot">' + updBtn + '<button type="button" class="ci-mbtn primary ci-exp-ver">' + ICO.list + ' Ver conteo</button></div>' +
     '</div>';
   }
   function paintEstados() {
@@ -570,6 +633,9 @@
     // "Ver conteo" → abre el modal directo en la vista de trabajo.
     var ver = exp.querySelector('.ci-exp-ver');
     if (ver) ver.addEventListener('click', function (e) { e.stopPropagation(); openDetail(id, 'trabajo'); });
+    // "Actualizar Excel SAP" → recarga el Excel y refresca las cantidades.
+    var upd = exp.querySelector('.ci-exp-upd');
+    if (upd) upd.addEventListener('click', function (e) { e.stopPropagation(); openUpdateExcel(id); });
     if (G() && !reduce()) {
       G().set(exp, { height: 'auto', opacity: 1 });
       var h = exp.offsetHeight;
@@ -761,37 +827,6 @@
       if (sv) { var was = sv.disabled; sv.disabled = items.length === 0; if (was && !sv.disabled && G() && !reduce()) G().fromTo(sv, { scale: .85 }, { scale: 1, duration: .32, ease: 'back.out(3)' }); }
     }
 
-    // Mapeo de columnas del Excel de SAP → ítems del inventario.
-    function normH(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim(); }
-    function findCol(headers, keys) {
-      var hs = headers.map(normH);
-      for (var k = 0; k < keys.length; k++) { var idx = hs.indexOf(keys[k]); if (idx >= 0) return idx; }
-      for (var i = 0; i < hs.length; i++) for (var j = 0; j < keys.length; j++) { if (hs[i].indexOf(keys[j]) >= 0) return i; }
-      return -1;
-    }
-    function toNum(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v; var n = parseFloat(String(v).replace(/\s/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')); return isNaN(n) ? null : n; }
-    function mapAoa(aoa) {
-      if (!aoa || !aoa.length) return [];
-      var headers = aoa[0] || [];
-      var c = { cod: findCol(headers, ['material']), desc: findCol(headers, ['texto breve', 'descripcion', 'texto']), centro: findCol(headers, ['centro']), alm: findCol(headers, ['almacen']), sap: findCol(headers, ['libre util', 'libre']), um: findCol(headers, ['unidad medida', 'unidad']), val: findCol(headers, ['valor libre', 'valor']) };
-      var out = [];
-      for (var r = 1; r < aoa.length; r++) {
-        var row = aoa[r]; if (!row) continue;
-        var cod = c.cod >= 0 ? String(row[c.cod] == null ? '' : row[c.cod]).trim() : '';
-        if (!cod) continue;
-        out.push({
-          codigo: cod,
-          descripcion: c.desc >= 0 ? String(row[c.desc] == null ? '' : row[c.desc]).trim() : '',
-          um: c.um >= 0 ? (String(row[c.um] == null ? '' : row[c.um]).trim() || 'UN') : 'UN',
-          sap: c.sap >= 0 ? toNum(row[c.sap]) : null,
-          valor: c.val >= 0 ? toNum(row[c.val]) : null,
-          centro: c.centro >= 0 ? String(row[c.centro] == null ? '' : row[c.centro]).trim() : '',
-          almacen: c.alm >= 0 ? String(row[c.alm] == null ? '' : row[c.alm]).trim() : '',
-        });
-      }
-      return out;
-    }
-
     // ── Loader de importación 0→100% PRO ──
     var fileInput = ov.querySelector('#mFile'), drop = ov.querySelector('#mDrop'), prog = ov.querySelector('#mProg'), doneBox = ov.querySelector('#mImpDone');
     var RC = 2 * Math.PI * 28;
@@ -805,16 +840,7 @@
       ov.querySelector('#mProgName').textContent = file.name;
       ov.querySelector('#mProgSub').textContent = 'Leyendo el archivo de SAP…';
       var parsed = null, err = null;
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          var wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-          var ws = wb.Sheets[wb.SheetNames[0]];
-          parsed = mapAoa(XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }));
-        } catch (ex) { err = ex; }
-      };
-      reader.onerror = function () { err = new Error('read'); };
-      reader.readAsArrayBuffer(file);
+      readSapExcel(file).then(function (its) { parsed = its; }).catch(function (ex) { err = ex; });
       function finish() {
         var tries = 0;
         (function waitParse() {
@@ -882,6 +908,73 @@
     }
   }
   function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  /* ── Actualizar un inventario recargando el Excel de SAP ─────────────── */
+  function openUpdateExcel(id) {
+    var x = DATA.find(function (t) { return t.id === id; }); if (!x) return;
+    var ov = el('<div class="ci-ov"></div>');
+    ov.innerHTML =
+      '<div class="ci-modal" role="dialog" aria-modal="true" style="width:min(560px,100%)">' +
+        '<div class="ci-modal__h"><h3>Actualizar desde SAP</h3><button class="ci-modal__x" aria-label="Cerrar">' + ICO.x + '</button></div>' +
+        '<div class="ci-modal__b">' +
+          '<p class="ci-upd-lead">Volvé a cargar el Excel de SAP para <b>' + esc(x.nombre) + '</b>. Se actualizan las cantidades de SAP y se conserva lo ya contado.</p>' +
+          '<div class="ci-imp">' +
+            '<input type="file" id="uFile" accept=".xlsx,.xls,.csv" hidden>' +
+            '<div class="ci-imp__drop" id="uDrop">' +
+              '<span class="ci-imp__ic">' + ICO.upload + '</span>' +
+              '<div class="ci-imp__txt"><b>Importá el Excel de SAP</b><span>Arrastrá el archivo acá o hacé clic para elegirlo · .xlsx</span></div>' +
+              '<button type="button" class="ci-mbtn primary" id="uPick">' + ICO.upload + ' Elegir archivo</button>' +
+            '</div>' +
+            '<div class="ci-imp__prog" id="uProg" hidden>' +
+              '<div class="ci-imp__pring"><svg viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="28"/><circle class="fg" id="uProgArc" cx="32" cy="32" r="28"/></svg><span class="ci-imp__ppct" id="uProgPct">0%</span></div>' +
+              '<div class="ci-imp__pmeta"><b id="uProgName">Leyendo archivo…</b><span id="uProgSub">Actualizando materiales</span></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ci-modal__f"><button class="ci-mbtn ghost" id="uCancel">Cancelar</button></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var fileInput = ov.querySelector('#uFile'), drop = ov.querySelector('#uDrop'), prog = ov.querySelector('#uProg');
+    var RC = 2 * Math.PI * 28;
+    function setProg(p) { var arc = ov.querySelector('#uProgArc'); if (arc) { arc.style.strokeDasharray = RC; arc.style.strokeDashoffset = RC * (1 - p); } var pct = ov.querySelector('#uProgPct'); if (pct) pct.textContent = Math.round(p * 100) + '%'; }
+    function close() { if (G() && !reduce()) { G().to(ov.querySelector('.ci-modal'), { opacity: 0, y: 10, scale: .97, duration: .16 }); G().to(ov, { opacity: 0, duration: .18, onComplete: function () { ov.remove(); } }); } else ov.remove(); }
+    ov.querySelector('.ci-modal__x').addEventListener('click', close);
+    ov.querySelector('#uCancel').addEventListener('click', close);
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) close(); });
+    function runUpdate(file) {
+      if (!file) return;
+      if (typeof XLSX === 'undefined') { flashOk('Falta la librería', 'No se pudo cargar el lector de Excel', false); return; }
+      drop.hidden = true; prog.hidden = false; setProg(0);
+      ov.querySelector('#uProgName').textContent = file.name;
+      var parsed = null, err = null;
+      readSapExcel(file).then(function (its) { parsed = its; }).catch(function (ex) { err = ex; });
+      function finish() {
+        var tries = 0;
+        (function waitParse() {
+          if (parsed == null && err == null && tries < 120) { tries++; return setTimeout(waitParse, 16); }
+          setProg(1);
+          if (err || !parsed || !parsed.length) { prog.hidden = true; drop.hidden = false; flashOk('No se pudo importar', err ? 'Archivo inválido o dañado' : 'No se encontraron materiales', false); return; }
+          x.items = (x.items || []).map(function (i) { return typeof i === 'string' ? { codigo: i, descripcion: '', um: 'UN' } : i; });
+          var res = mergeSapItems(x.items, parsed);
+          x.diffs = x.items.some(function (it) { return it.diff != null && it.diff !== 0; });
+          if (REMOTE) dbSaveConteo(x.id, x.items, x.estado, x.diffs);
+          close();
+          flashOk('SAP actualizado', res.upd + ' actualizado' + (res.upd === 1 ? '' : 's') + (res.add ? ' · ' + res.add + ' nuevo' + (res.add === 1 ? '' : 's') : ''));
+          paintKpis(); paintCalendar(false); paintList(true);
+        })();
+      }
+      if (G() && !reduce()) { var o = { v: 0 }; G().to(o, { v: 1, duration: 1.1, ease: 'power1.inOut', onUpdate: function () { setProg(o.v); }, onComplete: finish }); }
+      else { setProg(1); finish(); }
+    }
+    ov.querySelector('#uPick').addEventListener('click', function (e) { e.stopPropagation(); fileInput.click(); });
+    drop.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) runUpdate(fileInput.files[0]); });
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('drag'); }); });
+    ['dragleave', 'dragend'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('drag'); }); });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('drag'); var f = e.dataTransfer && e.dataTransfer.files[0]; if (f) runUpdate(f); });
+    if (G() && !reduce()) { G().fromTo(ov, { opacity: 0 }, { opacity: 1, duration: .18 }); G().fromTo(ov.querySelector('.ci-modal'), { opacity: 0, y: 20, scale: .96 }, { opacity: 1, y: 0, scale: 1, duration: .32, ease: 'power3.out' }); }
+  }
+
   // Flash de éxito centrado con check azul PRO (rápido y fluido).
   function flashOk(msg, sub, ok) {
     if (ok === undefined) ok = true;
