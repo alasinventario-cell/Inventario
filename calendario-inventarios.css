@@ -210,11 +210,13 @@
 .ci-row__meta{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
 .ci-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--ci-text-2);background:#eef2f6;border-radius:99px;padding:2px 7px;max-width:170px}
 .ci-pill svg{width:12px;height:12px;flex-shrink:0} .ci-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ci-badge-st{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 14px;border-radius:99px;font-size:12.5px;font-weight:800;border:1.5px solid;box-shadow:0 1px 4px rgba(15,36,64,.06)}
+.ci-badge-st{position:relative;flex-shrink:0;display:inline-flex;align-items:center;gap:7px;height:33px;padding:0 16px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.2px;border:1px solid;transition:transform .16s,box-shadow .2s}
 .ci-badge-st svg{width:15px;height:15px}
-.ci-badge-st.st-programado{background:#eef5fc;color:#0b5f8d;border-color:#cfe4f5}
-.ci-badge-st.st-en_proceso{background:#fdf6e6;color:#a9740c;border-color:#f3e2b5;animation:ciContPulse 1.6s ease-in-out infinite}
-@keyframes ciContPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.35)}50%{box-shadow:0 0 0 4px rgba(234,179,8,0)}}
+.ci-row:hover .ci-badge-st{transform:translateY(-1px)}
+.ci-badge-st.st-programado{background:linear-gradient(180deg,#f4f9ff,#e6f1fb);color:#0b5f8d;border-color:#bcd9f0;box-shadow:0 3px 10px rgba(11,95,141,.15),inset 0 1px 0 #fff}
+.ci-badge-st.st-en_proceso{background:linear-gradient(180deg,#fff8e8,#fceecc);color:#a9740c;border-color:#eed697;box-shadow:0 3px 10px rgba(169,116,12,.16),inset 0 1px 0 #fff}
+.ci-badge-st.st-en_proceso::after{content:'';position:absolute;inset:-1px;border-radius:99px;pointer-events:none;animation:ciContPulse 1.8s ease-in-out infinite}
+@keyframes ciContPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.42)}50%{box-shadow:0 0 0 5px rgba(234,179,8,0)}}
 /* Puntos animados "Contando…" */
 .ci-cnt-dots{display:inline-flex;align-items:center;gap:2.5px;margin-right:1px}
 .ci-cnt-dots i{width:4px;height:4px;border-radius:50%;background:currentColor;display:inline-block;animation:ciDot 1s ease-in-out infinite}
@@ -223,8 +225,8 @@
 /* Pulso del evento en el calendario cuando está Contando */
 .ci-ev.st-en_proceso .ci-ev__bar{animation:ciBarPulse 1.3s ease-in-out infinite}
 @keyframes ciBarPulse{0%,100%{opacity:1}50%{opacity:.35}}
-.ci-badge-st.st-realizado{background:#e9f7ef;color:#127a4b;border-color:#c5e9d4}
-.ci-badge-st.st-pendiente{background:#fdeded;color:#c0392b;border-color:#f6d2d0}
+.ci-badge-st.st-realizado{background:linear-gradient(180deg,#effaf3,#ddf2e6);color:#127a4b;border-color:#b4e1c6;box-shadow:0 3px 10px rgba(18,122,75,.16),inset 0 1px 0 #fff}
+.ci-badge-st.st-pendiente{background:linear-gradient(180deg,#fdf1f0,#fbdfdd);color:#c0392b;border-color:#f2c4c0;box-shadow:0 3px 10px rgba(192,57,43,.15),inset 0 1px 0 #fff}
 
 .ci-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:40px 20px;color:var(--ci-muted)}
 .ci-empty__ic{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;color:var(--ci-primary);
