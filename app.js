@@ -841,45 +841,125 @@
       '<div class="view dash">'+
         '<header class="dash-hero"><h1 class="dash-title">Usos Internos</h1>'+
           '<div class="dash-hero__ctl">'+monthNavHTML()+'<button class="dash-cta dash-cta--ghost" id="d_resumen">'+ICONS.chart+' Ver resumen</button></div></header>'+
-        '<div class="dash-kpis">'+
-          kpiCard('kpi--pend', ICONS.clock, 'Pendientes',       'k_pend',  'En proceso',      'pendientes')+
-          kpiCard('kpi--baja', ICONS.sap,   'Para dar de baja', 'k_baja',  'Cargados a SAP',  'porbaja')+
-          kpiCard('kpi--term', ICONS.check, 'Terminados',       'k_term',  'Dados de baja',   'terminados')+
-          kpiCard('kpi--muted',ICONS.file,  'Total documentos', 'k_total', 'Histórico',       '')+
-        '</div>'+
         '<section class="dash-section"><div class="dash-section__head"><span>Sectores</span><span class="hr"></span></div>'+
-          '<div class="sector-list" id="d_sectores"></div></section>'+
-        '<section class="dash-section" style="margin-top:8px"><div class="dash-section__head"><span>Resumen y gráficos</span><span class="hr"></span></div>'+
+          '<div class="sector-list sector-list--row" id="d_sectores"></div>'+
+          '<div class="sec-exp" id="d_sectorExp" hidden></div></section>'+
+        '<section class="dash-section" id="d_resumenSec" style="margin-top:18px" hidden><div class="dash-section__head"><span>Resumen y gráficos</span><span class="hr"></span></div>'+
           '<div id="d_resumenBody"></div></section>'+
       '</div>';
 
-    q('#d_resumen').addEventListener('click',function(){ var t=q('#d_resumenBody'); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); });
+    var resumenShown=false;
+    q('#d_resumen').addEventListener('click',function(){
+      var sec=q('#d_resumenSec'), btn=q('#d_resumen'); if(!sec) return;
+      resumenShown=!resumenShown;
+      sec.hidden=!resumenShown;
+      btn.classList.toggle('is-on', resumenShown);
+      if(resumenShown){
+        var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); }
+        if(window.gsap){ window.gsap.from(sec,{opacity:0,y:12,duration:.4,ease:'power2.out',clearProps:'all'}); }
+        setTimeout(function(){ sec.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
+        btn.innerHTML=ICONS.chart+' Ocultar resumen';
+      } else {
+        btn.innerHTML=ICONS.chart+' Ver resumen';
+      }
+    });
     root.querySelectorAll('.kpi[data-go]').forEach(function(b){ b.addEventListener('click',function(){ go(b.getAttribute('data-go')); }); });
 
     var host=q('#d_sectores');
     host.innerHTML=SECTOR_CARDS.map(function(s){
-      return '<button class="sector-card" data-sec="'+esc(s.key)+'">'+
-        '<span class="sector-card__ic">'+ICONS[s.icon]+'</span>'+
-        '<span class="sector-card__body"><span class="sector-card__name">'+esc(s.label)+'</span>'+
-        '<span class="sector-card__desc">'+esc(SECTOR_DESC[s.key]||'')+'</span></span>'+
-        '<span class="sector-card__count-wrap"><span class="sector-card__count" data-c="'+esc(s.key)+'">·</span>'+
-        '<span class="sector-card__count-lbl">materiales en curso</span></span>'+
-        '<span class="sector-card__arrow">'+ARROW+'</span></button>';
+      return '<button class="sector-card sc-v" data-sec="'+esc(s.key)+'">'+
+        '<span class="sc-top"><span class="sector-card__ic">'+ICONS[s.icon]+'</span>'+
+          '<span class="sc-count-box"><span class="sector-card__count" data-c="'+esc(s.key)+'">·</span></span></span>'+
+        '<span class="sc-name">'+esc(s.label)+'</span>'+
+        '<span class="sc-desc">'+esc(SECTOR_DESC[s.key]||'')+'</span>'+
+        '<span class="sc-prog"><span class="sc-prog__fill" data-p="'+esc(s.key)+'"></span></span>'+
+        '<span class="sc-foot"><span class="sc-lbl">materiales en curso</span><span class="sector-card__arrow">'+ARROW+'</span></span>'+
+      '</button>';
     }).join('');
-    host.querySelectorAll('.sector-card').forEach(function(b){ b.addEventListener('click',function(){ go('sector',b.getAttribute('data-sec')); }); });
+    // ── Acordeón inline por sector: tabla de materiales + filtros de estado ──
+    var secOpen=null, secFilter='all';
+    function sectorRows(key){
+      var rows=[];
+      (state._menuUsos||[]).filter(inMonth).forEach(function(u){
+        if(u.sector!==key||u.estado==='anulado') return;
+        (u.items||[]).forEach(function(it){ rows.push({u:u,it:it}); });
+      });
+      return rows;
+    }
+    function panelHTML(key){
+      var s=SECTOR_CARDS.find(function(x){return x.key===key;})||{};
+      var rows=sectorRows(key);
+      var c={pendiente:0,cargado:0,baja:0}; rows.forEach(function(r){ if(c[r.it.sap_estado]!=null)c[r.it.sap_estado]++; });
+      var chips=[{k:'all',l:'Todos',n:rows.length},{k:'pendiente',l:'Pendientes',n:c.pendiente},{k:'cargado',l:'Para dar de baja',n:c.cargado},{k:'baja',l:'Terminados',n:c.baja}];
+      var filtered=secFilter==='all'?rows:rows.filter(function(r){return r.it.sap_estado===secFilter;});
+      var body=filtered.length?filtered.map(function(r,i){var it=r.it;
+        return '<tr data-i="'+i+'"><td class="c">'+(i+1)+'</td>'+
+          '<td class="secx-cod">'+esc(it.cod_mercaderia||'—')+'</td>'+
+          '<td class="secx-desc" title="'+esc(it.descripcion||'')+'">'+esc(it.descripcion||'')+'</td>'+
+          '<td class="c">'+esc(it.cantidad!=null?it.cantidad:'')+'</td>'+
+          '<td class="secx-mut">'+esc(it.um||'')+'</td>'+
+          '<td class="secx-uso" title="'+esc(it.uso_texto||'')+'">'+esc(it.uso_texto||'—')+'</td>'+
+          '<td>'+sapBadge(it.sap_estado)+'</td></tr>';
+      }).join(''):'<tr><td colspan="7" class="secx-empty">Sin materiales'+(secFilter==='all'?'':' en este estado')+' en este sector este mes.</td></tr>';
+      return '<div class="secx" data-key="'+esc(key)+'">'+
+        '<div class="secx-head"><span class="secx-ic">'+ICONS[s.icon]+'</span>'+
+          '<div class="secx-ttl"><b>'+esc(s.label||key)+'</b><span>'+esc(SECTOR_DESC[key]||'')+' · '+rows.length+' material'+(rows.length===1?'':'es')+'</span></div>'+
+          '<button class="secx-all" data-secall="'+esc(key)+'">Ver todo '+ARROW+'</button>'+
+          '<button class="secx-x" data-secclose aria-label="Cerrar">'+(ICONS.x||ICONS.close||'✕')+'</button></div>'+
+        '<div class="secx-filters">'+chips.map(function(ch){return '<button class="secx-chip'+(secFilter===ch.k?' on e-'+ch.k:'')+'" data-secf="'+ch.k+'">'+ch.l+'<span class="secx-chip__n">'+ch.n+'</span></button>';}).join('')+'</div>'+
+        '<div class="secx-tblwrap"><table class="secx-tbl"><thead><tr><th>#</th><th>Código</th><th>Descripción</th><th>Cant.</th><th>UM</th><th>Uso</th><th>Estado</th></tr></thead><tbody id="secxBody">'+body+'</tbody></table></div>'+
+      '</div>';
+    }
+    function wireSecPanel(key){
+      var exp=q('#d_sectorExp'); if(!exp) return;
+      var xb=exp.querySelector('[data-secclose]'); if(xb) xb.addEventListener('click',function(){ closeSectorPanel(); });
+      var allb=exp.querySelector('[data-secall]'); if(allb) allb.addEventListener('click',function(){ go('sector',key); });
+      exp.querySelectorAll('[data-secf]').forEach(function(b){ b.addEventListener('click',function(){
+        secFilter=b.getAttribute('data-secf'); exp.innerHTML=panelHTML(key); wireSecPanel(key);
+        var nb=exp.querySelector('#secxBody'); if(window.gsap&&nb) window.gsap.from(nb.querySelectorAll('tr'),{opacity:0,y:6,duration:.26,stagger:.015,ease:'power2.out',clearProps:'all'});
+      }); });
+    }
+    function closeSectorPanel(cb){
+      var exp=q('#d_sectorExp');
+      host.querySelectorAll('.sector-card.active').forEach(function(c){c.classList.remove('active');});
+      if(!exp||exp.hidden){ secOpen=null; if(cb)cb(); return; }
+      if(window.gsap){ window.gsap.to(exp,{height:0,opacity:0,duration:.3,ease:'power2.inOut',onComplete:function(){exp.hidden=true;exp.style.height='';exp.style.opacity='';exp.innerHTML='';secOpen=null;if(cb)cb();}}); }
+      else { exp.hidden=true; exp.innerHTML=''; secOpen=null; if(cb)cb(); }
+    }
+    function openSectorPanel(key){
+      var exp=q('#d_sectorExp'); if(!exp) return;
+      secFilter='all'; exp.innerHTML=panelHTML(key); exp.hidden=false; secOpen=key;
+      host.querySelectorAll('.sector-card').forEach(function(c){c.classList.toggle('active',c.getAttribute('data-sec')===key);});
+      wireSecPanel(key);
+      if(window.gsap){ window.gsap.set(exp,{height:'auto',opacity:1}); var h=exp.offsetHeight;
+        window.gsap.fromTo(exp,{height:0,opacity:0},{height:h,opacity:1,duration:.42,ease:'expo.out',onComplete:function(){exp.style.height='auto';}});
+        window.gsap.from(exp.querySelectorAll('.secx-tbl tbody tr'),{opacity:0,y:8,duration:.3,stagger:.02,ease:'power2.out',delay:.1,clearProps:'all'});
+      }
+      setTimeout(function(){ exp.scrollIntoView({behavior:'smooth',block:'nearest'}); },60);
+    }
+    host.querySelectorAll('.sector-card').forEach(function(b){ b.addEventListener('click',function(){
+      var key=b.getAttribute('data-sec');
+      if(secOpen===key){ closeSectorPanel(); return; }
+      if(secOpen){ closeSectorPanel(function(){ openSectorPanel(key); }); } else { openSectorPanel(key); }
+    }); });
 
     animateMenu(root);
 
     function fillMenu(){
       var usos=(state._menuUsos||[]).filter(inMonth);
-      var term=usos.filter(function(u){return u.estado==='terminado';}).length;
-      var pend=0, baja=0; usos.forEach(function(u){ if(u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente') pend++; else if(it.sap_estado==='cargado') baja++; }); });
-      countUp(q('#k_pend'),pend); countUp(q('#k_term'),term); countUp(q('#k_total'),usos.length); countUp(q('#k_baja'),baja);
+      // Conteo por sector + barra de progreso (relativa al sector con más materiales en curso).
+      var counts={}, max=0;
       SECTOR_CARDS.forEach(function(s){
         var enCurso=0; usos.forEach(function(u){ if(u.sector!==s.key||u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente'||it.sap_estado==='cargado') enCurso++; }); });
-        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), enCurso);
+        counts[s.key]=enCurso; if(enCurso>max) max=enCurso;
       });
-      var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); }
+      SECTOR_CARDS.forEach(function(s){
+        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), counts[s.key]);
+        var bar=host.querySelector('.sc-prog__fill[data-p="'+s.key+'"]');
+        if(bar){ var pct=max>0?Math.max(6,Math.round(counts[s.key]/max*100)):0; if(window.gsap){ window.gsap.to(bar,{width:pct+'%',duration:.7,ease:'power2.out'}); } else { bar.style.width=pct+'%'; } }
+      });
+      var sec=q('#d_resumenSec');
+      if(sec && !sec.hidden){ var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); } }
     }
     wireMonthNav(root, fillMenu);
     API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); });
