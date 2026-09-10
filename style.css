@@ -695,10 +695,10 @@ tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-b
 .date-selall:hover { border-color:var(--alas-brand); background:#eef6fb; }
 .date-selall:active { transform:scale(.9); }
 .date-selall.is-on { background:var(--alas-brand); border-color:var(--alas-brand); color:#fff; }
-.row-date__sec { display:inline-flex; align-items:center; margin-right:12px; padding:4px 12px; border-radius:9px; background:var(--alas-brand);
-  color:#fff; font-size:13px; font-weight:800; letter-spacing:.01em; box-shadow:0 3px 8px rgba(11,95,141,.18); }
+.row-date__sec { display:inline-flex; align-items:center; margin-right:12px; padding:5px 13px; border-radius:99px; background:linear-gradient(135deg,#1478b8,var(--alas-brand));
+  color:#fff; font-size:11.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; box-shadow:0 4px 10px rgba(11,95,141,.24); }
 .inv-table tbody tr.is-collapsed { display:none; }
-.date-report-btn { display:inline-flex; align-items:center; gap:7px; height:37px; padding:0 16px; margin-left:16px; border:1px solid #cfe0ee; border-radius:10px;
+.date-report-btn { display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 15px; margin-left:auto; border:1px solid #cfe0ee; border-radius:10px;
   background:#fff; color:var(--alas-brand); font-size:13px; font-weight:700; transition:.16s var(--alas-ease); }
 .date-report-btn svg { width:16px; height:16px; }
 .date-report-btn:hover { background:#eef6fb; border-color:#8db6e8; }
@@ -718,8 +718,27 @@ tr.row-date.is-open .row-date__chev { transform:rotate(0deg); color:var(--alas-b
   background:#dcfce7; color:#15803d; font-size:13px; font-weight:800; }
 .date-baja-done svg { width:16px; height:16px; }
 /* Grupo desglosado (abierto): resaltado celeste + barra de acento a la izquierda */
-tr.row-date.is-open td { background:#e6f1fc; box-shadow:inset 3px 0 0 var(--alas-brand); }
-tr.row-date.is-open:hover td { background:#daeafb; }
+tr.row-date.is-open td { background:linear-gradient(90deg,#e9f2fc,#f3f8fd); box-shadow:inset 3px 0 0 var(--alas-brand); }
+tr.row-date.is-open:hover td { background:#e0edfa; }
+
+/* ── Pulido PRO de la tabla (orden + estética) ── */
+.row-date td { font-size:13.5px; background:#f7fafd; border-bottom:1px solid #eaeff5; }
+.row-date__inner { gap:0; }
+.row-date .date-count { min-width:26px; height:22px; background:#e4eef8; color:var(--alas-brand); font-weight:800; }
+.date-baja-btn, .date-ceco-btn, .date-baja-done, .date-ceco-done { height:36px; }
+.date-report-btn, .date-baja-btn, .date-ceco-btn { box-shadow:0 1px 3px rgba(15,23,42,.05); transition:background .16s, border-color .16s, transform .12s, box-shadow .16s; }
+.date-report-btn:hover, .date-baja-btn:hover, .date-ceco-btn:hover { transform:translateY(-1px); box-shadow:0 6px 14px rgba(11,95,141,.14); }
+/* Filas de ítems: más aire y separación suave */
+.inv-table tbody tr:not(.row-date) td { padding-top:11px; padding-bottom:11px; }
+.inv-table tbody tr:not(.row-date):hover { background:#f5faff; }
+.cod-txt { font-family:'JetBrains Mono',ui-monospace,'Sora',monospace; font-size:11.5px; font-weight:800; letter-spacing:.02em; color:var(--alas-brand); background:#eef5fc; border:1px solid #d9e8f6; border-radius:7px; padding:3px 8px; }
+.cell-desc .cell-wrap { font-weight:700; }
+.badge { padding:5px 11px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+.ceco-chip { height:27px; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+.ent-chip { padding:3px 9px; }
+/* Cargar a SAP más protagonista (acción principal) */
+.action-btn--pill.a-sap { background:linear-gradient(135deg,#3b82f6,#2563eb); color:#fff; border-color:transparent; box-shadow:0 6px 16px rgba(37,99,235,.28); }
+.action-btn--pill.a-sap:hover { filter:brightness(1.05); box-shadow:0 9px 22px rgba(37,99,235,.38); }
 
 /* Selección múltiple para baja */
 .th-check, .cell-check { width:38px; text-align:center; }
