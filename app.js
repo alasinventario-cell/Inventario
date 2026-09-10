@@ -37,8 +37,8 @@
     root.querySelectorAll('[data-mn]').forEach(function(b){ b.addEventListener('click',function(){
       var a=b.getAttribute('data-mn');
       if(a==='all') state.menuMonth=''; else state.menuMonth=shiftMonth(state.menuMonth || (new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')), a==='prev'?-1:1);
-      var lab=root.querySelector('.mn-label'); if(lab) lab.textContent=monthLabel(state.menuMonth);
-      var all=root.querySelector('.mn-all'); if(all) all.classList.toggle('on',!state.menuMonth);
+      var lab=root.querySelector('.mn-label'); if(lab){ lab.textContent=monthLabel(state.menuMonth); if(window.gsap){ window.gsap.fromTo(lab,{opacity:0,x:(a==='prev'?-10:(a==='next'?10:0))},{opacity:1,x:0,duration:.3,ease:'power2.out',clearProps:'all'}); } }
+      var all=root.querySelector('.mn-all'); if(all){ all.classList.toggle('on',!state.menuMonth); if(a==='all' && window.gsap) window.gsap.fromTo(all,{scale:.85},{scale:1,duration:.35,ease:'back.out(3)',clearProps:'transform'}); }
       onChange();
     }); });
   }
@@ -890,7 +890,7 @@
       // Fechas (según el estado elegido) → cuadrícula horizontal para filtrar por día.
       var baseRows=flt==='all'?rows:rows.filter(function(r){return r.it.sap_estado===flt;});
       var dmap={}; baseRows.forEach(function(r){ var d=String(r.uso.fecha_emision).slice(0,10); if(d.length===10) dmap[d]=(dmap[d]||0)+1; });
-      var dkeys=Object.keys(dmap).sort().reverse();
+      var dkeys=Object.keys(dmap).sort();
       var dateChips = dkeys.length ? ('<div class="secx-dates"><button class="secx-date secx-date--all'+(!sd?' on':'')+'" data-secd="" title="Todas las fechas"><span class="secx-date__all">'+ICONS.calendar+'</span><span class="secx-date__alll">Todas</span></button>'+
         dkeys.map(function(d){ var dt=new Date(d+'T00:00:00'); return '<button class="secx-date'+(sd===d?' on':'')+'" data-secd="'+d+'"><span class="secx-date__d">'+dt.getDate()+'</span><span class="secx-date__m">'+(MESES[dt.getMonth()]||'').slice(0,3).toUpperCase()+'</span><span class="secx-date__n">'+dmap[d]+'</span></button>'; }).join('')+'</div>') : '';
       var shownN = sd ? (dmap[sd]||0) : baseRows.length;
@@ -911,7 +911,7 @@
         return true;
       });
       state._rows=frows;
-      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
+      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), flat:!!sd, emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
       state._reRender=function(){ paintSecTable(key); };
     }
     function wireSecPanel(key){
@@ -1034,7 +1034,7 @@
     if(state._tableSig!==sig || !state._openDates){ state._tableSig=sig; state._openDates={}; var _today=ymd(new Date()), _op=false; order.forEach(function(k){ if(String(k).slice(0,10)===_today){ state._openDates[k]=true; _op=true; } }); if(!_op && order[0]) state._openDates[order[0]]=true; }
     // Recién creado: abrir el grupo que contiene el uso resaltado para que se vea.
     if(state._highlightUso){ order.forEach(function(k){ if(groups[k].some(function(r){ return r.uso.id===state._highlightUso; })) state._openDates[k]=true; }); }
-    var openAll=!!s; // al buscar, mostrar todos los grupos
+    var openAll=!!s || !!opts.flat; // al buscar (o modo plano) mostrar todos los grupos
     function isOpen(f){ return openAll || !!state._openDates[f]; }
     var colspan=11, animate=!state.search, ri=0, sel={};
     var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1059,7 +1059,7 @@
       // Seleccionar todo el grupo (solo si tiene lineas seleccionables: pendiente/cargado)
       var hasSel=groups[f].some(function(r){return r.it.sap_estado==='pendiente'||r.it.sap_estado==='cargado';});
       var selAll=hasSel?'<button class="date-selall" data-selall="'+esc(f)+'" title="Seleccionar todas las líneas del grupo" aria-label="Seleccionar todo el grupo">'+ICONS.check+'</button>':'';
-      body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+selAll+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+bajaBtn+'</div></td></tr>';
+      if(!opts.flat) body+='<tr class="row-date'+(open?' is-open':'')+'" data-toggle="'+esc(f)+'"><td colspan="'+colspan+'"><div class="row-date__inner"><span class="row-date__chev">'+ICONS.chevron+'</span>'+selAll+(fSec?'<span class="row-date__sec">'+esc(sectorShort(fSec))+'</span>':'')+'<span class="cal-ic">'+ICONS.calendar+'</span>'+esc(fmtFecha(fFecha))+'<span class="date-count">'+groups[f].length+'</span><button class="date-report-btn" data-date="'+esc(f)+'">'+ICONS.file+' Ver reporte</button>'+cecoBtn+bajaBtn+'</div></td></tr>';
       groups[f].forEach(function(r){
         var it=r.it, u=r.uso, hl=(state._highlightUso&&u.id===state._highlightUso);
         var rcls=(open?'':'is-collapsed')+((cssAnim&&open)?' mo-row':'');
@@ -1414,8 +1414,8 @@
     if(it.sap_estado==='baja') return '<span class="row-ro">—</span>';
     var h='';
     // Siguiente paso destacado con texto; acciones secundarias como íconos.
-    if(it.sap_estado==='pendiente') h+=actBtnLabeled('a-sap','Cargar a SAP',ICONS.sap,'cargar',u.id,it.id);
-    if(it.sap_estado==='cargado')   h+=actBtnLabeled('a-baja','Dar de baja',ICONS.docBaja,'baja',u.id,it.id);
+    if(it.sap_estado==='pendiente') h+=actBtn('a-sap','Cargar a SAP',ICONS.sap,'cargar',u.id,it.id);
+    if(it.sap_estado==='cargado')   h+=actBtn('a-baja','Dar de baja',ICONS.docBaja,'baja',u.id,it.id);
     h+=actBtn('a-edit','Editar',ICONS.edit,'editar',u.id,it.id);
     h+=actBtn('a-del','Eliminar',ICONS.trash,'eliminar',u.id,it.id);
     return h;

@@ -170,14 +170,15 @@ h1,h2,h3,.display { font-family:'Sora', system-ui, sans-serif; letter-spacing:-.
 .dash-hero__ctl { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
 
 /* Navegador de mes */
-.month-nav { display:inline-flex; align-items:center; gap:3px; padding:4px; border:1px solid var(--alas-border); border-radius:12px; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,.04); }
-.mn-btn { width:30px; height:30px; border:0; border-radius:8px; background:transparent; color:var(--alas-text-2); display:inline-flex; align-items:center; justify-content:center; transition:background .16s var(--alas-ease), color .16s var(--alas-ease); }
+.month-nav { display:inline-flex; align-items:center; gap:3px; padding:4px; border:1px solid var(--alas-border); border-radius:13px; background:#fff; box-shadow:0 2px 8px rgba(15,23,42,.06); }
+.mn-btn { width:34px; height:34px; border:0; border-radius:9px; background:transparent; color:var(--alas-text-2); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:background .16s var(--alas-ease), color .16s var(--alas-ease), transform .12s; }
 .mn-btn svg { width:16px; height:16px; }
-.mn-btn:hover { background:var(--gray-100); color:var(--alas-brand); }
-.mn-label { min-width:128px; text-align:center; font-size:13px; font-weight:700; color:var(--alas-text-1); }
-.mn-all { height:30px; padding:0 13px; border:0; border-radius:8px; background:var(--gray-100); color:var(--alas-text-2); font-size:12px; font-weight:700; transition:background .16s var(--alas-ease), color .16s var(--alas-ease); }
-.mn-all:hover { background:var(--gray-200); }
-.mn-all.on { background:var(--alas-brand); color:#fff; }
+.mn-btn:hover { background:var(--gray-100); color:var(--alas-brand); transform:translateY(-1px); }
+.mn-btn:active { transform:scale(.9); }
+.mn-label { min-width:140px; text-align:center; font-family:'Sora',sans-serif; font-size:14px; font-weight:800; letter-spacing:-.01em; color:var(--alas-text-1); }
+.mn-all { height:34px; padding:0 14px; margin-left:3px; border:0; border-radius:9px; background:var(--gray-100); color:var(--alas-text-2); font-size:12.5px; font-weight:800; cursor:pointer; transition:background .16s var(--alas-ease), color .16s var(--alas-ease); }
+.mn-all:hover:not(.on) { background:#e6edf3; color:var(--alas-text-1); }
+.mn-all.on { background:linear-gradient(135deg,#1478b8,var(--alas-brand)); color:#fff; box-shadow:0 5px 14px rgba(11,95,141,.28); }
 .dash-eyebrow { font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--alas-text-3); margin-bottom:12px; }
 .dash-title { font-size:30px; font-weight:800; color:var(--alas-text-1); letter-spacing:-.025em; line-height:1.1; }
 .dash-sub { font-size:14px; color:var(--alas-text-2); margin-top:8px; max-width:520px; }
