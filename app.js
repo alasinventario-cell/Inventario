@@ -912,7 +912,8 @@
         return true;
       });
       state._rows=frows;
-      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), flat:!!sd, openAll:!sd, emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
+      // Panel siempre plano (sin agrupar/ocultar por fecha); en "Todas" se agrega la columna Fecha.
+      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), flat:true, dateCol:!sd, emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
       state._reRender=function(){ paintSecTable(key); };
     }
     function wireSecPanel(key){
@@ -1037,7 +1038,7 @@
     if(state._highlightUso){ order.forEach(function(k){ if(groups[k].some(function(r){ return r.uso.id===state._highlightUso; })) state._openDates[k]=true; }); }
     var openAll=!!s || !!opts.flat; // al buscar (o modo plano) mostrar todos los grupos
     function isOpen(f){ return openAll || !!state._openDates[f]; }
-    var colspan=11, animate=!state.search, ri=0, sel={};
+    var colspan=11+(opts.dateCol?1:0), animate=!state.search, ri=0, sel={};
     var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var useGsap=animate && !!window.gsap && !reduce;
     var cssAnim=animate && !useGsap;
@@ -1068,6 +1069,7 @@
         var chk = (it.sap_estado==='pendiente'||it.sap_estado==='cargado') ? '<input type="checkbox" class="baja-check" data-baja-item="'+it.id+'" data-baja-uso="'+u.id+'" data-estado="'+it.sap_estado+'" aria-label="Seleccionar">' : '';
         body+='<tr class="'+rcls+'"'+rst+(hl?' data-hl="1"':'')+' data-group="'+esc(f)+'" data-d="'+esc(f)+'" data-row-item="'+it.id+'">'+
           '<td class="cell-check">'+chk+'</td>'+
+          (opts.dateCol?'<td class="cell-fecha"><span class="fecha-chip">'+ICONS.calendar+esc(fmtFecha(String(u.fecha_emision).slice(0,10)))+'</span></td>':'')+
           '<td class="cell-cod"><div class="cod-cell"><span class="cod-txt">'+esc(it.cod_mercaderia)+'</span>'+
             '<button class="copy-btn" data-copy="'+esc(it.cod_mercaderia)+'" aria-label="Copiar código" title="Copiar código">'+
               '<svg class="copy-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="11" height="11" rx="2.2" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
@@ -1095,7 +1097,7 @@
       '<div class="bulk-bar" id="bulkBar" hidden><div class="bulk-bar__info"><span class="bulk-count">0</span> línea(s) seleccionada(s)</div>'+
         '<div class="bulk-bar__actions"><button class="btn btn--ghost" id="bulkClear">Deseleccionar</button><button class="btn btn--secondary" id="bulkReport">'+ICONS.file+' Ver reporte</button><button class="btn btn--primary" id="bulkCeco" hidden>'+ICONS.tag+' Asignar CECO</button><button class="btn btn--sap" id="bulkSap" hidden>'+ICONS.sap+' Cargar SAP</button><button class="btn btn--success" id="bulkBaja" hidden>'+ICONS.docBaja+' Dar de baja</button></div></div>'+
       '<div class="table-wrap"><table class="inv-table"><thead><tr>'+
-      '<th class="th-check"></th><th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
+      '<th class="th-check"></th>'+(opts.dateCol?'<th>Fecha</th>':'')+'<th>Código</th><th>Descripción</th><th>Cant</th><th>UM</th><th>Uso</th>'+
       '<th>CECO</th><th>N.Reserva</th><th>SAP</th><th class="th-ent">Entregado</th><th></th>'+
       '</tr></thead><tbody>'+body+'</tbody></table></div>';
     host.querySelectorAll('[data-act]').forEach(function(btn){
