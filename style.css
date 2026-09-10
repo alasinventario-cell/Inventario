@@ -445,6 +445,8 @@ button.kpi:hover .kpi__go { opacity:1; transform:translateX(0); }
 .secx-chip.on.e-pendiente { background:#f59e0b; }
 .secx-chip.on.e-cargado { background:#2563eb; }
 .secx-chip.on.e-baja { background:#16a34a; }
+.secx-listhost { padding:4px 12px 12px; }
+.secx-listhost .table-wrap { border:0; border-radius:0; box-shadow:none; }
 .secx-tblwrap { max-height:60vh; overflow:auto; }
 .secx-tbl { width:100%; border-collapse:collapse; font-size:13px; }
 .secx-tbl thead th { position:sticky; top:0; z-index:2; background:#eef4fb; text-align:left; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--alas-text-3); padding:10px 14px; border-bottom:1px solid #e2ebf3; white-space:nowrap; }

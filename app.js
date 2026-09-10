@@ -868,13 +868,13 @@
         '<span class="sc-foot"><span class="sc-lbl">materiales en curso</span><span class="sector-card__arrow">'+ARROW+'</span></span>'+
       '</button>';
     }).join('');
-    // ── Acordeón inline por sector: tabla de materiales + filtros de estado ──
-    var secOpen=null, secFilter='all', _secAuto=false;
+    // ── Acordeón inline por sector: MISMA tabla y funciones que "Ver todo" ──
+    var _secAuto=false;
     function sectorRows(key){
       var rows=[];
       (state._menuUsos||[]).filter(inMonth).forEach(function(u){
         if(u.sector!==key||u.estado==='anulado') return;
-        (u.items||[]).forEach(function(it){ rows.push({u:u,it:it}); });
+        (u.items||[]).forEach(function(it){ rows.push({uso:u,it:it}); });
       });
       return rows;
     }
@@ -882,57 +882,57 @@
       var s=SECTOR_CARDS.find(function(x){return x.key===key;})||{};
       var rows=sectorRows(key);
       var c={pendiente:0,cargado:0,baja:0}; rows.forEach(function(r){ if(c[r.it.sap_estado]!=null)c[r.it.sap_estado]++; });
+      var flt=state._secFilter||'all';
       var chips=[{k:'all',l:'Todos',n:rows.length},{k:'pendiente',l:'Pendientes',n:c.pendiente},{k:'cargado',l:'Para dar de baja',n:c.cargado},{k:'baja',l:'Terminados',n:c.baja}];
-      var filtered=secFilter==='all'?rows:rows.filter(function(r){return r.it.sap_estado===secFilter;});
-      var body=filtered.length?filtered.map(function(r,i){var it=r.it;
-        return '<tr data-i="'+i+'"><td class="c">'+(i+1)+'</td>'+
-          '<td class="secx-cod">'+esc(it.cod_mercaderia||'—')+'</td>'+
-          '<td class="secx-desc" title="'+esc(it.descripcion||'')+'">'+esc(it.descripcion||'')+'</td>'+
-          '<td class="c">'+esc(it.cantidad!=null?it.cantidad:'')+'</td>'+
-          '<td class="secx-mut">'+esc(it.um||'')+'</td>'+
-          '<td class="secx-uso" title="'+esc(it.uso_texto||'')+'">'+esc(it.uso_texto||'—')+'</td>'+
-          '<td>'+sapBadge(it.sap_estado)+'</td></tr>';
-      }).join(''):'<tr><td colspan="7" class="secx-empty">Sin materiales'+(secFilter==='all'?'':' en este estado')+' en este sector este mes.</td></tr>';
       return '<div class="secx" data-key="'+esc(key)+'">'+
         '<div class="secx-head"><span class="secx-ic">'+ICONS[s.icon]+'</span>'+
           '<div class="secx-ttl"><b>'+esc(s.label||key)+'</b><span>'+esc(SECTOR_DESC[key]||'')+' · '+rows.length+' material'+(rows.length===1?'':'es')+'</span></div>'+
-          '<button class="secx-all" data-secall="'+esc(key)+'">Ver todo '+ARROW+'</button>'+
           '<button class="secx-x" data-secclose aria-label="Cerrar">'+(ICONS.x||ICONS.close||'✕')+'</button></div>'+
-        '<div class="secx-filters">'+chips.map(function(ch){return '<button class="secx-chip'+(secFilter===ch.k?' on e-'+ch.k:'')+'" data-secf="'+ch.k+'">'+ch.l+'<span class="secx-chip__n">'+ch.n+'</span></button>';}).join('')+'</div>'+
-        '<div class="secx-tblwrap"><table class="secx-tbl"><thead><tr><th>#</th><th>Código</th><th>Descripción</th><th>Cant.</th><th>UM</th><th>Uso</th><th>Estado</th></tr></thead><tbody id="secxBody">'+body+'</tbody></table></div>'+
+        '<div class="secx-filters">'+chips.map(function(ch){return '<button class="secx-chip'+(flt===ch.k?' on e-'+ch.k:'')+'" data-secf="'+ch.k+'">'+ch.l+'<span class="secx-chip__n">'+ch.n+'</span></button>';}).join('')+'</div>'+
+        '<div class="secx-listhost" id="secxListHost"></div>'+
       '</div>';
+    }
+    // Rellena la tabla funcional (paintTable) dentro del acordeón, respetando el filtro de estado.
+    function paintSecTable(key){
+      var hostEl=q('#secxListHost'); if(!hostEl) return;
+      var rows=sectorRows(key), flt=state._secFilter||'all';
+      var frows=flt==='all'?rows:rows.filter(function(r){return r.it.sap_estado===flt;});
+      state._rows=frows;
+      paintTable(hostEl, frows, { emptyText:'Sin materiales en este sector'+(flt==='all'?'':' en este estado')+' este mes', sig:'sec-'+key+'-'+flt });
+      state._reRender=function(){ paintSecTable(key); };
     }
     function wireSecPanel(key){
       var exp=q('#d_sectorExp'); if(!exp) return;
       var xb=exp.querySelector('[data-secclose]'); if(xb) xb.addEventListener('click',function(){ closeSectorPanel(); });
-      var allb=exp.querySelector('[data-secall]'); if(allb) allb.addEventListener('click',function(){ go('sector',key); });
       exp.querySelectorAll('[data-secf]').forEach(function(b){ b.addEventListener('click',function(){
-        secFilter=b.getAttribute('data-secf'); exp.innerHTML=panelHTML(key); wireSecPanel(key);
-        var nb=exp.querySelector('#secxBody'); if(window.gsap&&nb) window.gsap.from(nb.querySelectorAll('tr'),{opacity:0,y:6,duration:.26,stagger:.015,ease:'power2.out',clearProps:'all'});
+        state._secFilter=b.getAttribute('data-secf');
+        exp.querySelectorAll('[data-secf]').forEach(function(x){ x.className='secx-chip'+(x===b?' on e-'+state._secFilter:''); });
+        paintSecTable(key);
       }); });
     }
     function closeSectorPanel(cb){
       var exp=q('#d_sectorExp');
       host.querySelectorAll('.sector-card.active').forEach(function(c){c.classList.remove('active');});
-      if(!exp||exp.hidden){ secOpen=null; if(cb)cb(); return; }
-      if(window.gsap){ window.gsap.to(exp,{height:0,opacity:0,duration:.3,ease:'power2.inOut',onComplete:function(){exp.hidden=true;exp.style.height='';exp.style.opacity='';exp.innerHTML='';secOpen=null;if(cb)cb();}}); }
-      else { exp.hidden=true; exp.innerHTML=''; secOpen=null; if(cb)cb(); }
+      state._secOpenKey=null;
+      if(!exp||exp.hidden){ if(cb)cb(); return; }
+      if(window.gsap){ window.gsap.to(exp,{height:0,opacity:0,duration:.3,ease:'power2.inOut',onComplete:function(){exp.hidden=true;exp.style.height='';exp.style.opacity='';exp.innerHTML='';if(cb)cb();}}); }
+      else { exp.hidden=true; exp.innerHTML=''; if(cb)cb(); }
     }
     function openSectorPanel(key){
       var exp=q('#d_sectorExp'); if(!exp) return;
-      secFilter='all'; exp.innerHTML=panelHTML(key); exp.hidden=false; secOpen=key;
+      exp.innerHTML=panelHTML(key); exp.hidden=false; state._secOpenKey=key;
       host.querySelectorAll('.sector-card').forEach(function(c){c.classList.toggle('active',c.getAttribute('data-sec')===key);});
-      wireSecPanel(key);
+      wireSecPanel(key); paintSecTable(key);
       if(window.gsap){ window.gsap.set(exp,{height:'auto',opacity:1}); var h=exp.offsetHeight;
         window.gsap.fromTo(exp,{height:0,opacity:0},{height:h,opacity:1,duration:.42,ease:'expo.out',onComplete:function(){exp.style.height='auto';}});
-        window.gsap.from(exp.querySelectorAll('.secx-tbl tbody tr'),{opacity:0,y:8,duration:.3,stagger:.02,ease:'power2.out',delay:.1,clearProps:'all'});
       }
       setTimeout(function(){ exp.scrollIntoView({behavior:'smooth',block:'nearest'}); },60);
     }
     host.querySelectorAll('.sector-card').forEach(function(b){ b.addEventListener('click',function(){
       var key=b.getAttribute('data-sec');
-      if(secOpen===key){ closeSectorPanel(); return; }
-      if(secOpen){ closeSectorPanel(function(){ openSectorPanel(key); }); } else { openSectorPanel(key); }
+      if(state._secOpenKey===key){ closeSectorPanel(); return; }
+      state._secFilter='all';
+      if(state._secOpenKey){ closeSectorPanel(function(){ openSectorPanel(key); }); } else { openSectorPanel(key); }
     }); });
 
     animateMenu(root);
@@ -948,9 +948,9 @@
       SECTOR_CARDS.forEach(function(s){
         countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), counts[s.key]);
       });
-      // Depósito siempre desplegado al entrar; si cambia el mes con un panel abierto, refrescarlo.
-      if(!_secAuto){ _secAuto=true; openSectorPanel('ALMACENAMIENTO-DEPOSITO'); }
-      else if(secOpen){ var ex=q('#d_sectorExp'); if(ex && !ex.hidden){ ex.innerHTML=panelHTML(secOpen); wireSecPanel(secOpen); } }
+      // Depósito (o el sector recordado) desplegado al entrar; al cambiar de mes con panel abierto, refrescar su tabla.
+      if(!_secAuto){ _secAuto=true; openSectorPanel(state._secOpenKey||'ALMACENAMIENTO-DEPOSITO'); }
+      else if(state._secOpenKey){ var ex=q('#d_sectorExp'); if(ex && !ex.hidden){ ex.innerHTML=panelHTML(state._secOpenKey); wireSecPanel(state._secOpenKey); paintSecTable(state._secOpenKey); } }
     }
     wireMonthNav(root, fillMenu);
     API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); });
