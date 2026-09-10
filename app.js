@@ -660,18 +660,16 @@
   function animateMenu(root){
     var host=root.querySelector('#d_sectores');
     if(!window.gsap || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
-      staggerIn(root.querySelectorAll('.dash-kpis .kpi'), 30, 55);
-      if(host) staggerIn(host.querySelectorAll('.sector-card'), 140, 55);
+      if(host) staggerIn(host.querySelectorAll('.us-seg__btn'), 60, 45);
       return;
     }
     var g=window.gsap;
-    var cards=host?host.querySelectorAll('.sector-card'):[];
+    var segs=host?host.querySelectorAll('.us-seg__btn'):[];
     // Minimalista: fade suave con leve desplazamiento, sin giros ni rebotes.
     var tl=g.timeline({ defaults:{ ease:'power2.out', overwrite:'auto' } });
     tl.from(root.querySelectorAll('.dash-hero > *'), { y:12, opacity:0, duration:.5, stagger:.06 }, 0);
-    tl.from(root.querySelectorAll('.dash-kpis .kpi'), { y:14, opacity:0, duration:.5, stagger:.06, clearProps:'transform,opacity' }, .1);
-    tl.from(root.querySelectorAll('.dash-section__head'), { y:10, opacity:0, duration:.45 }, .26);
-    tl.from(cards, { y:16, opacity:0, duration:.5, stagger:.06, clearProps:'transform,opacity' }, .3);
+    tl.from(root.querySelectorAll('.dash-section__head'), { y:10, opacity:0, duration:.45 }, .2);
+    tl.from(segs, { y:14, opacity:0, duration:.45, stagger:.05, clearProps:'transform,opacity' }, .26);
   }
 
   /* ── Animación GSAP de la tabla (sectores / listas) ──────── */
@@ -840,10 +838,11 @@
     root.innerHTML=
       '<div class="view dash">'+
         '<header class="dash-hero"><h1 class="dash-title">Usos Internos</h1>'+
-          '<div class="dash-hero__ctl">'+monthNavHTML()+'<button class="dash-cta dash-cta--ghost" id="d_resumen">'+ICONS.chart+' Ver resumen</button></div></header>'+
+          '<div class="dash-hero__ctl">'+monthNavHTML()+'<button class="dash-cta dash-cta--ghost" id="d_resumen">'+ICONS.chart+' Ver resumen</button>'+
+            '<button class="dash-cta" id="d_nuevo">'+ICONS.plus+' Nuevo Uso Interno</button></div></header>'+
         '<section class="dash-section"><div class="dash-section__head"><span>Sectores</span><span class="hr"></span></div>'+
-          '<div class="sector-list sector-list--row" id="d_sectores"></div>'+
-          '<div class="sec-exp" id="d_sectorExp" hidden></div></section>'+
+          '<div class="us-seg" id="d_sectores"></div>'+
+          '<div class="sec-exp" id="d_sectorExp"></div></section>'+
       '</div>';
 
     // "Ver resumen" → modal PRO con los gráficos.
@@ -856,102 +855,90 @@
       if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(m.bd); animateCharts(m.bd); }
     }
     q('#d_resumen').addEventListener('click', openResumenModal);
+    var _nuevoBtn=q('#d_nuevo'); if(_nuevoBtn) _nuevoBtn.addEventListener('click', wizardNuevo);
     root.querySelectorAll('.kpi[data-go]').forEach(function(b){ b.addEventListener('click',function(){ go(b.getAttribute('data-go')); }); });
 
+    // ── Selector segmentado de sectores (estilo depósitos del Calendario) + tabla por pestaña ──
     var host=q('#d_sectores');
-    host.innerHTML=SECTOR_CARDS.map(function(s){
-      return '<button class="sector-card sc-v" data-sec="'+esc(s.key)+'">'+
-        '<span class="sc-top"><span class="sector-card__ic">'+ICONS[s.icon]+'</span>'+
-          '<span class="sc-count-box"><span class="sector-card__count" data-c="'+esc(s.key)+'">·</span></span></span>'+
-        '<span class="sc-name">'+esc(s.label)+'</span>'+
-        '<span class="sc-desc">'+esc(SECTOR_DESC[s.key]||'')+'</span>'+
-        '<span class="sc-foot"><span class="sc-lbl">materiales en curso</span><span class="sector-card__arrow">'+ARROW+'</span></span>'+
-      '</button>';
+    var SEG_ALL='__ALL__';
+    var TODOS_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>';
+    var SEG=[{key:SEG_ALL,label:'Todos',ic:TODOS_IC}].concat(SECTOR_CARDS.map(function(s){return {key:s.key,label:s.label,ic:ICONS[s.icon]};}));
+    host.innerHTML=SEG.map(function(s){
+      return '<button class="us-seg__btn" type="button" data-sec="'+esc(s.key)+'">'+
+        '<span class="us-seg__ic">'+s.ic+'</span>'+
+        '<span class="us-seg__col"><span class="us-seg__lbl">'+esc(s.label)+'</span>'+
+          '<span class="us-seg__n" data-c="'+esc(s.key)+'">·</span></span></button>';
     }).join('');
-    // ── Acordeón inline por sector: MISMA tabla y funciones que "Ver todo" ──
+
     var _secAuto=false;
     function sectorRows(key){
       var rows=[];
       (state._menuUsos||[]).filter(inMonth).forEach(function(u){
-        if(u.sector!==key||u.estado==='anulado') return;
+        if(u.estado==='anulado') return;
+        if(key!==SEG_ALL && u.sector!==key) return;
         (u.items||[]).forEach(function(it){ rows.push({uso:u,it:it}); });
       });
       return rows;
     }
     function panelHTML(key){
-      var s=SECTOR_CARDS.find(function(x){return x.key===key;})||{};
       var rows=sectorRows(key);
       var c={pendiente:0,cargado:0,baja:0}; rows.forEach(function(r){ if(c[r.it.sap_estado]!=null)c[r.it.sap_estado]++; });
       var flt=state._secFilter||'all';
       var chips=[{k:'all',l:'Todos',n:rows.length},{k:'pendiente',l:'Pendientes',n:c.pendiente},{k:'cargado',l:'Para dar de baja',n:c.cargado},{k:'baja',l:'Terminados',n:c.baja}];
       return '<div class="secx" data-key="'+esc(key)+'">'+
-        '<div class="secx-head"><span class="secx-ic">'+ICONS[s.icon]+'</span>'+
-          '<div class="secx-ttl"><b>'+esc(s.label||key)+'</b><span>'+esc(SECTOR_DESC[key]||'')+' · '+rows.length+' material'+(rows.length===1?'':'es')+'</span></div>'+
-          '<button class="secx-x" data-secclose aria-label="Cerrar">'+(ICONS.x||ICONS.close||'✕')+'</button></div>'+
-        '<div class="secx-filters">'+chips.map(function(ch){return '<button class="secx-chip'+(flt===ch.k?' on e-'+ch.k:'')+'" data-secf="'+ch.k+'">'+ch.l+'<span class="secx-chip__n">'+ch.n+'</span></button>';}).join('')+'</div>'+
+        '<div class="secx-filters">'+chips.map(function(ch){return '<button class="secx-chip'+(flt===ch.k?' on e-'+ch.k:'')+'" data-secf="'+ch.k+'">'+ch.l+'<span class="secx-chip__n">'+ch.n+'</span></button>';}).join('')+
+          '<span class="secx-count">'+rows.length+' material'+(rows.length===1?'':'es')+'</span></div>'+
         '<div class="secx-listhost" id="secxListHost"></div>'+
       '</div>';
     }
-    // Rellena la tabla funcional (paintTable) dentro del acordeón, respetando el filtro de estado.
+    // Tabla funcional (paintTable) de la pestaña activa, respetando el filtro de estado.
     function paintSecTable(key){
       var hostEl=q('#secxListHost'); if(!hostEl) return;
       var rows=sectorRows(key), flt=state._secFilter||'all';
       var frows=flt==='all'?rows:rows.filter(function(r){return r.it.sap_estado===flt;});
       state._rows=frows;
-      paintTable(hostEl, frows, { emptyText:'Sin materiales en este sector'+(flt==='all'?'':' en este estado')+' este mes', sig:'sec-'+key+'-'+flt });
+      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+' este mes', sig:'sec-'+key+'-'+flt });
       state._reRender=function(){ paintSecTable(key); };
     }
     function wireSecPanel(key){
       var exp=q('#d_sectorExp'); if(!exp) return;
-      var xb=exp.querySelector('[data-secclose]'); if(xb) xb.addEventListener('click',function(){ closeSectorPanel(); });
       exp.querySelectorAll('[data-secf]').forEach(function(b){ b.addEventListener('click',function(){
         state._secFilter=b.getAttribute('data-secf');
         exp.querySelectorAll('[data-secf]').forEach(function(x){ x.className='secx-chip'+(x===b?' on e-'+state._secFilter:''); });
         paintSecTable(key);
       }); });
     }
-    function closeSectorPanel(cb){
-      var exp=q('#d_sectorExp');
-      host.querySelectorAll('.sector-card.active').forEach(function(c){c.classList.remove('active');});
-      state._secOpenKey=null;
-      if(!exp||exp.hidden){ if(cb)cb(); return; }
-      if(window.gsap){ window.gsap.to(exp,{height:0,opacity:0,duration:.3,ease:'power2.inOut',onComplete:function(){exp.hidden=true;exp.style.height='';exp.style.opacity='';exp.innerHTML='';if(cb)cb();}}); }
-      else { exp.hidden=true; exp.innerHTML=''; if(cb)cb(); }
-    }
-    function openSectorPanel(key){
+    function selectSector(key, anim){
       var exp=q('#d_sectorExp'); if(!exp) return;
-      exp.innerHTML=panelHTML(key); exp.hidden=false; state._secOpenKey=key;
-      host.querySelectorAll('.sector-card').forEach(function(c){c.classList.toggle('active',c.getAttribute('data-sec')===key);});
+      state._secOpenKey=key;
+      host.querySelectorAll('.us-seg__btn').forEach(function(c){c.classList.toggle('on',c.getAttribute('data-sec')===key);});
+      exp.innerHTML=panelHTML(key);
       wireSecPanel(key); paintSecTable(key);
-      if(window.gsap){ window.gsap.set(exp,{height:'auto',opacity:1}); var h=exp.offsetHeight;
-        window.gsap.fromTo(exp,{height:0,opacity:0},{height:h,opacity:1,duration:.42,ease:'expo.out',onComplete:function(){exp.style.height='auto';}});
-      }
-      setTimeout(function(){ exp.scrollIntoView({behavior:'smooth',block:'nearest'}); },60);
+      if(anim!==false && window.gsap){ window.gsap.fromTo(exp,{opacity:0,y:8},{opacity:1,y:0,duration:.3,ease:'power2.out',clearProps:'all'}); }
     }
-    host.querySelectorAll('.sector-card').forEach(function(b){ b.addEventListener('click',function(){
+    host.querySelectorAll('.us-seg__btn').forEach(function(b){ b.addEventListener('click',function(){
       var key=b.getAttribute('data-sec');
-      if(state._secOpenKey===key){ closeSectorPanel(); return; }
+      if(state._secOpenKey===key) return;
       state._secFilter='all';
-      if(state._secOpenKey){ closeSectorPanel(function(){ openSectorPanel(key); }); } else { openSectorPanel(key); }
+      selectSector(key,true);
     }); });
 
     animateMenu(root);
 
     function fillMenu(){
       var usos=(state._menuUsos||[]).filter(inMonth);
-      // Conteo por sector + barra de progreso (relativa al sector con más materiales en curso).
-      var counts={}, max=0;
+      var counts={}, all=0;
       SECTOR_CARDS.forEach(function(s){
         var enCurso=0; usos.forEach(function(u){ if(u.sector!==s.key||u.estado==='anulado') return; (u.items||[]).forEach(function(it){ if(it.sap_estado==='pendiente'||it.sap_estado==='cargado') enCurso++; }); });
-        counts[s.key]=enCurso; if(enCurso>max) max=enCurso;
+        counts[s.key]=enCurso; all+=enCurso;
       });
-      SECTOR_CARDS.forEach(function(s){
-        countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), counts[s.key]);
-      });
-      // Depósito (o el sector recordado) desplegado al entrar; al cambiar de mes con panel abierto, refrescar su tabla.
-      if(!_secAuto){ _secAuto=true; openSectorPanel(state._secOpenKey||'ALMACENAMIENTO-DEPOSITO'); }
-      else if(state._secOpenKey){ var ex=q('#d_sectorExp'); if(ex && !ex.hidden){ ex.innerHTML=panelHTML(state._secOpenKey); wireSecPanel(state._secOpenKey); paintSecTable(state._secOpenKey); } }
+      counts[SEG_ALL]=all;
+      Object.keys(counts).forEach(function(k){ countUp(host.querySelector('.us-seg__n[data-c="'+k+'"]'), counts[k]); });
+      // Pestaña por defecto (Depósito o la recordada); al cambiar de mes / tras acción, refrescar la activa.
+      if(!_secAuto){ _secAuto=true; selectSector(state._secOpenKey||'ALMACENAMIENTO-DEPOSITO', false); }
+      else if(state._secOpenKey){ var ex=q('#d_sectorExp'); if(ex){ ex.innerHTML=panelHTML(state._secOpenKey); wireSecPanel(state._secOpenKey); paintSecTable(state._secOpenKey); } }
     }
+    state._menuRefresh=function(){ API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); }); };
     wireMonthNav(root, fillMenu);
     API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); });
   }
@@ -1483,7 +1470,7 @@
     else if(state.view==='terminados') renderLista({ estado:'terminados' }, 'Terminados');
     else if(state.view==='porbaja') renderPorBaja();
     else if(state.view==='resumen') renderResumen();
-    else if(state.view==='menu') renderMenu();
+    else if(state.view==='menu'){ if(typeof state._menuRefresh==='function') state._menuRefresh(); else renderMenu(); }
     else if(state.view==='auditoria') renderAuditoria();
   }
 
