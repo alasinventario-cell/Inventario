@@ -885,29 +885,50 @@
     function panelHTML(key){
       var rows=sectorRows(key);
       var c={pendiente:0,cargado:0,baja:0}; rows.forEach(function(r){ if(c[r.it.sap_estado]!=null)c[r.it.sap_estado]++; });
-      var flt=state._secFilter||'all';
+      var flt=state._secFilter||'all', sd=state._secDate||'';
       var chips=[{k:'all',l:'Todos',n:rows.length},{k:'pendiente',l:'Pendientes',n:c.pendiente},{k:'cargado',l:'Para dar de baja',n:c.cargado},{k:'baja',l:'Terminados',n:c.baja}];
+      // Fechas (según el estado elegido) → cuadrícula horizontal para filtrar por día.
+      var baseRows=flt==='all'?rows:rows.filter(function(r){return r.it.sap_estado===flt;});
+      var dmap={}; baseRows.forEach(function(r){ var d=String(r.uso.fecha_emision).slice(0,10); if(d.length===10) dmap[d]=(dmap[d]||0)+1; });
+      var dkeys=Object.keys(dmap).sort().reverse();
+      var dateChips = dkeys.length ? ('<div class="secx-dates"><button class="secx-date secx-date--all'+(!sd?' on':'')+'" data-secd="" title="Todas las fechas"><span class="secx-date__all">'+ICONS.calendar+'</span><span class="secx-date__alll">Todas</span></button>'+
+        dkeys.map(function(d){ var dt=new Date(d+'T00:00:00'); return '<button class="secx-date'+(sd===d?' on':'')+'" data-secd="'+d+'"><span class="secx-date__d">'+dt.getDate()+'</span><span class="secx-date__m">'+(MESES[dt.getMonth()]||'').slice(0,3).toUpperCase()+'</span><span class="secx-date__n">'+dmap[d]+'</span></button>'; }).join('')+'</div>') : '';
+      var shownN = sd ? (dmap[sd]||0) : baseRows.length;
       return '<div class="secx" data-key="'+esc(key)+'">'+
         '<div class="secx-filters">'+chips.map(function(ch){return '<button class="secx-chip'+(flt===ch.k?' on e-'+ch.k:'')+'" data-secf="'+ch.k+'">'+ch.l+'<span class="secx-chip__n">'+ch.n+'</span></button>';}).join('')+
-          '<span class="secx-count">'+rows.length+' material'+(rows.length===1?'':'es')+'</span></div>'+
+          '<span class="secx-count">'+shownN+' material'+(shownN===1?'':'es')+'</span></div>'+
+        dateChips+
         '<div class="secx-listhost" id="secxListHost"></div>'+
       '</div>';
     }
     // Tabla funcional (paintTable) de la pestaña activa, respetando el filtro de estado.
     function paintSecTable(key){
       var hostEl=q('#secxListHost'); if(!hostEl) return;
-      var rows=sectorRows(key), flt=state._secFilter||'all';
-      var frows=flt==='all'?rows:rows.filter(function(r){return r.it.sap_estado===flt;});
+      var rows=sectorRows(key), flt=state._secFilter||'all', sd=state._secDate||'';
+      var frows=rows.filter(function(r){
+        if(flt!=='all' && r.it.sap_estado!==flt) return false;
+        if(sd && String(r.uso.fecha_emision).slice(0,10)!==sd) return false;
+        return true;
+      });
       state._rows=frows;
-      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+' este mes', sig:'sec-'+key+'-'+flt });
+      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
       state._reRender=function(){ paintSecTable(key); };
     }
     function wireSecPanel(key){
       var exp=q('#d_sectorExp'); if(!exp) return;
+      // Filtro por estado: al cambiar, se muestran todas las fechas de ese estado → se reconstruye el panel.
       exp.querySelectorAll('[data-secf]').forEach(function(b){ b.addEventListener('click',function(){
-        state._secFilter=b.getAttribute('data-secf');
-        exp.querySelectorAll('[data-secf]').forEach(function(x){ x.className='secx-chip'+(x===b?' on e-'+state._secFilter:''); });
+        state._secFilter=b.getAttribute('data-secf'); state._secDate='';
+        exp.innerHTML=panelHTML(key); wireSecPanel(key); paintSecTable(key);
+        if(window.gsap){ var ds=exp.querySelector('.secx-dates'); if(ds) window.gsap.fromTo(ds.children,{opacity:0,y:-6,scale:.9},{opacity:1,y:0,scale:1,duration:.3,stagger:.02,ease:'back.out(2)',clearProps:'all'}); }
+      }); });
+      // Filtro por fecha: muestra lo pedido ese día.
+      exp.querySelectorAll('[data-secd]').forEach(function(b){ b.addEventListener('click',function(){
+        state._secDate=b.getAttribute('data-secd')||'';
+        exp.querySelectorAll('[data-secd]').forEach(function(x){ x.classList.toggle('on', x===b); });
         paintSecTable(key);
+        var cnt=exp.querySelector('.secx-count'); if(cnt){ var n=(state._rows||[]).length; cnt.textContent=n+' material'+(n===1?'':'es'); }
+        if(window.gsap){ var lh=exp.querySelector('#secxListHost'); if(lh) window.gsap.fromTo(lh,{opacity:0,y:8},{opacity:1,y:0,duration:.3,ease:'power2.out',clearProps:'all'}); }
       }); });
     }
     function selectSector(key, anim){
@@ -921,7 +942,7 @@
     host.querySelectorAll('.us-seg__btn').forEach(function(b){ b.addEventListener('click',function(){
       var key=b.getAttribute('data-sec');
       if(state._secOpenKey===key) return;
-      state._secFilter='all';
+      state._secFilter='all'; state._secDate='';
       selectSector(key,true);
     }); });
 
