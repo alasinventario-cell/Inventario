@@ -877,7 +877,7 @@
       '</button>';
     }).join('');
     // ── Acordeón inline por sector: tabla de materiales + filtros de estado ──
-    var secOpen=null, secFilter='all';
+    var secOpen=null, secFilter='all', _secAuto=false;
     function sectorRows(key){
       var rows=[];
       (state._menuUsos||[]).filter(inMonth).forEach(function(u){
@@ -960,6 +960,9 @@
       });
       var sec=q('#d_resumenSec');
       if(sec && !sec.hidden){ var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); } }
+      // Depósito siempre desplegado al entrar; si cambia el mes con un panel abierto, refrescarlo.
+      if(!_secAuto){ _secAuto=true; openSectorPanel('ALMACENAMIENTO-DEPOSITO'); }
+      else if(secOpen){ var ex=q('#d_sectorExp'); if(ex && !ex.hidden){ ex.innerHTML=panelHTML(secOpen); wireSecPanel(secOpen); } }
     }
     wireMonthNav(root, fillMenu);
     API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); });
