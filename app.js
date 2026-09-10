@@ -844,25 +844,18 @@
         '<section class="dash-section"><div class="dash-section__head"><span>Sectores</span><span class="hr"></span></div>'+
           '<div class="sector-list sector-list--row" id="d_sectores"></div>'+
           '<div class="sec-exp" id="d_sectorExp" hidden></div></section>'+
-        '<section class="dash-section" id="d_resumenSec" style="margin-top:18px" hidden><div class="dash-section__head"><span>Resumen y gráficos</span><span class="hr"></span></div>'+
-          '<div id="d_resumenBody"></div></section>'+
       '</div>';
 
-    var resumenShown=false;
-    q('#d_resumen').addEventListener('click',function(){
-      var sec=q('#d_resumenSec'), btn=q('#d_resumen'); if(!sec) return;
-      resumenShown=!resumenShown;
-      sec.hidden=!resumenShown;
-      btn.classList.toggle('is-on', resumenShown);
-      if(resumenShown){
-        var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); }
-        if(window.gsap){ window.gsap.from(sec,{opacity:0,y:12,duration:.4,ease:'power2.out',clearProps:'all'}); }
-        setTimeout(function(){ sec.scrollIntoView({behavior:'smooth',block:'start'}); }, 60);
-        btn.innerHTML=ICONS.chart+' Ocultar resumen';
-      } else {
-        btn.innerHTML=ICONS.chart+' Ver resumen';
-      }
-    });
+    // "Ver resumen" → modal PRO con los gráficos.
+    function openResumenModal(){
+      var inner='<div class="modal__head"><span class="modal__title">Resumen y gráficos</span>'+
+          '<div class="modal__head-actions"><button class="modal__close" data-close aria-label="Cerrar">'+(ICONS.x||ICONS.close||'✕')+'</button></div></div>'+
+        '<div class="modal__body"><div id="d_resumenModalBody"></div></div>';
+      var m=openModal(inner,{cls:'modal--resumen'});
+      var rb=m.bd.querySelector('#d_resumenModalBody');
+      if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(m.bd); animateCharts(m.bd); }
+    }
+    q('#d_resumen').addEventListener('click', openResumenModal);
     root.querySelectorAll('.kpi[data-go]').forEach(function(b){ b.addEventListener('click',function(){ go(b.getAttribute('data-go')); }); });
 
     var host=q('#d_sectores');
@@ -872,7 +865,6 @@
           '<span class="sc-count-box"><span class="sector-card__count" data-c="'+esc(s.key)+'">·</span></span></span>'+
         '<span class="sc-name">'+esc(s.label)+'</span>'+
         '<span class="sc-desc">'+esc(SECTOR_DESC[s.key]||'')+'</span>'+
-        '<span class="sc-prog"><span class="sc-prog__fill" data-p="'+esc(s.key)+'"></span></span>'+
         '<span class="sc-foot"><span class="sc-lbl">materiales en curso</span><span class="sector-card__arrow">'+ARROW+'</span></span>'+
       '</button>';
     }).join('');
@@ -955,11 +947,7 @@
       });
       SECTOR_CARDS.forEach(function(s){
         countUp(host.querySelector('.sector-card__count[data-c="'+s.key+'"]'), counts[s.key]);
-        var bar=host.querySelector('.sc-prog__fill[data-p="'+s.key+'"]');
-        if(bar){ var pct=max>0?Math.max(6,Math.round(counts[s.key]/max*100)):0; if(window.gsap){ window.gsap.to(bar,{width:pct+'%',duration:.7,ease:'power2.out'}); } else { bar.style.width=pct+'%'; } }
       });
-      var sec=q('#d_resumenSec');
-      if(sec && !sec.hidden){ var rb=q('#d_resumenBody'); if(rb){ rb.innerHTML=resumenBodyHTML(); wireChartTips(root); animateCharts(root); } }
       // Depósito siempre desplegado al entrar; si cambia el mes con un panel abierto, refrescarlo.
       if(!_secAuto){ _secAuto=true; openSectorPanel('ALMACENAMIENTO-DEPOSITO'); }
       else if(secOpen){ var ex=q('#d_sectorExp'); if(ex && !ex.hidden){ ex.innerHTML=panelHTML(secOpen); wireSecPanel(secOpen); } }

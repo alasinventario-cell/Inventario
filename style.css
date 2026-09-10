@@ -405,9 +405,7 @@ button.kpi:hover .kpi__go { opacity:1; transform:translateX(0); }
 .sc-v .sector-card__count { font-family:'Sora',sans-serif; font-weight:800; font-size:26px; color:var(--alas-brand); line-height:1; letter-spacing:-.02em; }
 .sc-name { font-size:16px; font-weight:800; color:var(--alas-text-1); letter-spacing:-.01em; line-height:1.15; }
 .sc-desc { font-size:12px; color:var(--alas-text-3); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sc-prog { display:block; height:6px; border-radius:999px; background:var(--gray-100); overflow:hidden; margin:13px 0 10px; }
-.sc-prog__fill { display:block; height:100%; width:0; border-radius:999px; background:linear-gradient(90deg,#1478b8,var(--alas-brand)); }
-.sc-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.sc-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid #eef2f7; }
 .sc-lbl { font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:var(--alas-brand); opacity:.72; }
 .sc-v .sector-card__arrow { color:var(--gray-300); }
 .sc-v .sector-card__arrow svg { width:18px; height:18px; }
@@ -731,6 +729,8 @@ tr.row-date.is-open:hover td { background:#daeafb; }
 .modal { position:relative; width:min(820px, calc(100vw - 32px)); max-height:90vh; overflow:hidden; border-radius:22px;
   background:#fff; box-shadow:0 30px 80px rgba(11,95,141,.22), 0 8px 24px rgba(15,23,42,.10); display:flex; flex-direction:column;
   opacity:0; transform:translateY(22px) scale(.965); transition:opacity 360ms var(--alas-ease), transform 360ms var(--alas-ease); }
+.modal.modal--resumen { width:min(1080px, calc(100vw - 32px)); }
+.modal--resumen .modal__body { padding:20px 22px 24px; }
 .modal--wide { width:min(820px, calc(100vw - 32px)); }
 .modal-backdrop.is-open .modal { opacity:1; transform:translateY(0) scale(1); }
 .modal__bar { height:4px; background:linear-gradient(90deg,#0e6fa8,#0B5F8D 55%,#084f78); }
