@@ -838,7 +838,8 @@
     root.innerHTML=
       '<div class="view dash">'+
         '<header class="dash-hero"><h1 class="dash-title">Usos Internos</h1>'+
-          '<div class="dash-hero__ctl">'+monthNavHTML()+'<button class="dash-cta dash-cta--ghost" id="d_resumen">'+ICONS.chart+' Ver resumen</button>'+
+          '<div class="dash-hero__month">'+monthNavHTML()+'</div>'+
+          '<div class="dash-hero__ctl"><button class="dash-cta dash-cta--ghost" id="d_resumen">'+ICONS.chart+' Ver resumen</button>'+
             '<button class="dash-cta" id="d_nuevo">'+ICONS.plus+' Nuevo Uso Interno</button></div></header>'+
         '<section class="dash-section"><div class="dash-section__head"><span>Sectores</span><span class="hr"></span></div>'+
           '<div class="us-seg" id="d_sectores"></div>'+
@@ -911,7 +912,7 @@
         return true;
       });
       state._rows=frows;
-      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), flat:!!sd, emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
+      paintTable(hostEl, frows, { showSector:(key===SEG_ALL), flat:!!sd, openAll:!sd, emptyText:'Sin materiales'+(flt==='all'?'':' en este estado')+(sd?' en esa fecha':' este mes'), sig:'sec-'+key+'-'+flt+'-'+sd });
       state._reRender=function(){ paintSecTable(key); };
     }
     function wireSecPanel(key){
