@@ -869,6 +869,8 @@
         '<span class="us-seg__col"><span class="us-seg__lbl">'+esc(s.label)+'</span>'+
           '<span class="us-seg__n" data-c="'+esc(s.key)+'">·</span></span></button>';
     }).join('');
+    // Loader mientras llega la data (evita el "vacío trabado" del primer render).
+    q('#d_sectorExp').innerHTML='<div class="us-loading"><span class="us-spin"></span><span class="us-loading__t">Cargando materiales…</span></div>';
 
     var _secAuto=false;
     function sectorRows(key){
@@ -940,6 +942,7 @@
     }
     state._menuRefresh=function(){ API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); }); };
     wireMonthNav(root, fillMenu);
+    if((state._menuUsos||[]).length){ fillMenu(); }   // pinta al toque desde cache
     API.listUsos({}).then(function(usos){ state._menuUsos=usos; fillMenu(); });
   }
 
